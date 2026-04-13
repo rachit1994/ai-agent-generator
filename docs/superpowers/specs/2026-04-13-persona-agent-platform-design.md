@@ -9,7 +9,7 @@ Build persona agents from `docs/personas` and `docs/more_personas` that are:
 - and runnable on a local system.
 
 ## Scope
-- Primary architecture: **hybrid** (library core + optional runtime service)
+- Primary architecture: **hybrid** (library core + deployable runtime service component). “Hybrid” describes **how code is packaged and run**, not a reduced scope: the **full** manifest and design obligations still apply whether operators use the library alone or also run the service process.
 - Local LLM strategy: **dual-first** (`Ollama` and `vLLM` as equal first-class backends)
 - Persona execution model: phase-based workflows with step-level triads:
   - `architect`
@@ -22,6 +22,10 @@ Build persona agents from `docs/personas` and `docs/more_personas` that are:
   - temporal constraint enforcement,
   - trajectory-level evaluation metrics,
   - speculative decoding + adaptive local routing.
+
+Production program boundary:
+- **One** production exit delivers **all** design outcomes for **100%** of the **production workflow manifest** in `docs/implementation/production-workflow-manifest.md` (complete inventory from `docs/personas` and `docs/more_personas`; enumeration rules in `docs/implementation/2026-04-13-persona-agent-platform-implementation-roadmap.md`).
+- Capabilities may use shadow → canary → active promotion ladders, but **nothing** in the manifest or core design is deferred as “MVP” or “version 2”; backlog items require explicit EM + Tech Lead promotion to enter scope.
 
 ## Non-Negotiables
 - Clarification and objective lock before execution-heavy phases.
@@ -53,15 +57,17 @@ flowchart TD
 
 ## Core Tech Stack
 - **Python 3.13+**
-- **LangGraph** for deterministic workflow state machine and checkpoints
+- **LangGraph** for deterministic workflow state machine and checkpoints, with **`langgraph-checkpoint-postgres`** for durable state on Postgres
 - **AutoGen AgentChat** for per-step triad collaboration
 - **LiteLLM** for model routing
 - **Ollama + vLLM** for local inference
 - **Speculative decoding + adaptive routing** for local latency/quality control
 - **Pydantic v2** for strict contracts and schema-safe step IO
-- **Postgres + pgvector** for durable long-term memory
-- **structlog + OpenTelemetry + Langfuse (or equivalent)** for observability
-- **Prompt/eval harness** (`promptfoo`-style) for regression and policy promotion gates
+- **Instructor** for default structured LLM outputs at planner, reviewer, and typed tool boundaries
+- **Postgres + pgvector** for durable long-term memory (optional **Graphiti** / **Mem0** only per ADR in implementation docs)
+- **structlog + OpenTelemetry** for observability (optional self-hosted **Langfuse** for UX when approved)
+- **openai-guardrails-python** for default guardrail pipeline patterns; platform owns tenant binding, policy version pins, and temporal proofs
+- **promptfoo** for prompt and policy regression CI; **agentevals** on OTel traces for promotion and incident scoring; **DeepEval** (+ **RAGAS** where RAG applies) for pytest quality gates
 
 ## Persona Execution Contract
 For every persona step:
@@ -81,6 +87,7 @@ For every persona step:
 - Output policy checks (PII leakage, claim substantiation, schema conformance).
 - Temporal safety constraints for phase order and preconditions.
 - Hard stop conditions for violations and confidence-collapse scenarios.
+- Policy/auth/tenant-context resolution outage forces `safe_denied` halt (no degraded bypass mode).
 
 ## Long-Term Memory Model
 - **Episodic memory**: run history, decisions, retries, outcomes.
@@ -112,7 +119,9 @@ Memory write policy:
   - recovery quality after rejects.
 
 ## Research-Backed Design Updates (as of Apr 2026)
-The following findings are integrated as architectural requirements (not optional extras):
+The following findings inform architecture direction. **Production-exit required** items are those tagged `adopt-now` or `controlled-rollout` (must reach production configuration before exit) in the implementation package:
+- Tiering source of truth: `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md` and `docs/implementation/2026-04-13-persona-agent-platform-quality-self-improvement-advancements.md`.
+- Extended **research bibliography (2024–Apr 2026)** and **OSS integration** candidates: `docs/implementation/2026-04-13-persona-agent-platform-research-and-oss-integration.md`.
 
 ### Planning and long-horizon execution
 - Language Agent Tree Search (ICML 2024): planning over reason-act loops.
@@ -140,6 +149,8 @@ The following findings are integrated as architectural requirements (not optiona
 - Long-running autonomous agent trend (2026): validates persistent, multi-day persona workflows.
 
 ## URLs (research and references)
+- https://arxiv.org/abs/2603.24639
+- https://arxiv.org/abs/2601.06112
 - https://proceedings.mlr.press/v235/zhou24r.html
 - https://arxiv.org/abs/2603.12710
 - https://arxiv.org/abs/2509.24704
@@ -156,18 +167,18 @@ The following findings are integrated as architectural requirements (not optiona
 ## Implementation Sequence
 1. Build workflow compiler from persona phase docs into typed step specs.
 2. Implement `TreeSearchPlanner` and integrate with phase orchestration.
-3. Implement run engine with triad step orchestration and validator hooks.
-4. Add temporal-constraint runtime + railguard + tool gateway permissions.
-5. Add memory service (episodic/semantic/procedural/failure/generative + recursive summaries).
-6. Add observability, replay, and coordination diagnostics.
-7. Add evaluation harness with trajectory metrics and GEPA-style policy evolution.
+3. Implement run engine with triad step orchestration, **`langgraph-checkpoint-postgres`**, **Instructor**-backed structured IO, and validator hooks.
+4. Add temporal-constraint runtime + railguard + tool gateway permissions (**openai-guardrails-python** where applicable).
+5. Add memory service (episodic/semantic/procedural/failure/generative + recursive summaries; optional Graphiti per ADR).
+6. Add observability, replay, and coordination diagnostics (OTel required; Langfuse optional).
+7. Add evaluation harness: **promptfoo**, **agentevals** on traces, **DeepEval**/**RAGAS**, trajectory metrics, and GEPA-style policy evolution.
 8. Add adaptive local inference router (speculative decoding + backend routing).
 9. Add local runtime API/CLI and scheduling for autonomous operation.
 
 ## Done Criteria
-- All persona workflows compile and execute with gate outcomes.
+- **All** workflows in the production workflow manifest compile and execute with gate outcomes.
 - Same known failure cannot pass unchallenged twice (failure-memory retrieval check).
 - Policy violations reliably block or route to escalation.
 - Temporal sequence violations are blocked before unsafe actions execute.
-- Local run is supported with either Ollama or vLLM.
-- Improvement loop is measurable, regression-safe, and supports prompt-policy evolution promotion.
+- Local run is validated on both `Ollama` and `vLLM`, with parity checks across the **full** manifest suite.
+- Improvement loop is measurable, regression-safe, and supports prompt-policy evolution promotion including governed generative memory writes.

@@ -16,7 +16,7 @@ The public Python API takes **inspiration** from popular multi-agent patterns—
 
 **What stays different under the hood (the crux):** everything still runs from **one persona definition in YAML** per active configuration. The engine is **not** an open-ended multi-persona studio. It **materialises exactly one persona** at a time: ordered **stages → steps**, each step running **Architecture → Implementer → validators → Reviewer**, with **ToolGateway**, **tenant isolation**, and **gated memory**. The vocabulary above is a **thin facade and ergonomics layer** over that pipeline—not a second orchestration philosophy.
 
-**Scope rule:** v1 supports **one logical persona per loaded YAML** (one “world” of task types, memory, and tools). You may still pass lists of `Specialist` and `Assignment` objects into `Squad(...)` for a conventional call style, but the library **generates or binds** those objects from the same persona file; you do not design unrelated specialist teams side by side inside one product instance.
+**Scope rule:** this contract supports **one logical persona per loaded YAML** (one “world” of task types, memory, and tools). You may still pass lists of `Specialist` and `Assignment` objects into `Squad(...)` for a conventional call style, but the library **generates or binds** those objects from the same persona file; you do not design unrelated specialist teams side by side inside one product instance.
 
 | Inspired idea | Name in this library | What it actually drives here |
 |-------------|---------------------------|------------------------------|
@@ -33,7 +33,7 @@ The public Python API takes **inspiration** from popular multi-agent patterns—
 
 ## How we get from idea to shipped behaviour (one line each)
 
-These lines tell the whole story from “idea” to “library behaviour.” Later sections add names, tables, and edge cases; **nothing here drops a feature**.
+These lines tell the whole story from “idea” to “library behaviour.” The sections below add names, tables, and edge cases; **nothing here drops a feature**.
 
 1. We ship a **normal Python library** (wheel/sdist) that your app imports—this package **is** the product, not a sample app wrapped around it.
 2. Your integration code stays **tiny**: supply an **API key** (or auth bundle) and a **path to persona YAML** during **`configure` / `init`**, materialise **one** **`Squad`** for that persona, then call **`launch(inputs=...)`** (including a **task type id** in `inputs` when multiple task types exist)—**everything else** (graphs, model roles, memory, tools, checkpoints) runs **inside the library**.
@@ -63,7 +63,7 @@ These lines tell the whole story from “idea” to “library behaviour.” Lat
 26. If the Reviewer **rejects**, **Implementer** (and if policy says so, **Architecture**) may retry up to a **policy limit**, and each retry must show **real progress** (for example a different output hash or better validator score), not the same wrong answer pasted again.
 27. If retries run out, the run pauses in **`awaiting_human`** until a person approves, edits, or aborts—your escape hatch.
 28. If the Reviewer **escalates**, policy can send the run straight to **human** without burning more automatic retries.
-29. When a step is **accepted**, we **append an episodic record**—the machine-friendly trail of tools, hashes, validator links—so you can **replay** and debug later.
+29. When a step is **accepted**, we **append an episodic record**—the machine-friendly trail of tools, hashes, validator links—so you can **replay** and debug in a **subsequent** investigation.
 30. Optionally we also stage **“step learning” rows**—short signals about failures or fixes—under promotion rules so noise does not flood long-term memory.
 31. When **every step in a stage** is accepted, we clear or archive **stage scratch (“working memory”)** per policy and **open the next stage**.
 32. When the **whole task ends**—success, failure, cancel, or partial—we write or update a **retrospective capsule**: what worked, mistakes, paths touched, validator fingerprints, in a **searchable** row with **redaction** applied first—that is the core of **self-learning** for the next **`launch`**.
@@ -72,7 +72,7 @@ These lines tell the whole story from “idea” to “library behaviour.” Lat
 35. **Mistake clustering** (for example embeddings + DBSCAN) may highlight recurring patterns for analytics and prompt hints—but **never** as unvetted automatic doctrine.
 36. **Dedupe fingerprints** on mistakes reduce ten copies of the same lesson crowding search results.
 37. If you enable a **Markdown run diary** under the workspace, we **append human-readable sections** after meaningful events so PMs can read a story; **automation still trusts** SQLite + validators, not prose alone.
-38. **DAG-first mode** (future) lets a global planner own a branching plan—but it still **compiles down to the same step records** so checkpoints, validators, and replay stay one system.
+38. **DAG-first mode** (optional planner profile) lets a global planner own a branching plan—but it still **compiles down to the same step records** so checkpoints, validators, and replay stay one system.
 39. **Follow-up messages** (you, CI bots, tickets) land in a **queue** and merge into plans under **rules** so nobody silently widens tools or scope mid-run.
 40. **Plan or YAML changes** after the fact require a **version bump** and a short **why** note; we **never silently rewrite** steps that already finished.
 41. **Idempotency** on **`launch`** (and any thin `execute_task` alias) is defined and tested so double-clicks do not spawn ghost runs—keys are scoped per **(companyId, key)** when you pass them.
@@ -84,10 +84,10 @@ These lines tell the whole story from “idea” to “library behaviour.” Lat
 47. Advanced callers can still use lower-level **`RunSession`**, **`memory.search`**, **`replay.export`**, **`approve`**—but the **happy path** is: **`configure` / `init` + `Squad.launch`** (optional **`Pipeline.launch`** when you need outer state). A legacy **`execute_task(...)`** alias may exist as a one-line forwarder to **`launch`** for older integrations.
 48. **Extension hooks** let you register **custom tools** and **custom validators** without forking core types into app code everywhere.
 49. **Hermetic CI** uses a **fake or recorded model** and **no network** in unit tests, plus **cross-tenant negative tests** that prove company A cannot read company B’s ids.
-50. **Phase A** delivers one vertical slice: one persona YAML, one task type, full **Architecture → Implementer → validators → Reviewer** loop per step, SQLite per tenant, replay, human gate, offline tests.
-51. **Phase B** adds smarter retrieval: vectors, async embedding jobs, hybrid rank, optional mistake clustering analytics.
-52. **Phase C** adds breadth: more personas and task types, optional DAG templates on the **same** step engine, richer promotion workflows for playbooks.
-53. **Non-goals for v1** stay honest: we do not require Kafka-scale buses; we do not let an LLM score alone approve a merge; we do not merge memory across tenants without an explicit audited export bridge.
+50. **Integration slice A** proves one vertical path: one persona YAML, one task type, full **Architecture → Implementer → validators → Reviewer** loop per step, SQLite per tenant, replay, human gate, offline tests.
+51. **Integration slice B** adds smarter retrieval: vectors, async embedding jobs, hybrid rank, optional mistake clustering analytics.
+52. **Integration slice C** adds breadth: more personas and task types, optional DAG templates on the **same** step engine, richer promotion workflows for playbooks.
+53. **Explicit non-goals** stay honest: we do not require Kafka-scale buses; we do not let an LLM score alone approve a merge; we do not merge memory across tenants without an explicit audited export bridge.
 54. **What success looks like:** each persona you define in YAML **keeps getting smarter** in a controlled way because capsules and search surface **prior evidence**; quality stays high because **validators and humans** hold the line—not because we pretend models never repeat errors.
 
 ---
@@ -102,7 +102,7 @@ It should:
 - Run each **`launch`** as **ordered stages**; each stage contains **ordered steps** for that task type.
 - For **every step**: an **Architecture** agent shapes the approach; an **Implementer** agent does the work with tools; **non-LLM validators** run; a **Reviewer** accepts, rejects, or escalates. **No step completes without Reviewer confirmation** (after validators pass).
 - Keep **stages sequential**: stage *k+1* starts only when every step in stage *k* is confirmed.
-- Load **memory and precedents before step-level LLM work**, and **write structured outcomes** (episodic + retrospective capsules) so later **`launch`** calls retrieve lessons—**self-learning** with **gated** promotion to long-term doctrine.
+- Load **memory and precedents before step-level LLM work**, and **write structured outcomes** (episodic + retrospective capsules) so **subsequent** **`launch`** calls retrieve lessons—**self-learning** with **gated** promotion to long-term doctrine.
 - Expose **terminal, search, filesystem, git**, and other tools only through a **registry + gateway** (allowlists, schemas, audit).
 - Scale from **one organisation / one workspace** to **many tenants** (`companyId`) without cross-tenant data leaks.
 - Keep **orchestration** (e.g. LangGraph) **inside an adapter**; the **default public API** is the **Pipeline / Squad / Specialist / Assignment** surface: **`launch` / `alaunch`**, optional **`Pipeline`** + **`blueprint`**, with optional advanced entry points (`RunSession`, replay, memory search).
@@ -113,22 +113,22 @@ Retrieval plus gated memory **strongly reduces** repeated mistakes; **validators
 
 ---
 
-## 2. Non-goals (v1)
+## 2. Explicit non-goals
 
-v1 is **not** a giant cloud SaaS, does not let chatbots vote on shipping, and does not silently blend two customers’ memories.
+This library is **not** a giant cloud SaaS, does not let chatbots vote on shipping, and does not silently blend two customers’ memories.
 
 - Mandatory Kafka/SQS or hyperscale multi-region SaaS.
 - LLM-as-judge for merge/shipping authority (LLM hints may exist; **mechanical validators decide**).
 - Cross-tenant memory merge or handoff without explicit audited export policy.
-- **Peer specialist-to-specialist handoff** or **dynamic router / “who speaks next”** selection inside a step. Each step stays **Architecture → Implementer → validators → Reviewer**; future **DAG** mode is still **planner → materialised steps**, not arbitrary group-chat topology.
-- **Distributed agent runtime** in v1 (separate processes, mesh RPC, pub/sub topics as the primary execution model). The default remains **in-process** orchestration with **SQLite per tenant** and an optional LangGraph adapter.
-- **First-class multimodal role traffic** (e.g. images or audio as native messages between roles) in v1. Rich data flows through **tools**, **files under workspace jail**, and declared **structured outputs** unless a later version extends the contract.
+- **Peer specialist-to-specialist handoff** or **dynamic router / “who speaks next”** selection inside a step. Each step stays **Architecture → Implementer → validators → Reviewer**; optional **DAG-first** mode is still **planner → materialised steps**, not arbitrary group-chat topology.
+- **Distributed agent runtime** where separate processes, mesh RPC, or pub/sub topics are the **primary** execution model—**out of scope** for the default library profile. The shipped default is **in-process** orchestration with **SQLite per tenant** and an optional LangGraph adapter.
+- **First-class multimodal role traffic** (e.g. images or audio as native messages between roles)—**out of scope** for the default message model. Rich data flows through **tools**, **files under workspace jail**, and declared **structured outputs** until native multimodal role payloads are explicitly added to the contract.
 
 ---
 
 ## 3. Core execution contract
 
-These rules define the **pipeline persona** runtime. Optional **DAG-first** mode (a **global planner** owns a branching plan) may exist later but must compile to the same internal **step/todo** records for checkpoints and replay.
+These rules define the **pipeline persona** runtime. Optional **DAG-first** mode (a **global planner** owns a branching plan) may be enabled when implemented, but must compile to the same internal **step/todo** records for checkpoints and replay.
 
 ```
 Run  (one Squad.launch / one task run)
@@ -360,7 +360,7 @@ result = MarketerPersona().squad().launch(
 
 ### 10.2 Expandable API catalogue (real-world surface)
 
-Split **“happy path”** (two calls and done) from **operations** (pause, audit, bill), **extensibility** (hooks, custom tools), and **governance** (GDPR, tenancy). Below is the **full method set** a serious v1→v2 library should plan for—not every method ships on day one, but **reserving names and seams** avoids breaking consumers later.
+Split **“happy path”** (two calls and done) from **operations** (pause, audit, bill), **extensibility** (hooks, custom tools), and **governance** (GDPR, tenancy). Below is the **full method set** a long-lived public library should reserve—not every method ships in the **first integration slice**, but **reserving names and seams** avoids breaking consumers when the published surface expands.
 
 **Design principles**
 
@@ -525,9 +525,9 @@ Split **“happy path”** (two calls and done) from **operations** (pause, audi
 
 | Commands mirroring methods | `persona validate`, `persona run`, `persona status`, `persona approve`, `persona memory search`, `persona replay export` — same code paths as the library API. |
 
-**Stability note:** ship **A + C (`launch` / `alaunch` / `submit_task` / `wait`) + B (`load` / `validate`) + H (register)** first, with **default `StopRule` wiring** and **`stream_task_events` v1** (§10.3) so caps and observability are real—not stubbed; add **F, G export, N** as soon as you have real customers; keep **skip_step** and **delete** behind **`operator_mode`** flags.
+**Stability note:** ship **A + C (`launch` / `alaunch` / `submit_task` / `wait`) + B (`load` / `validate`) + H (register)** in the first integration slice, with **default `StopRule` wiring** and **`stream_task_events`** using the **initial reserved event kinds** from §10.3 so caps and observability are real—not stubbed; add **F, G export, N** as soon as you have real customers; keep **skip_step** and **delete** behind **`operator_mode`** flags.
 
-Internal representation: YAML materializes to an ordered list of **steps** (degenerate DAG) sharing the same checkpoint / progress model as future parallel work.
+Internal representation: YAML materializes to an ordered list of **steps** (degenerate DAG) sharing the same checkpoint / progress model as **branching or parallel** plans once those shapes ship.
 
 ### 10.3 Stop rules, structured events, run handles, message middleware
 
@@ -551,7 +551,7 @@ Each yielded value is an envelope, not a raw string:
 - **`event`** (string kind)  
 - **`task_id`**, **`run_id`** (if distinct), **`stage_id`**, **`step_id`**, **`company_id`**, **`ts`**, **`payload`** (typed dict per kind)
 
-**Reserved `event` kinds** (extend in minor versions; consumers must ignore unknown kinds):
+**Reserved `event` kinds** (extend only with backward-compatible envelope bumps; consumers must ignore unknown kinds):
 
 `run_started`, `run_finished`, `stage_entered`, `stage_left`, `step_started`, `step_finished`, `role_started`, `role_finished`, `llm_chunk` (optional when streaming is on), `tool_call_started`, `tool_call_finished`, `validator_started`, `validator_finished`, `review_verdict`, `human_gate_opened`, `human_gate_closed`, `memory_citation_injected`, `capsule_written`, `followup_queued`
 
@@ -590,7 +590,7 @@ Pin **versions in your repo**; treat the table as **defaults to verify**, not im
 
 | Layer | Recommendation |
 |-------|------------------|
-| Runtime language | **Python 3.13+** for first shippable library (ecosystem depth); TS may mirror **schemas** later. |
+| Runtime language | **Python 3.13+** for first shippable library (ecosystem depth); TypeScript may mirror **schemas** in a sibling package when you add one. |
 | Packaging | **uv**, semver, lockfile; wheel/sdist distribution. |
 | Orchestration | **LangGraph** (or equivalent) **behind adapter**; SqliteSaver / AsyncSqliteSaver per tenant policy. |
 | Schemas | **Pydantic v2** strict / JSON Schema for tool and step outputs. |
@@ -603,22 +603,22 @@ Pin **versions in your repo**; treat the table as **defaults to verify**, not im
 
 ---
 
-## 13. Incremental delivery
+## 13. Integration ordering (not separate products)
 
-Ship a **thin vertical slice** first—one persona, one YAML, full safety story—then add smarter search, then add more personas and optional branching plans.
+Ship a **thin vertical slice** first—one persona, one YAML, full safety story—then add smarter search, then add more personas and optional branching plans. The slices below are **build sequencing** inside one contract, not separate shipped products.
 
-**Phase A — Shippable vertical slice**
+**Slice A — Shippable vertical path**
 
 - Facade + LangGraph adapter only.
 - Tenant-scoped SQLite + leak tests.
 - One **persona YAML** + one **task type** + **Architecture → Implementer → validators → Reviewer** loop per step + episodic + retrospective write/read + replay export + human gate callback + **offline tests**.
-- Default **`StopRule`** wiring (§10.3) aligned with §11 caps, plus **`stream_task_events`** with **`event_schema_version`** and the **v1 reserved kinds** subset.
+- Default **`StopRule`** wiring (§10.3) aligned with §11 caps, plus **`stream_task_events`** with **`event_schema_version`** and the **initial reserved event kinds** subset.
 
-**Phase B — Smarter retrieval**
+**Slice B — Smarter retrieval**
 
 - Optional vectors, async embed jobs, hybrid ranking, mistake clustering.
 
-**Phase C — Breadth**
+**Slice C — Breadth**
 
 - More personas and templates; DAG-first templates on same todo engine; promotion workflows for playbooks.
 
@@ -647,4 +647,4 @@ What you have here is the **single contract**: what the library guarantees (step
 
 ---
 
-_Document version: 1.8 — Adds §10.3 composable `StopRule`s, versioned `stream_task_events` kinds, `RunDriver` / `AssignmentOutcome`, message-path middleware, and clarified non-goals (handoff, distributed runtime, multimodal bus)._
+_Specification revision 1.8 — Adds §10.3 composable `StopRule`s, schema-versioned `stream_task_events` kinds, `RunDriver` / `AssignmentOutcome`, message-path middleware, and clarified non-goals (handoff, distributed runtime, multimodal bus)._
