@@ -1,6 +1,8 @@
 # Persona Agent Platform Technology Decisions (Production)
 
 ## Decision Framework
+**Precedence:** `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` resolves any conflict in this file for production exit.
+
 Selection criteria:
 - deterministic workflow orchestration,
 - strong typed contracts and validation,
@@ -93,6 +95,8 @@ Rationale:
   - gate outcome parity >= 99% across backends on **100%** of the production workflow manifest,
   - p95 latency delta between canary and baseline <= 20%,
   - memory retrieval parity top-k overlap >= 0.90 on seeded replay set.
+
+**Exact meaning of the second bullet:** see `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §4. Summary: **every** manifest workflow must **pass** required gates on **each** backend; the **≥99%** figure measures **cross-backend agreement** on ordered gate outcomes, not permission for per-workflow gate failure.
 
 ## Quality and Self-Improvement Techniques (Adoption Decision)
 - **Adopt now (production exit):** trajectory-reflection heuristics (ERL-style), reliability stress tests (`pass^k`, perturbations, fault injection), SLO-aware speculative decoding tuning, **generative latent memory (MemGen-style) with promotion governance**, and **reflective prompt evolution (GEPA-style)** with versioned registry, held-out suites, and rollback.

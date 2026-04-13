@@ -5,22 +5,24 @@ One program, **one** production promotion, **no MVP**, **no phased product reduc
 
 ## Read in this order (do not skip)
 1. `README.md` — stack and non-negotiables.
-1b. `docs/implementation/production-workflow-manifest.md` — **scope inventory**. If the table is empty or still template-only, **stop**: finish Phase 1 inventory before claiming compiler or engine phases complete.
-2. `docs/implementation/2026-04-13-persona-agent-platform-implementation-roadmap.md` — **what to build in what order**.
-3. `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md` — **what libraries to use by default**.
-4. `docs/implementation/2026-04-13-persona-agent-platform-delivery-process.md` — **how gates and evidence work**.
-5. `docs/implementation/2026-04-13-persona-agent-platform-release-gate-spec.md` — **numbers and promotion packet contents**.
-6. `docs/superpowers/specs/2026-04-13-persona-agent-platform-design.md` — **behavioral contract** (persona steps, memory, safeguards).
-7. `docs/implementation/2026-04-13-persona-agent-platform-quality-self-improvement-advancements.md` — **research techniques** tied to gates.
-8. `docs/implementation/2026-04-13-persona-agent-platform-research-and-oss-integration.md` — **papers + OSS** reference.
-9. `docs/implementation/2026-04-13-persona-agent-platform-risk-register.md` — **what can go wrong** and owners.
-10. `docs/implementation/2026-04-13-persona-agent-platform-metrics-and-slos.md` — **SLOs** you must not break.
+2. `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` — **conflict resolution, literals, and machine definitions** (read before any other implementation doc if instructions appear to disagree).
+3. `docs/implementation/production-workflow-manifest.md` — **scope inventory**. If the table has **zero** data rows per that file’s rules, **stop**: finish Phase 1 inventory before claiming compiler or engine phases complete.
+4. `docs/implementation/2026-04-13-persona-agent-platform-implementation-roadmap.md` — **what to build in what order** (includes M1–M4 crosswalk).
+5. `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md` — **what libraries to use by default**.
+6. `docs/implementation/2026-04-13-persona-agent-platform-delivery-process.md` — **how gates and evidence work**.
+7. `docs/implementation/2026-04-13-persona-agent-platform-release-gate-spec.md` — **numbers and promotion packet contents**.
+8. `docs/superpowers/specs/2026-04-13-persona-agent-platform-design.md` — **behavioral contract** (persona steps, memory, safeguards).
+9. `docs/implementation/2026-04-13-persona-agent-platform-quality-self-improvement-advancements.md` — **research techniques** tied to gates.
+10. `docs/implementation/2026-04-13-persona-agent-platform-research-and-oss-integration.md` — **papers + OSS** reference.
+11. `docs/implementation/2026-04-13-persona-agent-platform-risk-register.md` — **what can go wrong** and owners.
+12. `docs/implementation/2026-04-13-persona-agent-platform-metrics-and-slos.md` — **SLOs** you must not break.
+13. `docs/implementation/2026-04-13-persona-agent-platform-phased-checklist.md` — **optional** single-page atomic checklist in everyday English (cross-check nothing was skipped).
 
 ## Glossary (one line each)
 | Term | Meaning |
 |------|---------|
 | **production_workflow_manifest** | Authoritative list of in-scope workflows; file: `docs/implementation/production-workflow-manifest.md`. |
-| **gate packet** | Evidence bundle for a milestone or promotion: tests, traces, promptfoo, agentevals/DeepEval/RAGAS, sign-offs, manifest mapping. |
+| **gate packet** | Evidence bundle for a milestone or promotion: tests, traces, promptfoo, agentevals/DeepEval/RAGAS, sign-offs, manifest mapping; layout in `evidence/gate-packets/README.md` and `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §10. |
 | **ADR** | Architecture Decision Record: **required** to swap a **planned baseline** OSS dependency, add Graphiti/Mem0, or exempt Instructor for a step. Minimum fields: context, decision, consequences, owner, rollback, date. |
 | **DOR** | Definition of Ready — checklist before starting work on a change (see delivery process). |
 | **fail-closed** | If unsure or dependency unhealthy, **stop** unsafe paths; never “best effort” tool execution. |

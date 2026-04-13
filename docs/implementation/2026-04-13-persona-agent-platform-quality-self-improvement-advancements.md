@@ -3,6 +3,8 @@
 ## Objective
 Capture recent research and ecosystem advancements that materially improve reliability, quality assurance, and autonomous self-improvement for the persona platform. **Production exit** includes governed adoption of these techniques where tagged below—not a reduced “MVP” subset.
 
+**Normative tie-breaks** (`agentevals` floors, observability phase split, parity): `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`.
+
 **Canonical paper lists and OSS projects:** `docs/implementation/2026-04-13-persona-agent-platform-research-and-oss-integration.md`
 
 **Evidence tooling (planned usage):** promotion and gate evidence use **promptfoo**, **agentevals** (on OTel traces), and **DeepEval** / **RAGAS** as described in `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md` and the delivery process.

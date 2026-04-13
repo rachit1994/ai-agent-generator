@@ -1,5 +1,7 @@
 > **Where to start:** The repository root [`README.md`](../README.md) is the **consolidated guide** for the **persona library** and the **senior engineer persona** it must be able to generate end-to-end. **This file** is the **exhaustive persona library contract**—YAML shape, full §10 API catalogue, numbered integration story, and edge cases—for implementers who need the full spec.
 
+> **Persona Agent Platform program (2026):** For **production exit** of the local-first platform (Postgres + `langgraph-checkpoint-postgres`, Markdown personas under `docs/personas` / `docs/more_personas`, manifest inventory), **`docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` supersedes** SQLite defaults, YAML-as-source-of-truth, and persistence language in this contract **unless** an ADR explicitly adopts this library and maps it onto that stack. This contract remains authoritative for **library API shape** when the library is in scope.
+
 ---
 
 # Persona Library

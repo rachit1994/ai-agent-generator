@@ -3,6 +3,8 @@
 ## Purpose
 Single place for **peer-reviewed and strong preprint research** (Jan 2024–Apr 2026) and **free/open-source software**. **Planned baseline usage** (what implementers ship unless an ADR explicitly replaces it) is defined in lockstep with `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md`. Research **adopt-now / controlled-rollout / backlog** for techniques remains in `docs/implementation/2026-04-13-persona-agent-platform-quality-self-improvement-advancements.md`.
 
+**Normative tie-breaks** (eval floors, persona sources, parity): `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`.
+
 ## OSS integration strategy (avoid reinventing the wheel)
 - **Prefer composition** over rebuilding: LangGraph checkpointing, OTel-first traces, CI-bound eval harnesses, and optional memory/graph layers that respect **Postgres + tenant isolation** as the system of record.
 - **One primary memory architecture:** either **Postgres + pgvector (+ RLS)** as the sole source of truth, or **Postgres + one** temporal/graph layer (for example Graphiti) with explicit boundaries. Avoid stacking **Mem0 + Graphiti + bespoke tables** without an ADR that names the owner of truth and migration path.

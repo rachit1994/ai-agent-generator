@@ -15,8 +15,9 @@ The platform is designed to:
 - **`critical_workflows` (SLOs)** and the **production workflow manifest** are the **same full set**; see `docs/implementation/2026-04-13-persona-agent-platform-release-gate-spec.md`.
 
 ## First-time execution (read this if you are new to the program)
-1. Open `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md` and follow the **reading order** and **corner-case** table literally.
-2. Maintain the live inventory in `docs/implementation/production-workflow-manifest.md` (template explains columns). **No manifest rows ⇒ no “100% manifest” claims.**
+1. Read `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` — **single source of truth** for conflicts, literals, failure-signature hashing, `agentevals` floors, observability phase boundaries, and persona-library contract scope.
+2. Open `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md` and follow the **reading order** and **corner-case** table literally.
+3. Maintain the live inventory in `docs/implementation/production-workflow-manifest.md` (column literals and inventory rules are defined there and in doc-precedence). **Zero data rows ⇒ no “100% manifest” claims.**
 
 ## Core Libraries and Runtime Stack
 ### Orchestration and Agent Runtime
@@ -68,6 +69,8 @@ The design and quality model are informed by recent research and production-orie
 - **One** promotion window requires SLO-compliant canary behavior and rollback readiness.
 
 ## Project Documents
+- Documentation precedence and zero-gap norms: `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`
+- Plain-English phased checklist (all steps): `docs/implementation/2026-04-13-persona-agent-platform-phased-checklist.md`
 - Base system design: `docs/superpowers/specs/2026-04-13-persona-agent-platform-design.md`
 - Master implementation plan: `docs/implementation/2026-04-13-persona-agent-platform-master-plan.md`
 - Tech decisions: `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md`

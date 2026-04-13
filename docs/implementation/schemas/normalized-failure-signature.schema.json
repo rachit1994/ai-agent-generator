@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://coding-agent.local/schemas/normalized-failure-signature.schema.json",
+  "title": "NormalizedFailureSignature",
+  "description": "Canonical fields for deduplicated failure signatures. Hash input is normative per docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "workflow_id",
+    "failure_class",
+    "gate_stage",
+    "normalized_message",
+    "tool_name",
+    "policy_rule_id",
+    "tenant_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Bump only with EM + Data/Memory DRI + Safety Owner sign-off and manifest note."
+    },
+    "workflow_id": {
+      "type": "string",
+      "pattern": "^docs\\.(personas|more_personas)\\.[a-z0-9-]+$",
+      "description": "Must match a row in production-workflow-manifest.md."
+    },
+    "failure_class": {
+      "type": "string",
+      "enum": [
+        "policy_violation",
+        "temporal_violation",
+        "tool_denied",
+        "schema_reject",
+        "reviewer_reject",
+        "validator_fail",
+        "infra_error",
+        "unknown"
+      ]
+    },
+    "gate_stage": {
+      "type": "string",
+      "enum": [
+        "input",
+        "plan",
+        "action",
+        "output",
+        "post_run"
+      ]
+    },
+    "normalized_message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "Lowercased, template placeholders substituted, stack and paths stripped per precedence doc normalization pipeline."
+    },
+    "tool_name": {
+      "type": "string",
+      "description": "Empty string if no tool involved."
+    },
+    "policy_rule_id": {
+      "type": "string",
+      "description": "Empty string if no policy id."
+    },
+    "tenant_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "step_id": {
+      "type": "string",
+      "description": "Optional compiler step id when known."
+    },
+    "criticality": {
+      "type": "string",
+      "enum": ["critical", "non_critical"],
+      "default": "non_critical",
+      "description": "Production no-repeat contract applies only to critical; assignment rules are normative in doc-precedence."
+    },
+    "alias_of": {
+      "type": "string",
+      "description": "Optional prior signature_hash this record merges into."
+    }
+  }
+}

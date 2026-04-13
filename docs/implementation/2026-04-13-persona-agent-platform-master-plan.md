@@ -20,6 +20,7 @@ This package defines how we deliver a **production-ready** persona agent platfor
 - Release operations support a **single** canary window, promotion, and rollback with owned runbooks.
 
 ## Document Map
+- `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` (**read second after `README.md`; overrides conflicting prose**)
 - `docs/implementation/2026-04-13-persona-agent-platform-tech-decisions.md`
 - `docs/implementation/2026-04-13-persona-agent-platform-delivery-process.md`
 - `docs/implementation/2026-04-13-persona-agent-platform-implementation-roadmap.md`
@@ -30,6 +31,7 @@ This package defines how we deliver a **production-ready** persona agent platfor
 - `docs/implementation/2026-04-13-persona-agent-platform-research-and-oss-integration.md`
 - `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md`
 - `docs/implementation/production-workflow-manifest.md`
+- `docs/implementation/2026-04-13-persona-agent-platform-phased-checklist.md` (single plain-English step list by phase)
 
 ## Quality and Self-Improvement Upgrade Policy
 - Research-driven upgrades are tracked in the advancements document and triaged as `adopt-now`, `controlled-rollout`, or `backlog`.

@@ -1,6 +1,8 @@
 # Persona Agent Platform Metrics and SLOs (Production)
 
 ## Measurement Principles
+**Precedence:** numeric tie-breaks for `agentevals` floors and cross-backend parity live in `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §4 and §7.
+
 - Metrics must drive release and rollback decisions, not passive reporting.
 - Every SLO has a clear owner, source dashboard, and response policy.
 - Threshold breaches trigger explicit action within the defined response window.

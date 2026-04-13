@@ -1,5 +1,7 @@
 # Persona Agent Platform Risk Register (Single Production Exit)
 
+**Normative definitions** (failure signatures, parity, `agentevals`): `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`.
+
 ## Risk Scoring Model
 - **Severity:** Low, Medium, High, Critical
 - **Probability:** Low, Medium, High

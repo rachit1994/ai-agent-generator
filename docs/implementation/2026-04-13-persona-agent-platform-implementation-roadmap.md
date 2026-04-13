@@ -22,6 +22,16 @@ Milestones are **integration checkpoints**, not separately releasable products. 
 - **M3 Owner:** Data/Memory DRI + Quality Owner (joint)  
 - **M4 Owner:** SRE/Operations Owner  
 
+## Milestones ↔ phases (normative crosswalk)
+| Milestone | Phases | Integration focus |
+|-----------|--------|-------------------|
+| **M1** | 1 | Contracts, ADRs, approved manifest. |
+| **M2** | 2–4 | Compiler, run engine + triad + tree search, safety/temporal. |
+| **M3** | 5–7 | Memory, evaluation/stress/self-improvement, inference routing. |
+| **M4** | 8–10 | Production-grade observability/replay, runtime API/CLI/scheduling, single production exit. |
+
+**Normative detail:** `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §11 duplicates this table for precedence ordering.
+
 ## Phase Plan (Gate-Gated)
 ### Phase 1 — Contracts and inventory
 - Finalize architecture contracts and subsystem ownership.
@@ -63,7 +73,7 @@ Milestones are **integration checkpoints**, not separately releasable products. 
 - Add reliability stress harness (`pass^k`), perturbation tests, and injected tool/API failure tests.
 - Add reflective prompt-policy evolution (GEPA-style) with versioned registry, held-out suite, and rollback (evaluated via promptfoo + agentevals + DeepEval).
 - **Acceptance:** candidate evaluation runs without manual patching; stress suite runs in CI/nightly; prompt/policy promotion path is proven with non-regression gates.
-- **Prerequisite:** baseline traces, logs, and required-stage dashboards are active before high-volume stress evidence is accepted.
+- **Prerequisite:** **Baseline observability** per `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §8 must be satisfied before high-volume stress evidence is accepted; **production-grade** observability per §8 of that file remains mandatory before Phase 10.
 
 ### Phase 7 — Inference routing and SLO-aware serving
 - Implement adaptive inference routing across `Ollama` and `vLLM`.
@@ -86,7 +96,7 @@ Milestones are **integration checkpoints**, not separately releasable products. 
 ## Critical Path Dependencies
 - Manifest approval (Phase 1) gates all downstream implementation.
 - Safety and temporal checks (Phase 4) gate broader integration and promotion logic.
-- Observability baseline (Phase 6 prerequisite) gates acceptance of high-volume stress evidence.
+- Observability baseline (Phase 6 prerequisite; defined in `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §8) gates acceptance of high-volume stress evidence.
 - Observability production-grade coverage (Phase 8) is required before **Phase 10** (single production exit).
 - Local runtime API/CLI/scheduling (Phase 9) is required before **Phase 10** (single production exit).
 

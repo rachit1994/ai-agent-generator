@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0.0",
+  "required_stage_span_names": ["plan", "action", "output"],
+  "description": "Span names used in doc-precedence §7 and playbook machine prerequisites. Instrumentation MUST emit these exact span names (otel span name string) for gate evidence."
+}

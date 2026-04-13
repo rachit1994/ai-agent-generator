@@ -1,5 +1,7 @@
 # Persona Agent Platform Design (Hybrid, Local-First)
 
+**Normative tie-breaks and literals** (persona sources, parity math, failure signatures, `agentevals` floors): `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`.
+
 ## Goal
 Build persona agents from `docs/personas` and `docs/more_personas` that are:
 - fully autonomous by default,

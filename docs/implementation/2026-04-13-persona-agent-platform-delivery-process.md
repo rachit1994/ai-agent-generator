@@ -5,6 +5,8 @@ This program ships **once** to production configuration when **all** gates pass 
 
 **Contributor execution guide:** `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md` (reading order, glossary, machine prerequisites, evaluator corner cases).
 
+**Normative tie-breaks:** `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`.
+
 ## Roles and Accountability
 - **Engineering Manager (A):** scope governance, staffing, gate enforcement, release decision authority.
 - **Tech Lead (R):** architecture consistency, contract quality, integration sequencing.
@@ -39,7 +41,7 @@ Gate 2: **Quality Gate**
 - unit, integration, and **full-manifest** E2E tests pass with stable repeatability across the **production workflow manifest**.
 - **DeepEval** (pytest) suites pass in CI with pinned dependencies; **RAGAS** metrics pass where semantic retrieval is in scope.
 - **promptfoo** prompt and policy suites pass for every suite version pinned in the release candidate; failures block.
-- **agentevals** scores on sampled **OpenTelemetry** traces meet thresholds defined in the gate packet, **or** a **Tech Lead-signed** full re-run evaluation is attached that meets the **identical** pass/fail criteria (see execution playbook—silent omission fails the gate).
+- **agentevals** scores on sampled **OpenTelemetry** traces meet the **numeric floors** in `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §7, **or** a **Tech Lead-signed** full re-run evaluation is attached that meets the **identical** pass/fail criteria (see execution playbook—silent omission fails the gate).
 
 Gate 3: **Safety Gate**
 - input/action/output policy checks and temporal constraints pass.
@@ -94,6 +96,7 @@ Every milestone submission must include:
 
 ## Dependency Failure Behavior Matrix (Required)
 - For each dependency (`Ollama`, `vLLM`, Postgres/`pgvector`, telemetry sink), define and test behavior for `happy`, `nil`, `empty`, and `error` states.
+- **`safety-critical` (inference row):** every `workflow_id` in `docs/implementation/production-workflow-manifest.md` — see `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` §9.
 - Mandatory behavior contracts:
   - inference backend outage -> fallback to healthy backend or fail-closed for safety-critical flows,
   - memory retrieval empty result -> continue only with explicit `no-memory` marker and stricter reviewer gate,
