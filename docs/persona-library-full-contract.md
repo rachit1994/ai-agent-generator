@@ -1,3 +1,7 @@
+> **Where to start:** The repository root [`README.md`](../README.md) is the **consolidated guide** for the **persona library** and the **senior engineer persona** it must be able to generate end-to-end. **This file** is the **exhaustive persona library contract**—YAML shape, full §10 API catalogue, numbered integration story, and edge cases—for implementers who need the full spec.
+
+---
+
 # Persona Library
 
 This package **is** the product: a Python library your application imports. You give it a **persona definition** in YAML—who the coworker is, how they think, which tools they may use, and—for each **task type**—which **stages** and **steps** to run. The library turns that YAML into a **runnable persona** with **memory**, **self-learning** (durable retrospectives and gated promotion), and **orchestration kept inside** the package. Your app stays small: **configure credentials and paths once**, build a **Squad** (or **Pipeline** that owns one Squad) from that YAML, then call **`launch(inputs=...)`**—a **`launch`-first** entrypoint in the spirit of common multi-agent stacks, with **our own** type names. Stages, steps, Architecture / Implementer / Reviewer roles per step, validators, checkpoints, and replay all run **behind the scenes**.
@@ -638,6 +642,8 @@ When something ugly happens in production, these are the agreed directions:
 ## 15. Where to go next
 
 What you have here is the **single contract**: what the library guarantees (step loop, memory, tenancy, validators) and how the pieces fit. Longer worked examples, YAML samples, package layout sketches, token math tables, and extended failure notes sit in the project’s companion materials whenever you need copy-paste or extra rationale beyond what is spelled out above.
+
+**Senior engineering agent — production delivery:** For an **implementation-first** kit (outcomes, architecture, data, runtime, tools, evals, security, and **milestone acceptance criteria**) aligned with [`docs/senior-agent-lifecycle-plan.md`](docs/senior-agent-lifecycle-plan.md), see [`docs/agent-system/README.md`](docs/agent-system/README.md). **LangAlpha / DeepAgents-style patterns** (checkpoints, SSE replay, PTC, vault, middleware) are mapped in [`docs/agent-system/09-reference-patterns-langalpha-deepagents.md`](docs/agent-system/09-reference-patterns-langalpha-deepagents.md).
 
 ---
 
