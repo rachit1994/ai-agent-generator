@@ -1,0 +1,13 @@
+# Phase 0 minimal deterministic eval (no network). Names align with `docs/implementation/schemas/otel-span-stage-registry.json`.
+description: Promptfoo Phase 0 smoke (echo provider)
+prompts:
+  - "{{prompt}}"
+providers:
+  - id: echo
+    label: echo
+tests:
+  - vars:
+      prompt: plan.action.output
+    assert:
+      - type: equals
+        value: plan.action.output
