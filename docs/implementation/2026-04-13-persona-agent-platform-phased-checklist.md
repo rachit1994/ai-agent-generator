@@ -48,6 +48,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 
 **Exit check:** items 1–4 and 6–7 are true in writing (links, versions, owner names, or a short internal runbook).
 
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
+
 ---
 
 ## Phase 1 — Contracts, inventory, and who owns what (milestone **M1**)
@@ -86,6 +95,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 
 **Exit check:** Phase 1 acceptance in the roadmap is satisfied **in writing** with names and dates.
 
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
+
 ---
 
 ## Phase 2 — Compiler and first hard CI gates (start of **M2**)
@@ -105,6 +123,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 9. If you ever change external IDs, do it in the **same PR** as the compiler change and update **every** manifest row, CI mapping, and packet reference, with **EM + Tech Lead** sign-off captured in the promotion packet.
 
 **Exit check:** roadmap Phase 2 acceptance: **100%** compile, CI gates are real blockers, DeepEval runs in CI.
+
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
 
 ---
 
@@ -130,6 +157,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 
 **Exit check:** roadmap Phase 3 acceptance is true for **all** manifest rows.
 
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
+
 ---
 
 ## Phase 4 — Safety and time ordering (end of **M2**)
@@ -150,6 +186,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 10. Prove **out-of-order** actions are **blocked before execution**.
 
 **Exit check:** roadmap Phase 4 acceptance on the **full** manifest.
+
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
 
 ---
 
@@ -175,6 +220,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 14. For **generative (MemGen-style) memory**, prove **trajectory-quality uplift** on held-out scenarios with **zero safety regression** and an **auditable promotion history** (quality advancements adopt-now #4), or do not turn it on in production configuration.
 
 **Exit check:** roadmap Phase 5 acceptance.
+
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
 
 ---
 
@@ -212,6 +266,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 
 **Exit check:** roadmap Phase 6 acceptance, and baseline observability was true **before** you treated high-volume stress runs as evidence.
 
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
+
 ---
 
 ## Phase 7 — Routing between Ollama and vLLM (end of **M3**)
@@ -229,6 +292,15 @@ These are the “you cannot honestly start” checks from the execution playbook
 7. Have **Inference DRI** (tech decisions) sign off on **routing policy and benchmark governance** for the evidence you attach at promotion.
 
 **Exit check:** roadmap Phase 7 acceptance.
+
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
 
 ---
 
@@ -265,6 +337,15 @@ These steps implement doc-precedence §4 and the tech decisions parity contract.
 
 **Exit check:** roadmap Phase 8 acceptance. If Phase 8 later **regresses**, treat earlier heavy stress evidence as **stale** and re-run stress after recovery (doc-precedence §8).
 
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
+
 ---
 
 ## Phase 9 — Local API, CLI, and schedules (still **M4**)
@@ -281,6 +362,15 @@ These steps implement doc-precedence §4 and the tech decisions parity contract.
 6. Publish a **local operations runbook**: common tasks, failure symptoms, who to call, how to roll back locally.
 
 **Exit check:** roadmap Phase 9 acceptance.
+
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
 
 ---
 
@@ -333,6 +423,15 @@ These steps implement doc-precedence §4 and the tech decisions parity contract.
 33. Run a **cross-doc consistency audit** (roadmap vs release gate vs metrics vs risk register vs manifest) so there are **no contradicting numbers or owners** left unfixed (master plan “acceptance rules for this package”).
 
 **Exit check:** Phase 10 acceptance in the roadmap and a single, documented promotion event with immutable packets.
+
+### Evidence bar
+
+| Item | Record |
+|------|--------|
+| Primary evidence (immutable URL, `evidence/gate-packets/…`, or internal runbook link) | |
+| CI or harness proof (if this phase invoked automated gates) | |
+| Verifier (name) and date | |
+| Notes (pins, SHAs, hardware class, or N/A) | |
 
 ---
 

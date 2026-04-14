@@ -48,6 +48,9 @@ jobs:
           psql -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS vector;"
           psql -v ON_ERROR_STOP=1 -c "SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';" | grep -F vector
 
+      # Phase 0 checklist item 4 — pytest + DeepEval + OTel (agentevals-ready export wiring):
+      #   DeepEval: tests/test_deepeval_smoke.py
+      #   OpenTelemetry: tests/test_otel_export_smoke.py, tests/test_otel_otlp_exporter_smoke.py
       - name: Pytest (DeepEval + OpenTelemetry smoke)
         run: uv run pytest
 
