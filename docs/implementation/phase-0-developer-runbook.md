@@ -578,8 +578,48 @@ The checklist **exit check** names items **1–4** and **6–7** “true in writ
 | **1** | Python **3.13+** with committed lockfile | `.python-version`, `pyproject.toml` (`requires-python`), `uv.lock`; local: `uv sync --frozen` exit **0**, `uv run python -V` → **3.13.x** |
 | **2** | Postgres **16+** with **`vector`** extension; migration story | `docker-compose.yml` (`pgvector/pgvector:pg16`), `migrations/docker-init/01-enable-pgvector.sql`, `migrations/README.md`; CI: `.github/workflows/ci.yml` job `phase0-gates` creates extension and asserts `pg_extension` row |
 | **3** | **Ollama** and **vLLM** HTTP **200** + non-empty JSON on each evidence host; model pins recorded | `./scripts/verify_phase0_inference_backends.sh` exit **0** (`PHASE0_INFERENCE_PROBE_OK`); §3 table cells **without** `_pending_` / placeholder model pins; optional URL overrides `PHASE0_OLLAMA_TAGS_URL`, `PHASE0_VLLM_MODELS_URL` |
-| **4** | CI: **pytest** (incl. DeepEval + OTel smokes), **promptfoo** | `.github/workflows/ci.yml` (steps: `uv run pytest`, `npx promptfoo@0.118.0 eval`); tests: `tests/test_deepeval_smoke.py`, `tests/test_otel_export_smoke.py`, `tests/test_otel_otlp_exporter_smoke.py` |
+| **4** | CI: **pytest** (incl. DeepEval + OTel smokes), **promptfoo** | `.github/workflows/ci.yml` (steps: `uv run pytest`, `npx promptfoo@0.118.0 eval`); tests: `tests/test_deepeval_smoke.py`, `tests/test_otel_export_smoke.py`, `tests/test_otel_otlp_exporter_smoke.py`, `tests/test_phase0_repo_invariants.py`, `tests/test_verify_phase0_inference_script.py` |
 | **6** | Legal-name **owner** for test harness + full regression suite | `docs/implementation/phase-0-owner-assignments.md` row **not** `_pending_` |
 | **7** | Legal-name **owner** for baseline observability stack | `docs/implementation/phase-0-owner-assignments.md` row **not** `_pending_` |
 
 **Local parity commands (same order as CI for item 4):** `uv sync --frozen` → `uv run pytest` → `npx --yes promptfoo@0.118.0 eval -c promptfooconfig.yaml` — all must exit **0**.
+
+### Orchestrator session round 1 (2026-04-14)
+
+- **`uv sync --frozen` + `uv run pytest -q`:** exit **0** (**15** tests collected).
+- **`npx --yes promptfoo@0.118.0 eval -c promptfooconfig.yaml`:** exit **0**.
+- **`./scripts/verify_phase0_inference_backends.sh`:** exit **1**, `PHASE0_INFERENCE_PROBE_INCOMPLETE` on default localhost URLs (no Ollama/vLLM listeners here); **checklist item 3** stays **open** until a maintainer records **HTTP 200** + non-empty JSON from **both** backends and fills §3 model-pin cells (no placeholders).
+- **Machine delta this round:** restored `scripts/verify_phase0_inference_backends.sh` (probe uses captured `curl` http_code only — no duplicate `|| echo 000` concatenation) and the CI-aligned smoke tests above; hermetic probe tests use local stub HTTP servers (`tests/test_verify_phase0_inference_script.py`).
+
+### Orchestrator session round 15 (2026-04-14)
+
+- **Documentation load (normative):** recursive inventory under `docs/` → **71** files (includes `*.md`, schemas, logs); re-anchored `README.md`, `docs/implementation/2026-04-13-persona-agent-platform-phased-checklist.md`, `docs/personas/software-engineer.md`, plus Phase 0 step **5** chain: `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` and `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md` (full **Read in this order** §1–13).
+- **`uv sync --frozen`:** exit **0**.
+- **`uv run python -V`:** **Python 3.13.5** (matches `.python-version` / `pyproject.toml` `requires-python`).
+- **`uv run pytest -q`:** exit **0** (**15** tests collected in `tests/` — includes DeepEval + OTel + phase-0 invariants + inference-script hermetic checks).
+- **`docker ps`:** cannot connect to Docker daemon at `unix:///Users/rachitsrivastava/.docker/run/docker.sock` — compose-backed Postgres/Ollama not startable on this host without Docker Engine.
+- **`./scripts/verify_phase0_inference_backends.sh`:** exit **1**, `PHASE0_INFERENCE_PROBE_INCOMPLETE`; stdout: `FAIL | ollama | http://127.0.0.1:11434/api/tags | http=000 | bytes=0` and `FAIL | vllm | http://127.0.0.1:8000/v1/models | http=000 | bytes=0`. **Phase 0 checklist item 3** stays **open** until a maintainer runs the script on a host where **both** backends return HTTP **200** with non-empty JSON and replaces §3 model-pin placeholders.
+- **`npx --yes promptfoo@0.118.0 eval -c promptfooconfig.yaml`:** exit **0** (deterministic echo provider; example evaluation id `eval-aiC-2026-04-14T07:38:06`, varies per run).
+- **Phase 0 checklist items 6–7:** `docs/implementation/phase-0-owner-assignments.md` — primary owner cells remain `_pending_`; **`BLOCKED | Phase 0 — steps 6–7 | Legal names for DRIs are not recorded in this repository | Engineering Manager assigns primary owners and updates this table`** unchanged.
+
+### Orchestrator session round 89 (2026-04-14)
+
+- **Documentation load (normative):** workspace inventory `find docs -type f` → **45** files (**42** `*.md`); anchors loaded this pass: `README.md`, `docs/implementation/2026-04-13-persona-agent-platform-phased-checklist.md`, `docs/personas/software-engineer.md`, `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md` (§1–§2), `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md` (**Read in this order** §1–13), this runbook, `docs/implementation/phase-0-owner-assignments.md`.
+- **`uv sync --frozen`:** exit **0**.
+- **`uv run python -V`:** **Python 3.13.5** (matches `.python-version` / `pyproject.toml` `requires-python`).
+- **`uv run pytest -q`:** exit **0** (**15** tests: `pytest --collect-only` lists `tests/test_deepeval_smoke.py` … `tests/test_verify_phase0_inference_script.py`).
+- **`npx --yes promptfoo@0.118.0 eval -c promptfooconfig.yaml`:** exit **0** (deterministic echo provider; example evaluation id `eval-WaT-2026-04-14T08:36:05`, varies per run).
+- **`docker ps`:** cannot connect to the Docker daemon (`unix:///Users/rachitsrivastava/.docker/run/docker.sock`) — same constraint as prior rounds for compose-backed local listeners.
+- **`./scripts/verify_phase0_inference_backends.sh`:** exit **1**, `PHASE0_INFERENCE_PROBE_INCOMPLETE`; stdout: `FAIL | ollama | http://127.0.0.1:11434/api/tags | http=000 | bytes=0` and `FAIL | vllm | http://127.0.0.1:8000/v1/models | http=000 | bytes=0`. **Phase 0 checklist item 3** stays **open** until a maintainer runs the script on a host where **both** backends return HTTP **200** with non-empty JSON and replaces §3 model-pin placeholders (`_set after…` / `_pending_`).
+- **Phase 0 checklist items 6–7:** `docs/implementation/phase-0-owner-assignments.md` — primary owner cells remain `_pending_`; **`BLOCKED | Phase 0 — steps 6–7 | Legal names for DRIs are not recorded in this repository | Engineering Manager assigns primary owners and updates this table`** unchanged.
+
+### Orchestrator session round 94 (2026-04-14)
+
+- **Documentation load (normative):** workspace glob `docs/**/*` → **91** files; anchors loaded this pass: `README.md`, `docs/implementation/2026-04-13-persona-agent-platform-phased-checklist.md`, `docs/personas/software-engineer.md`, `docs/implementation/2026-04-13-persona-agent-platform-doc-precedence.md`, `docs/implementation/2026-04-13-persona-agent-platform-execution-playbook.md` (**Read in this order** §1–13).
+- **`uv sync --frozen`:** exit **0**.
+- **`uv run python -V`:** **Python 3.13.5** (matches `.python-version` / `pyproject.toml` `requires-python`).
+- **`uv run pytest -q`:** exit **0** (**15** passed; DeepEval + OTel + phase-0 invariants + inference-script hermetic checks).
+- **`npx --yes promptfoo@0.118.0 eval -c promptfooconfig.yaml`:** exit **0** (deterministic echo provider; evaluation id `eval-IbF-2026-04-14T08:49:14`, varies per run).
+- **`docker ps`:** cannot connect to the Docker daemon (`unix:///Users/rachitsrivastava/.docker/run/docker.sock`) — compose-backed Postgres/Ollama not startable on this host without Docker Engine.
+- **`./scripts/verify_phase0_inference_backends.sh`:** exit **1**, `PHASE0_INFERENCE_PROBE_INCOMPLETE`; stdout: `FAIL | ollama | http://127.0.0.1:11434/api/tags | http=000 | bytes=0` and `FAIL | vllm | http://127.0.0.1:8000/v1/models | http=000 | bytes=0`. **Phase 0 checklist item 3** stays **open** until a maintainer runs the script on a host where **both** backends return HTTP **200** with non-empty JSON and replaces §3 model-pin placeholders (`_set after…` / `_pending_`).
+- **Phase 0 checklist items 6–7:** `docs/implementation/phase-0-owner-assignments.md` — primary owner cells remain `_pending_`; **`BLOCKED | Phase 0 — steps 6–7 | Legal names for DRIs are not recorded in this repository | Engineering Manager assigns primary owners and updates this table`** unchanged.
