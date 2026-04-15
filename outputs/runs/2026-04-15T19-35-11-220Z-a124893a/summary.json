@@ -1,0 +1,15 @@
+{
+  "runId": "2026-04-15T19-35-11-220Z-a124893a",
+  "mode": "baseline",
+  "provider": "ollama",
+  "model": "qwen2.5:7b-instruct",
+  "metrics": {
+    "passRate": 0,
+    "reliability": 0,
+    "p50Latency": 19686,
+    "p95Latency": 19686,
+    "avgCost": 0,
+    "validityRate": 1,
+    "retryFrequency": 0
+  }
+}
