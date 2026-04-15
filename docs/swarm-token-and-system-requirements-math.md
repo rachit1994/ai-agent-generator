@@ -205,3 +205,97 @@ Daily allocation algorithm:
 - `CriticalPolicyDriftIncidents == 0`
 
 Any breach freezes promotion/autonomy expansion budgets until green again.
+
+## 10) Recommended LLM Stack (Cloud + Local)
+
+Use a tiered router so each role gets the cheapest model that still satisfies
+quality and safety gates.
+
+### 10.1 Model Tiers
+
+- Tier A (high-risk, high-reasoning): architecture, evaluator final pass, safety decisions.
+- Tier B (balanced): normal execution, review, learning synthesis.
+- Tier C (low-cost, high-throughput): formatting, summaries, lightweight retries.
+- Tier L (local/private path): deterministic local-prod fallback and privacy-sensitive workloads.
+
+### 10.2 Suggested Cloud Models by Tier
+
+Map by capability class, not vendor lock-in:
+
+- Tier A:
+  - OpenAI `o3` or `gpt-5` class
+  - Anthropic `Claude Opus` class
+  - Google `Gemini 2.5 Pro` class
+- Tier B:
+  - OpenAI `gpt-4.1` class
+  - Anthropic `Claude Sonnet` class
+  - Google `Gemini 2.5 Flash` class
+- Tier C:
+  - OpenAI `gpt-4.1-mini` class
+  - Anthropic `Claude Haiku` class
+  - Google `Gemini Flash-lite` class
+
+### 10.3 Suggested Local LLMs
+
+For local-first and cost control:
+
+- reasoning local:
+  - `Qwen3 32B` (or nearest reasoning-capable 30B-40B model)
+  - `Llama 3.3 70B Instruct` (when GPU budget allows)
+- balanced local:
+  - `Qwen3 14B`
+  - `Mistral Small` class
+- throughput local:
+  - `Qwen3 8B`
+  - `Llama 3.1 8B Instruct`
+
+Embedding/rerank local pair:
+
+- embeddings: `bge-m3` or `e5-large`
+- rerank: `bge-reranker-v2`
+
+### 10.4 Role -> Model Routing Recommendation
+
+- `safety`, `policy`, `identity-authz`, promotion committee decisions:
+  - primary Tier A cloud, fallback Tier A/B local (if policy allows).
+- `evaluator`, `reviewer`, `architect`, `career-strategy`:
+  - primary Tier A/B, fallback Tier B.
+- `senior`, `midlevel`, `learning`, `practice`:
+  - primary Tier B, fallback Tier C/local balanced.
+- `junior`, low-risk execution retries, summarization:
+  - primary Tier C or local throughput.
+- `incident-ops` during active containment:
+  - Tier A required for decision quality; Tier B for non-critical support tasks.
+
+### 10.5 Budget Split Across Model Tiers (Equal Quality/Cost Policy)
+
+Practical default starting point aligned with Sections 1-5:
+
+- Tier A: `20-25%` of tokens (quality-critical paths only)
+- Tier B: `45-55%` of tokens (main production work)
+- Tier C: `15-20%` of tokens (bulk low-risk tasks)
+- Tier L local: `10-20%` baseline, increase as local quality reaches gates
+
+Keep protected-role floors from Section 4 unchanged while optimizing.
+
+### 10.6 Minimum Local Hardware by Model Class
+
+Indicative baseline for inference-only deployment:
+
+- 8B class:
+  - 1 GPU with `>=16 GB` VRAM (or CPU-only with lower throughput)
+- 14B class:
+  - 1 GPU with `>=24 GB` VRAM
+- 32B class:
+  - 2x48 GB GPU or 4x24 GB GPU
+- 70B class:
+  - 4x80 GB GPU (or equivalent distributed setup)
+
+If local GPU is constrained, keep Tier A on cloud and shift Tier C first to local.
+
+### 10.7 Failover Policy
+
+- Step 1: same tier fallback (provider/model switch).
+- Step 2: one tier down only if role risk class permits.
+- Step 3: if quality floor fails, escalate/defer (do not force completion on cheaper model).
+- Step 4: log route decision artifact in event lineage for replay and audit.

@@ -1,0 +1,119 @@
+.DS_Store
+# --- OS & editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+*.sublime-*
+
+# VS Code: keep shared settings if you add them; ignore local-only junk
+.vscode/*.code-workspace
+.history/
+
+# --- Python bytecode & packages ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-wheel-metadata/
+
+# --- Virtual environments (create one name repo-wide) ---
+.venv/
+venv/
+ENV/
+env/
+.env/
+.virtualenv/
+
+# --- Secrets & local env (never commit) ---
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+secrets.yaml
+secrets.yml
+
+# --- pytest, coverage, benchmarks ---
+# DeepEval writes cached runs/metadata here during local pytest (Phase 0 item 4).
+.deepeval/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+prof/
+
+# --- Type checkers & linters ---
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+.pyre/
+
+# --- LangChain / LangGraph / LLM local caches (common on dev machines) ---
+.langchain.db
+.langchain.sqlite
+*.sqlite3-journal
+.litellm_cache/
+
+# --- Local databases & checkpoints (Postgres is usually external; these are file-based dev artifacts) ---
+*.db
+*.sqlite
+*.sqlite3
+checkpoints.sqlite
+checkpoints.db
+
+# --- Docker / Compose overrides with secrets ---
+docker-compose.override.yml
+.docker/
+
+# --- Node (promptfoo, frontend tooling if added later) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# --- OTel / exporter scratch (large or machine-local export dirs) ---
+otel-export/
+*.ndjson
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+
+# --- macOS / tooling ---
+.AppleDouble
+.LSOverride
+
+# --- Project-specific ---
+# Versioned gate evidence lives under evidence/gate-packets/<packet_id>/ — do NOT blanket-ignore that tree.
+# Optional: ignore local-only scratch (uncomment if you use this path)
+# evidence/.local/

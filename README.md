@@ -1,532 +1,421 @@
-# AI Professional Evolution System — CTO Architecture Review Blueprint
+# AI Professional Evolution System - CTO Architecture Blueprint
 
-This document defines the complete, production-grade architecture for building an AI Professional Evolution System that develops agents capable of long-horizon, autonomous, auditable professional growth equivalent to senior engineering organizations.
+This repository defines the full production architecture for an AI Professional Evolution System: a local-first, event-sourced, policy-governed platform where agents evolve from junior execution to organization-level technical leadership.
 
-This document is intended for **CTO-level review and implementation approval**.
+Primary source of truth:
+- `docs/AI-Professional-Evolution-Master-Architecture.md`
 
-This is **not an MVP design**. This is the **full production architecture** intended to be implemented end-to-end.
+Supporting implementation docs:
+- `docs/operating-system-folder-structure.md`
+- `docs/swarm-token-and-system-requirements-math.md`
 
 ---
 
 # 1. Executive Objective
 
-## Primary Goal
-
-Build an **AI Professional Operating System** where agents evolve from junior execution to organization-level technical leadership through:
-
-- Long-horizon capability growth
-- Deterministic learning
-- Auditable autonomy expansion
-- Policy-gated self-improvement
-- Production-safe execution
-
-The system must support:
-
-- Autonomous execution
-- Autonomous learning
-- Autonomous promotion
-- Autonomous career strategy
-- Multi-agent organizational growth
+Build an AI Professional Operating System that enables:
+- autonomous execution,
+- autonomous learning,
+- autonomous promotion,
+- autonomous career strategy,
+- multi-agent organizational growth.
 
 All behavior must remain:
-
-- Deterministic
-  n- Auditable
-- Replayable
-- Safe under long-horizon execution
-
----
-
-# 2. Core Design Principles
-
-## 2.1 Professional Evolution First
-
-The system optimizes for:
-
-- Long-term capability growth
-- Reliability improvement
-- Error recurrence reduction
-
-Not:
-
-- Single-task performance
-- Benchmark optimization
-- One-off task success
+- deterministic,
+- replayable,
+- auditable,
+- safe under long-horizon operation.
 
 ---
 
-## 2.2 Event-Sourced Intelligence
+# 2. Why This System Exists
 
-All learning must follow immutable lineage:
+Most agent systems fail at long-term growth because they:
+- optimize one-off task quality over capability trajectory,
+- treat memory as cache instead of governed institutional knowledge,
+- lack lifecycle promotion governance,
+- cannot causally explain behavior change.
 
-Event → Reflection → Learning Update → Evaluation → Rollout
-
-No behavior change allowed outside lineage.
-
----
-
-## 2.3 Policy-Gated Autonomy
-
-Autonomy expands only when:
-
-- Capability thresholds reached
-- Reliability sustained
-- Safety verified
-- Promotion committee approval granted
+This architecture solves those gaps with explicit contracts, governance, and closed-loop evolution.
 
 ---
 
-## 2.4 Deterministic Reproducibility
+# 3. Core Design Principles
 
-All decisions must support:
-
-- Deterministic replay
-- Versioned policy bundles
-- Auditable learning updates
-
----
-
-## 2.5 Local-First Production Constraint
-
-Production mode:
-
-`local-prod`
-
-Requirements:
-
-- No cloud dependency in critical loops
-- Deterministic runtime
-- Full offline capability
+- Professional evolution is the product.
+- Event-sourced lineage is mandatory.
+- Autonomy is policy-gated and reversible.
+- Deterministic evaluation is required for high-impact change.
+- `local-prod` is the only production runtime profile.
+- Objective arbitration across safety/quality/velocity/autonomy is explicit and machine-enforced.
 
 ---
 
-# 3. System Goals
+# 4. Human Professional Evolution Model
 
-## Functional Goals
+Canonical growth loop:
 
-The system must support:
+`Task -> Execution -> Review -> Metrics -> Reflection -> Learning Update -> Deliberate Practice -> Capability Delta -> Next Task`
 
-- Multi-agent organization
-- Autonomous learning
-- Capability tracking
-- Promotion lifecycle
-- Risk-tiered autonomy
-- Memory-driven improvement
-- Cross-domain transfer learning
+Career progression:
 
----
+`New -> Junior -> Mid-level -> Senior -> Architect -> Manager/Specialist`
 
-## Non-Goals
-
-- Unbounded self-modification
-- Non-deterministic learning
-- Human-dependent execution
-- Black-box policy updates
+Human-to-agent mapping includes:
+- mentorship operating model,
+- performance review cycle contract,
+- deliberate practice capacity protection,
+- institutional memory.
 
 ---
 
-# 4. Professional Evolution Model
+# 5. Agent Organization and Roles
 
-## Human Growth Model
+Execution roles:
+- `JuniorAgent`, `MidLevelAgent`, `SeniorAgent`, `ArchitectAgent`, `SpecialistAgent`
 
-Task
-→ Execution
-→ Review
-→ Metrics
-→ Reflection
-→ Learning Update
-→ Practice
-→ Capability Growth
-→ Promotion
+Governance and learning roles:
+- `ReviewerAgent`, `EvaluatorAgent`, `LearningAgent`, `PracticeAgent`, `ManagerAgent`
 
----
+Strategy role:
+- `CareerStrategyAgent`
 
-## Career Progression Model
-
-New
-→ Junior
-→ Mid
-→ Senior
-→ Architect
-→ Specialist / Manager
+Critical constraints:
+- no self-approval for promotion or autonomy increases,
+- all handoffs are schema-validated,
+- single-writer task ownership via lease + heartbeat.
 
 ---
 
-# 5. Agent Organizational Model
-
-## Agent Roles
-
-Execution Roles
-
-- JuniorAgent
-- MidLevelAgent
-- SeniorAgent
-- ArchitectAgent
-- SpecialistAgent
-
-Governance Roles
-
-- ReviewerAgent
-- EvaluatorAgent
-- SafetyAgent
-- ManagerAgent
-
-Learning Roles
-
-- LearningAgent
-- PracticeAgent
-- ReflectionAgent
-
-Strategy Roles
-
-- CareerStrategyAgent
-- PortfolioPlanningAgent
-
-Infrastructure Roles
-
-- OrchestratorAgent
-- MemoryAgent
-- CapabilityAgent
-
----
-
-# 6. Agent Lifecycle
+# 6. Lifecycle and Promotion Governance
 
 Lifecycle:
 
-New → Junior → Mid → Senior → Architect → Specialist/Manager
-
----
-
-## Promotion Requirements
+`NewAgent -> JuniorAgent -> MidLevelAgent -> SeniorAgent -> ArchitectAgent -> SpecialistAgent|ManagerAgent`
 
 Promotion requires:
+- capability prerequisites,
+- sustained reliability windows,
+- replay-verifiable lineage evidence,
+- independent committee signal,
+- probation completion.
 
-- Capability threshold
-- Reliability window
-- Safety compliance
-- Promotion evaluation pass
-- Committee approval
-- Probation window
-
----
-
-## Demotion Logic
-
-Demotion triggered by:
-
-- Severe regression
-- Safety violation
-- Recurring failure
+System includes:
+- demotion rules,
+- promotion rollback during probation,
+- recertification for high-risk capabilities,
+- stagnation detection and intervention ladder.
 
 ---
 
 # 7. Capability Model
 
-## Capability Graph
+Capability graph:
+- nodes = atomic capabilities,
+- edges = prerequisite dependencies,
+- maturity levels = `L0..L5`.
 
-Nodes:
+Scoring combines:
+- outcomes,
+- review quality,
+- regression behavior,
+- transfer performance.
 
-Atomic skills
-
-Edges:
-
-Dependencies
-
-Levels:
-
-L0-L5
-
----
-
-## Capability Scoring
-
-Signals:
-
-- Task success
-- Review quality
-- Regression rate
-- Transfer success
-
----
-
-## Capability Decay
-
-Capabilities decay over time.
-
-Recertification required.
+High-risk capabilities use:
+- decay,
+- recertification,
+- dependency-aware promotion limits.
 
 ---
 
 # 8. Memory Architecture
 
-Memory Types
+Memory classes:
+- episodic,
+- semantic,
+- skill/procedural.
 
-- Episodic Memory
-- Semantic Memory
-- Skill Memory
+Policy model:
+- write/defer/discard/retrieve-more actions,
+- provenance and confidence requirements,
+- contradiction quarantine,
+- safety-gated writes.
 
----
-
-## Memory Policies
-
-Write Policy
-
-- Provenance required
-- Confidence scoring
-
-Retrieval Policy
-
-- Multi-stage retrieval
-- Confidence ranking
+Lifecycle:
+- hot/warm/cold tiers,
+- compaction and retention controls,
+- memory quality metrics and harmful-noise tracking.
 
 ---
 
-# 9. Learning System
+# 9. Learning and Evolution Engine
 
-Learning Loop
+Learning loop:
 
-Episode
-→ Reflection
-→ Lesson
-→ Validation
-→ Update
-→ Practice
-→ Capability Delta
+`Episode -> Reflection -> Lesson Proposal -> Validation -> Approved Update -> Practice -> Capability Verification`
 
----
-
-## Learning Constraints
-
-- Deterministic learning
-- Policy gated
-- Rollback supported
+Mandatory controls:
+- causal closure proof for durable updates,
+- rollback-ready learning updates,
+- policy-gated canary rollout,
+- protected learning/practice capacity.
 
 ---
 
-# 10. Evaluation Framework
+# 10. Workflow Pipelines
 
-Evaluation Types
+Production pipeline:
 
-- Offline
-- Online
-- Regression
-- Promotion
+`Task -> Execution -> Review -> Evaluate -> Learn -> Practice -> Promote`
 
----
+Strategy overlay:
 
-# 11. Guardrails
+`CareerStrategy -> TaskPortfolioPlanning -> Production Pipeline`
 
-Safety Controller
+State machines are explicit for:
+- task execution,
+- learning update rollout,
+- incident recovery.
 
-Dual Control
-
-Rollback
-
-Risk Budgets
+Retry, failure, and improvement loops are reason-coded and bounded.
 
 ---
 
-# 12. Event Sourcing
+# 11. Guardrails and Safety
 
-Immutable Event Store
+Safety controls include:
+- dual control for irreversible actions,
+- severity-based review gating,
+- risk-tier permission matrix,
+- rollback-first operations,
+- objective constraints that never trade safety for speed.
 
-Replay
-
-Lineage
-
----
-
-# 13. Orchestration
-
-Federated Orchestrators
-
-- Task Orchestrator
-- Learning Orchestrator
-- Lifecycle Orchestrator
-- Strategy Orchestrator
+`SafetyController` retains final veto authority.
 
 ---
 
-# 14. Identity and Authorization
+# 12. Event-Sourced Backbone
 
-Agent identity
-
-Scoped permissions
-
-Capability-based authorization
-
----
-
-# 15. Career Strategy Layer
-
-Agents plan:
-
-- Skill growth
-- Project selection
-- Domain specialization
+Event store is immutable and append-only, with:
+- monotonic sequencing,
+- idempotency semantics,
+- replay fail-closed behavior,
+- hash-chain integrity,
+- mandatory lineage:
+  `event -> reflection -> update -> evaluation -> rollout`.
 
 ---
 
-# 16. Multi-Agent Coordination
+# 13. Evaluation and Success Criteria
 
-Contracts
+Evaluation layers:
+- offline replay,
+- online shadow/canary,
+- regression,
+- promotion evaluation.
 
-Handoff protocols
-
-Conflict resolution
-
----
-
-# 17. Production Architecture
-
-Runtime
-
-Python-based deterministic runtime
-
-Storage
-
-Postgres event store
-
-Vector memory
-
-Observability
-
-OpenTelemetry
+Core hard gates:
+- `CriticalRegressionCount == 0`
+- `UnsafeActionRate <= 0.02`
+- `ReplayCriticalDriftCount == 0`
+- `RollbackDrillPass == true`
+- `ResourceBudgetBreaches == 0`
 
 ---
 
-# 18. Scalability
+# 14. Production Architecture (`local-prod`)
 
-Federated orchestration
+Runtime and infrastructure:
+- deterministic Python-first execution runtime,
+- federated orchestration,
+- Postgres event store + projections,
+- local vector-backed retrieval,
+- identity/authz plane with scoped high-risk approvals,
+- observability stack with replay and lineage visualization.
 
-Memory scaling
-
-Replay scaling
-
----
-
-# 19. Governance
-
-Promotion committee
-
-Safety authority
-
-Policy governance
+No cloud dependency in critical loops.
 
 ---
 
-# 20. Failure Modes
+# 15. Component and Service Architecture
 
-Learning drift
+The master architecture defines five planes:
+- control,
+- data,
+- learning,
+- evaluation/safety,
+- operations.
 
-Memory corruption
-
-Autonomy failures
-
-Coordination failures
-
----
-
-# 21. Operational Layer
-
-Incident management
-
-Rollback drills
-
-Forensics bundles
-
----
-
-# 22. Compute Governance
-
-Budgeting
-
-Retry limits
-
-Execution budgets
+Major services include:
+- `orchestrator`,
+- `objective-policy-engine`,
+- `lifecycle-governance`,
+- `identity-authz`,
+- `policy-management`,
+- `memory-lifecycle`,
+- `canary-rollout`,
+- `evaluation`,
+- `quota-scheduler`,
+- `model-router`,
+- `incident-ops`,
+- `chaos-simulator`.
 
 ---
 
-# 23. Model Strategy
+# 16. Repository Structure
 
-Execution model
+Canonical OS-style structure is defined in:
+- `docs/operating-system-folder-structure.md`
 
-Review model
+Key roots:
+- `contracts/` (versioned schemas),
+- `services/` (extraction-ready service units),
+- `agents/` (role executors),
+- `runtime/` (deterministic worker + local-prod profile),
+- `libraries/`, `data/`, `infra/`, `tests/`, `tools/`.
 
-Learning model
-
----
-
-# 24. Cold Start Strategy
-
-Seed capabilities
-
-Seed policies
-
-Seed playbooks
-
----
-
-# 25. Storage Lifecycle
-
-Compaction
-
-Archival
-
-Retention
+Non-bypass ownership rules:
+- only `memory-lifecycle` mutates memory,
+- only `lifecycle-governance` changes promotion/autonomy state,
+- only `policy-management` activates policy bundles,
+- only `safety-controller` issues final high-risk veto,
+- only `identity-authz` issues scoped approval tokens.
 
 ---
 
-# 26. Observability
+# 17. Contract Closure Requirements
 
-Tracing
+Mandatory contract additions include:
+- objective arbitration contract,
+- common service RPC contract,
+- orchestration hierarchy contract,
+- deadlock detection/recovery contract,
+- deterministic worker contract,
+- policy bundle governance contract.
 
-Metrics
-
-Replay
-
----
-
-# 27. Security
-
-Isolation
-
-Permissions
-
-Audit logs
+CI and runtime admission are fail-closed for contract violations.
 
 ---
 
-# 28. Release Gates
+# 18. Security Hardening
 
-CriticalRegressionCount == 0
+Production security requirements:
+- cryptographic workload identity,
+- deny-by-default ABAC+RBAC authorization,
+- prompt-injection/jailbreak containment gateway,
+- tool firewall with strict argument validation,
+- trust-channel mTLS + anti-replay controls,
+- threshold-signed policy activation,
+- centralized short-lived secret management.
 
-UnsafeActionRate < threshold
-
-Replay drift == 0
-
----
-
-# 29. Production Readiness Criteria
-
-P0 complete
-
-P1 hardened
-
-P2 validated
+Security release gates are mandatory and binary.
 
 ---
 
-# 30. Final Objective
+# 19. Reliability and Resilience
 
-Build agents that:
+Critical reliability closure:
+- learning rollback contract,
+- promotion cascade breaker,
+- memory poisoning sentinel,
+- policy drift contract,
+- binary release gate engine.
 
-- Evolve professionally
-- Learn autonomously
-- Improve continuously
-- Operate safely
+Operational discipline:
+- runbook-grade incident flows,
+- signed evidence bundles,
+- chaos qualification per release window,
+- reliability SLO/SLA targets with promotion/autonomy freeze on breach.
 
-This system represents a **professional evolution operating system for AI agents**.
+---
 
-End of Document
+# 20. Scalability and Performance
+
+Scaling model includes:
+- hierarchical compute quota scheduling,
+- protected learning/practice capacity,
+- model routing with bounded fallback attempts,
+- circuit-breakers and budget caps,
+- replay window/snapshot strategy,
+- memory/event growth thresholds,
+- mandatory KPI dashboards.
+
+Performance release thresholds are binary and fail-closed.
+
+---
+
+# 21. Swarm Budget and System Requirement Math
+
+Quantitative planning model is defined in:
+- `docs/swarm-token-and-system-requirements-math.md`
+
+It provides:
+- balanced utility function (equal quality/cost effectiveness),
+- token throughput and spend math,
+- protected budget floors for safety/evaluation/learning,
+- local-prod CPU/RAM/disk/network sizing formulas,
+- SLO-aligned operating envelopes.
+
+---
+
+# 22. Full Build Order (Not MVP)
+
+Stages:
+- A: Foundations and contract freeze
+- B: Deterministic runtime + identity core
+- C: Event/projection/observability backbone
+- D: Orchestration hierarchy and deadlock safety
+- E: Capability and lifecycle governance
+- F: Memory governance and defense
+- G: Learning causal-closure + canary rollback
+- H: Evaluation/resilience/security hardening
+- I: Curriculum and cold-start acceleration
+- J: Long-horizon evolution and federation readiness
+
+Production claim requires Stage A-H completion with evidence.
+
+---
+
+# 23. Production Readiness Program
+
+Readiness program requires:
+- single execution tracker with owner/approver/evidence fields,
+- weighted 100-point scoring model,
+- P0/P1 score caps until closure,
+- weekly governance cadence and decision logs,
+- two consecutive all-green windows for 100/100 claim.
+
+Hard program gates:
+- `OpenP0 == 0`
+- `OpenP1 == 0`
+- release gates from architecture Sections 14 and 26 pass,
+- lineage completeness = 100% for promotion/autonomy decisions.
+
+---
+
+# 24. What "Production-Grade 100/100" Means Here
+
+A valid 100/100 claim means:
+- architecture is fully implemented (not only documented),
+- all contract, security, reliability, and performance gates pass,
+- evidence artifacts are complete and auditable,
+- rollout/rollback operations are proven via drills and replay.
+
+If any hard gate fails, production claim is automatically blocked.
+
+---
+
+# 25. Document Index
+
+Primary architecture:
+- `docs/AI-Professional-Evolution-Master-Architecture.md`
+
+Implementation structure:
+- `docs/operating-system-folder-structure.md`
+
+Capacity and budget planning math:
+- `docs/swarm-token-and-system-requirements-math.md`
+
+---
+
+End of README.
