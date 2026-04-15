@@ -1,0 +1,149 @@
+{
+  "runId": "2026-04-15T19-53-48-498Z-a1cba87f",
+  "suitePath": "./data/mvp-tasks.jsonl",
+  "suiteVersion": "mvp-tasks-v1",
+  "mode": "baseline",
+  "provider": "ollama",
+  "models": {
+    "implementation": "qwen2.5:7b-instruct",
+    "support": "gemma 4"
+  },
+  "budgets": {
+    "maxTokens": 4096,
+    "maxRetries": 1,
+    "timeoutMs": 90000
+  },
+  "baselineMetrics": {
+    "passRate": 0,
+    "reliability": 0,
+    "p50Latency": 21643,
+    "p95Latency": 50656,
+    "avgCost": 0,
+    "validityRate": 1,
+    "retryFrequency": 0
+  },
+  "guardedMetrics": {
+    "passRate": 0,
+    "reliability": 0,
+    "p50Latency": 0,
+    "p95Latency": 0,
+    "avgCost": 0,
+    "validityRate": 0,
+    "retryFrequency": 0
+  },
+  "passRateDeltaPoints": 0,
+  "medianLatencyDeltaPercent": -100,
+  "perTaskDeltas": [
+    {
+      "taskId": "t-001",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 4800,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -4800
+    },
+    {
+      "taskId": "t-002",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 21643,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -21643
+    },
+    {
+      "taskId": "t-003",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 53960,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -53960
+    },
+    {
+      "taskId": "t-004",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 22648,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -22648
+    },
+    {
+      "taskId": "t-005",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 50656,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -50656
+    },
+    {
+      "taskId": "t-006",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 0,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": 0
+    },
+    {
+      "taskId": "t-007",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 48265,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -48265
+    },
+    {
+      "taskId": "t-008",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 44225,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -44225
+    },
+    {
+      "taskId": "t-009",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 17676,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -17676
+    },
+    {
+      "taskId": "t-010",
+      "baselinePassed": false,
+      "guardedPassed": null,
+      "baselineLatencyMs": 14346,
+      "guardedLatencyMs": null,
+      "baselineRetryCount": 0,
+      "guardedRetryCount": null,
+      "passDelta": 0,
+      "latencyDeltaMs": -14346
+    }
+  ],
+  "verdict": "inconclusive"
+}
