@@ -23,15 +23,15 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 
 ## Phase 1 - CLI Skeleton And Single Task Run
 
-- [x] Create CLI entrypoint module under `src/cli/`.
-- [x] Add `agent run` command parsing.
-- [x] Add `agent benchmark` command parsing.
-- [x] Add `agent report` command parsing.
+- [x] Create CLI entrypoint module under `src/services/orchestrator/runtime/agent_mvp/cli/`.
+- [x] Add `sde run` command parsing.
+- [x] Add `sde benchmark` command parsing.
+- [x] Add `sde report` command parsing.
 - [x] Create run-id generation utility.
 - [x] Create per-run output directory at `outputs/runs/<run-id>/`.
 - [x] Add model adapter invocation path.
-- [x] Wire `agent run --task "<text>" --mode baseline|guarded_pipeline` to runner input.
-- [x] Execute `agent run --task "hello" --mode baseline`.
+- [x] Wire `sde run --task "<text>" --mode baseline|guarded_pipeline` to runner input.
+- [x] Execute `sde run --task "hello" --mode baseline`.
   - Verification: CLI prints a result and a `run_id`.
 
 ## Phase 2 - Baseline Mode
@@ -84,8 +84,8 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 - [x] Ensure suite includes at least one simple task.
 - [x] Ensure suite includes at least one medium task.
 - [x] Ensure suite includes at least one failure-prone task.
-- [x] Execute `agent benchmark --suite ./data/mvp-tasks.jsonl` in baseline mode.
-- [x] Execute `agent benchmark --suite ./data/mvp-tasks.jsonl` in guarded_pipeline mode.
+- [x] Execute `sde benchmark --suite ./data/mvp-tasks.jsonl` in baseline mode.
+- [x] Execute `sde benchmark --suite ./data/mvp-tasks.jsonl` in guarded_pipeline mode.
 - [x] Generate run summary JSON artifacts for both modes.
 - [x] Generate per-run markdown report artifact for both modes.
 
@@ -119,7 +119,7 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 
 ## Phase 6 - Definition Of Done Gate
 
-- [x] Confirm `agent run` completes a single task and prints result plus run id.
+- [x] Confirm `sde run` completes a single task and prints result plus run id.
 - [x] Confirm benchmark suite runs in baseline mode.
 - [x] Confirm benchmark suite runs in guarded_pipeline mode.
 - [x] Confirm per-task traces are persisted for benchmark runs.

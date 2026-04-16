@@ -12,6 +12,7 @@ Use this with `00-master-sequence.md` to control progression.
 - CLI commands parse correctly.
 - Run-id and output directory logic are stable.
 - Adapter supports provider abstraction with metadata.
+- Implementation uses Python package paths (`src/services/orchestrator/runtime/agent_mvp/...`) rather than TS paths.
 - `qwen2.5:7b-instruct` is used for implementation prompts.
 
 ## Phase 2 (Prompts 06-07)
@@ -34,4 +35,5 @@ Use this with `00-master-sequence.md` to control progression.
 - Security and performance passes complete.
 - Final quality gates pass.
 - Final evidence bundle is complete.
+- Python test/lint gates are used (`pytest`, Python compile/lint checks).
 - `gemma 4` is used for non-implementation/support prompts in this phase.

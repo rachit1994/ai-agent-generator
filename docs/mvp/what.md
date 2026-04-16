@@ -5,6 +5,9 @@
 Build a local CLI MVP that tests whether guardrails + a staged execution
 pipeline improve outcomes versus a plain one-shot baseline.
 
+Implementation language/runtime:
+- Python 3 CLI (`src/services/orchestrator/runtime/agent_mvp` package).
+
 ## Timebox And Environment
 
 - Timebox: 2 days.
@@ -46,9 +49,9 @@ If fallback is used, rerun full A/B and document provider/model/reason in
 ## Product Surface
 
 CLI commands:
-- `agent run --task "..."`
-- `agent benchmark --suite ./data/mvp-tasks.jsonl`
-- `agent report --run-id <id>`
+- `sde run --task "..."`
+- `sde benchmark --suite ./data/mvp-tasks.jsonl`
+- `sde report --run-id <id>`
 
 Modes:
 - `baseline`: `task -> model -> output`
@@ -79,13 +82,24 @@ Suggested code layout:
 
 ```text
 src/
-  cli/
-  runner/
-  modes/
-  model-adapter/
-  safeguards/
-  eval/
-  report/
+  services/
+    orchestrator/
+      api/
+      runtime/
+        agent_mvp/
+          cli/
+          modes/
+          config.py
+          runner.py
+          benchmark.py
+          report.py
+          model_adapter.py
+          safeguards.py
+          eval.py
+          storage.py
+          types.py
+      tests/
+        unit/
 data/
   mvp-tasks.jsonl
 outputs/
@@ -142,8 +156,8 @@ Verdict:
 
 ## Definition Of Done
 
-1. `agent run` succeeds and returns run id.
-2. `agent benchmark` runs both modes on same suite.
+1. `sde run` succeeds and returns run id.
+2. `sde benchmark` runs both modes on same suite.
 3. Required artifacts are written per run.
-4. `agent report` emits clear verdict and recommendation.
+4. `sde report` emits clear verdict and recommendation.
 5. Entire flow runs locally within machine constraints.

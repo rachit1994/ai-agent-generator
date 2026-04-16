@@ -26,7 +26,8 @@ repo/
 |  |- adrs/
 |  \- threat-models/
 |
-|- contracts/
+|- src/
+|  |- contracts/
 |  |- event/
 |  |  |- event_envelope.v1.json
 |  |  |- event_integrity.v1.json
@@ -51,7 +52,7 @@ repo/
 |  \- runtime/
 |     \- deterministic_worker.v1.json
 |
-|- services/
+|  |- services/
 |  |- orchestrator/
 |  |  |- api/
 |  |  |- runtime/
@@ -76,7 +77,7 @@ repo/
 |  |- incident-ops/
 |  \- chaos-simulator/
 |
-|- agents/
+|  |- agents/
 |  |- junior-agent/
 |  |- midlevel-agent/
 |  |- senior-agent/
@@ -89,7 +90,7 @@ repo/
 |  |- specialist-agent/
 |  \- career-strategy-agent/
 |
-|- runtime/
+|  |- runtime/
 |  |- deterministic-worker/
 |  |  |- image/
 |  |  |- sandbox/
@@ -98,24 +99,24 @@ repo/
 |  \- profile/
 |     \- local-prod/
 |
-|- libraries/
+|  |- libraries/
 |  |- event-sdk/
 |  |- contract-validator/
 |  |- lineage-sdk/
 |  |- policy-eval-sdk/
 |  \- memory-sdk/
 |
-|- data/
+|  |- data/
 |  |- seed-curriculum/
 |  |- benchmark-suites/
 |  \- replay-manifests/
 |
-|- infra/
+|  |- infra/
 |  |- local-prod/
 |  |- backup-restore/
 |  \- monitoring/
 |
-|- tests/
+|  |- tests/
 |  |- unit/
 |  |- integration/
 |  |- e2e/
@@ -124,10 +125,13 @@ repo/
 |  |- security/
 |  \- promotion/
 |
-\- tools/
-   |- contract-lint/
-   |- schema-upcaster/
-   \- incident-forensics/
+|  \- tools/
+|     |- contract-lint/
+|     |- schema-upcaster/
+|     \- incident-forensics/
+|
+\- outputs/
+   \- runs/<run-id>/
 ```
 
 ## Service Atomicity Rules
@@ -152,11 +156,11 @@ To extract any service (example: `services/learning-update/`) into a standalone
 deployment unit:
 
 1. Copy the service folder unchanged.
-2. Copy required contracts from `contracts/` (declared in service `README.md`).
-3. Copy referenced SDKs from `libraries/` only.
-4. Wire through `contracts/service/common_rpc.v1.json`.
-5. Register with `services/orchestrator` and `services/identity-authz`.
-6. Validate with `tools/contract-lint/` in fail-closed mode.
+2. Copy required contracts from `src/contracts/` (declared in service `README.md`).
+3. Copy referenced SDKs from `src/libraries/` only.
+4. Wire through `src/contracts/service/common_rpc.v1.json`.
+5. Register with `src/services/orchestrator` and `src/services/identity-authz`.
+6. Validate with `src/tools/contract-lint/` in fail-closed mode.
 
 If these rules are satisfied, extraction is direct and does not require internal
 code from unrelated services.

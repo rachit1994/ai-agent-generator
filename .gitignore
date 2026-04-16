@@ -117,3 +117,5 @@ otel-export/
 # Versioned gate evidence lives under evidence/gate-packets/<packet_id>/ — do NOT blanket-ignore that tree.
 # Optional: ignore local-only scratch (uncomment if you use this path)
 # evidence/.local/
+
+/outputs/

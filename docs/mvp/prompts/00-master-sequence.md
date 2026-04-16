@@ -45,9 +45,10 @@ Tasks:
 
 ```text
 Implement CLI command surface skeleton:
-- agent run
-- agent benchmark
-- agent report
+- sde run
+- sde benchmark
+- sde report
+Use Python package structure under `src/services/orchestrator/runtime/agent_mvp/cli/`.
 Add tests for command parsing and invalid argument handling.
 ```
 
@@ -165,8 +166,8 @@ Implement threshold-driven verdict logic and tests.
 
 ```text
 Run smoke validation:
-1) agent run baseline
-2) agent run guarded_pipeline
+1) sde run baseline
+2) sde run guarded_pipeline
 3) benchmark with small suite
 4) generate report
 Fix any failing path immediately.
@@ -213,8 +214,7 @@ Determinism and reproducibility pass:
 
 ```text
 Final quality gate run:
-- lint
-- type-check
+- python compile/lint checks
 - unit tests
 - integration tests
 - benchmark smoke
