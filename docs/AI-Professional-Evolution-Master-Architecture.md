@@ -547,6 +547,12 @@ Extension specs under `docs/coding-agent/` (execution through organization) tran
 
 Phase exits in §17 should cite concrete evidence paths (artifacts, gate IDs, replay manifests) defined in `docs/coding-agent/execution.md` and `docs/coding-agent/planning.md` through `docs/coding-agent/organization.md`. See also [docs/README.md](README.md) for reading order.
 
+### Full architecture goal vs extension ladder (completion)
+
+Finishing every extension under `docs/coding-agent/` is **necessary** for the **behavioral and evidence goals** of this blueprint (auditable evolution, lineage, gates, local-first contracts) as implemented in this repository. It is **not automatically sufficient** for every **named production service** and **readiness-program** item in later sections (e.g. §15 infrastructure choices, §28 scoring) unless those are separately bound, built, and evidenced.
+
+**Canonical completion definition and coverage matrix:** [docs/architecture-goal-completion.md](architecture-goal-completion.md).
+
 ---
 
 # 18. Risks
