@@ -6,7 +6,7 @@ Build a local CLI SDE baseline that tests whether guardrails + a staged executio
 pipeline improve outcomes versus a plain one-shot baseline.
 
 Implementation language/runtime:
-- Python 3 CLI (`src/services/orchestrator/runtime/sde` package).
+- Python 3 CLI (installable import package **`orchestrator`** under `src/services/orchestrator/orchestrator/`; wheel / CLI names remain **`sde`** / **`agent`** per `pyproject.toml`).
 
 ## Timebox And Environment
 

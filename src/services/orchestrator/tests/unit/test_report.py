@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from sde.report import generate_report
-from sde.storage import ensure_dir, write_json
+from orchestrator.runtime.report import generate_report
+from orchestrator.runtime.storage import ensure_dir, write_json
 
 
 def test_single_run_report_support(tmp_path, monkeypatch) -> None:

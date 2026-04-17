@@ -1,4 +1,4 @@
-from sde.safeguards import validate_structured_output, validate_task_text
+from orchestrator.runtime.safeguards import validate_structured_output, validate_task_text
 
 
 def test_rejects_empty_task() -> None:

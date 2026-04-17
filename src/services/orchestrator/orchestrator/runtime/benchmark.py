@@ -3,11 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from sde.config import DEFAULT_CONFIG, config_snapshot
-from sde.eval import aggregate_metrics, root_cause_distribution, stage_latency_breakdown, strict_gate_decision, verdict_for
-from sde.modes.baseline import run_baseline
-from sde.modes.guarded import run_guarded
-from sde.run_logging import (
+from orchestrator.runtime.config import DEFAULT_CONFIG, config_snapshot
+from orchestrator.runtime.eval import aggregate_metrics, root_cause_distribution, stage_latency_breakdown, strict_gate_decision, verdict_for
+from orchestrator.runtime.modes.baseline import run_baseline
+from orchestrator.runtime.modes.guarded import run_guarded
+from orchestrator.runtime.run_logging import (
     log_benchmark_banner,
     log_run_end,
     log_run_error,
@@ -16,9 +16,9 @@ from sde.run_logging import (
     setup_run_logger,
     shutdown_run_logger,
 )
-from sde.safeguards import validate_task_payload
-from sde.storage import append_jsonl, ensure_dir, write_json
-from sde.utils import create_run_id, outputs_base
+from orchestrator.runtime.safeguards import validate_task_payload
+from orchestrator.runtime.storage import append_jsonl, ensure_dir, write_json
+from orchestrator.runtime.utils import create_run_id, outputs_base
 
 
 def _read_suite(suite_path: str) -> list[dict]:

@@ -1,4 +1,4 @@
-from sde.cli.main import build_parser
+from orchestrator.runtime.cli.main import build_parser
 
 
 def test_cli_run_parse() -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import sde.runner as runner
+import orchestrator.runtime.runner as runner
 
 
 def test_execute_single_task_writes_artifacts(tmp_path: Path, monkeypatch) -> None:

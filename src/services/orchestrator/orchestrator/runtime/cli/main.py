@@ -3,9 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from sde.benchmark import run_benchmark
-from sde.report import generate_report
-from sde.runner import execute_single_task
+from orchestrator.api import execute_single_task, generate_report, run_benchmark
 
 
 def build_parser() -> argparse.ArgumentParser:

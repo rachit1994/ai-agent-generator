@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import sde.runner as runner
-from sde.cto_gates import validate_execution_run_directory
+import orchestrator.runtime.runner as runner
+from orchestrator.runtime.cto_gates import validate_execution_run_directory
 
 
 def test_execute_single_task_emits_cto_artifacts_and_passes_gates(tmp_path: Path, monkeypatch) -> None:

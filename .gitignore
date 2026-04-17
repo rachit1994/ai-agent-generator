@@ -118,7 +118,7 @@ otel-export/
 # Optional: ignore local-only scratch (uncomment if you use this path)
 # evidence/.local/
 
-# SDE and benchmarks: all run artifacts under repo-root ``outputs/`` (see ``sde.utils.outputs_base``).
+# SDE and benchmarks: all run artifacts under repo-root ``outputs/`` (see ``orchestrator.runtime.utils.outputs_base``).
 /outputs/
 
 # Local SDE demo applications (not committed; seed from docs/templates/sde-demo)

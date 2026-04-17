@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sde.utils import outputs_base
+from orchestrator.runtime.utils import outputs_base
 
 
 def test_outputs_base_prefers_repo_pyproject(tmp_path, monkeypatch) -> None:

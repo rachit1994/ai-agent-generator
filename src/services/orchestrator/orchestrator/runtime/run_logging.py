@@ -11,7 +11,7 @@ _LOG_EXCERPT = 500
 
 def setup_run_logger(run_id: str, output_dir: Path) -> logging.Logger:
     """Attach a file logger for this run to ``output_dir / run.log``."""
-    name = f"sde.run.{run_id}"
+    name = f"orchestrator.run.{run_id}"
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     for h in tuple(logger.handlers):

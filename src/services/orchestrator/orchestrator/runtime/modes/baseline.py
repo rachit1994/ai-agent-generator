@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import time
 
-from sde.model_adapter import invoke_model
-from sde.safeguards import classify_output_failure, refusal_for_unsafe, validate_structured_output, validate_task_text
-from sde.types import Score, TraceEvent
-from sde.utils import ms_to_iso
+from orchestrator.runtime.model_adapter import invoke_model
+from orchestrator.runtime.safeguards import classify_output_failure, refusal_for_unsafe, validate_structured_output, validate_task_text
+from orchestrator.runtime.types import Score, TraceEvent
+from orchestrator.runtime.utils import ms_to_iso
 
 
 def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, list[dict]]:

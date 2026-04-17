@@ -257,7 +257,7 @@ def build_review(
 
 
 def metrics_from_events(events: list[dict[str, Any]]) -> dict[str, Any]:
-    from sde.eval import aggregate_metrics
+    from orchestrator.runtime.eval import aggregate_metrics
 
     return aggregate_metrics(events)
 

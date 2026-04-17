@@ -4,7 +4,8 @@ Top-level source tree for this repository: **services**, future **contracts**, *
 
 ## Where to look first
 
-- **Runnable SDE code:** [`services/orchestrator/runtime/sde/`](services/orchestrator/runtime/sde/) — Python package behind the `sde` / `agent` CLI (`pyproject.toml`).
+- **Orchestrator service:** [`services/orchestrator/`](services/orchestrator/) — contains `orchestrator/api/` (public surface), `orchestrator/runtime/` (implementation), and `tests/`.
+- **CLI:** `sde` / `agent` entrypoints → `orchestrator.runtime.cli.main:main` (`pyproject.toml`).
 - **Tests:** [`services/orchestrator/tests/unit/`](services/orchestrator/tests/unit/).
 
 ## Documentation

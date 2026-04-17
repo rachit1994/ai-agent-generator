@@ -14,7 +14,7 @@ This project is an **architecture and local-runtime workspace** for an *AI Profe
 - **`sde benchmark`** — run a suite of tasks (JSONL) in baseline and/or guarded mode and aggregate metrics into a benchmark run directory.
 - **`sde report`** — turn `summary.json` from a run into `report.md` / `report-meta.json`.
 
-The **vision** (multi-service OS, event store, memory, org-wide IAM) lives in Markdown specs under **`docs/`**. The **implementation** that tracks those specs most closely today lives under **`src/services/orchestrator/runtime/sde/`**.
+The **vision** (multi-service OS, event store, memory, org-wide IAM) lives in Markdown specs under **`docs/`**. The **implementation** that tracks those specs most closely today lives under **`src/services/orchestrator/orchestrator/runtime/`**.
 
 ---
 
@@ -40,7 +40,7 @@ After that, read other **`docs/coding-agent/*.md`** files as needed for the feat
 ```text
 coding-agent/
 ├── README.md                 # Product / architecture entry
-├── pyproject.toml            # Python project: package name `sde`, CLI entrypoints
+├── pyproject.toml            # Distribution name `sde`; import package `orchestrator`; CLI `sde` / `agent`
 ├── data/
 │   └── benchmark-tasks.jsonl # Default benchmark suite (tracked)
 ├── docs/                     # All specifications and this walkthrough
@@ -54,15 +54,15 @@ coding-agent/
 │   └── runs/<run-id>/        # traces, summary, report, logs, …
 └── src/
     └── services/
-        └── orchestrator/     # One “service” shell: api / runtime / tests
-            ├── api/          # Future public surface for other services
-            ├── runtime/
-            │   └── sde/      # **Python package `sde`** — all CLI logic
+        └── orchestrator/     # Service shell
+            ├── orchestrator/ # Import package root
+            │   ├── api/      # Public re-exports (other services import here)
+            │   └── runtime/  # CLI, modes, gates, storage, …
             └── tests/
-                └── unit/     # Pytest unit tests for SDE
+                └── unit/     # Pytest
 ```
 
-**Important:** Run artifacts always resolve to **`<repo>/outputs/`**, not under `src/`, via `sde.utils.outputs_base()` (finds `pyproject.toml` walking up from your shell’s current directory). You should not commit anything under `outputs/`.
+**Important:** Run artifacts always resolve to **`<repo>/outputs/`**, not under `src/`, via `orchestrator.runtime.utils.outputs_base()` (finds `pyproject.toml` walking up from your shell’s current directory). You should not commit anything under `outputs/`.
 
 ---
 
@@ -70,22 +70,22 @@ coding-agent/
 
 When you run `uv run sde run …` or `uv run sde benchmark …`:
 
-1. **Entrypoint:** [`src/services/orchestrator/runtime/sde/cli/main.py`](../src/services/orchestrator/runtime/sde/cli/main.py) — parses arguments and dispatches.
-2. **Single task:** [`runner.py`](../src/services/orchestrator/runtime/sde/runner.py) — `execute_single_task`: creates `run_id`, builds output dir, runs `baseline` or `guarded_pipeline`, writes JSONL traces and `summary.json`.
-3. **Suite:** [`benchmark.py`](../src/services/orchestrator/runtime/sde/benchmark.py) — loads JSONL tasks, runs baseline/guarded per task mode, aggregates metrics.
-4. **Report:** [`report.py`](../src/services/orchestrator/runtime/sde/report.py) — reads `summary.json`, writes `report.md` and `report-meta.json`.
-5. **Modes:** [`modes/baseline.py`](../src/services/orchestrator/runtime/sde/modes/baseline.py), [`modes/guarded.py`](../src/services/orchestrator/runtime/sde/modes/guarded.py), [`modes/guarded_pipeline.py`](../src/services/orchestrator/runtime/sde/modes/guarded_pipeline.py) — concrete execution strategies.
-6. **Gates / validation:** [`cto_gates.py`](../src/services/orchestrator/runtime/sde/cto_gates.py) — helpers to validate a run directory against strict contracts (used in tests and for CI-style checks).
+1. **Entrypoint:** [`src/services/orchestrator/orchestrator/runtime/cli/main.py`](../src/services/orchestrator/orchestrator/runtime/cli/main.py) — parses arguments and dispatches.
+2. **Single task:** [`runner.py`](../src/services/orchestrator/orchestrator/runtime/runner.py) — `execute_single_task`: creates `run_id`, builds output dir, runs `baseline` or `guarded_pipeline`, writes JSONL traces and `summary.json`.
+3. **Suite:** [`benchmark.py`](../src/services/orchestrator/orchestrator/runtime/benchmark.py) — loads JSONL tasks, runs baseline/guarded per task mode, aggregates metrics.
+4. **Report:** [`report.py`](../src/services/orchestrator/orchestrator/runtime/report.py) — reads `summary.json`, writes `report.md` and `report-meta.json`.
+5. **Modes:** [`modes/baseline.py`](../src/services/orchestrator/orchestrator/runtime/modes/baseline.py), [`modes/guarded.py`](../src/services/orchestrator/orchestrator/runtime/modes/guarded.py), [`modes/guarded_pipeline.py`](../src/services/orchestrator/orchestrator/runtime/modes/guarded_pipeline.py) — concrete execution strategies.
+6. **Gates / validation:** [`cto_gates.py`](../src/services/orchestrator/orchestrator/runtime/cto_gates.py) — helpers to validate a run directory against strict contracts (used in tests and for CI-style checks).
 
-**Suggested first code read:** `cli/main.py` → `runner.py` → `modes/guarded_pipeline.py` (longest path) → `storage.py` / `report.py`.
+**Suggested first code read:** `orchestrator/api/__init__.py` (public surface) → `cli/main.py` → `runner.py` → `modes/guarded_pipeline.py` (longest path) → `storage.py` / `report.py`.
 
 ---
 
 ## 5. Following the folder structure (rules of thumb)
 
 1. **Specs vs code:** If it is a *requirement* or *contract*, it belongs under **`docs/`**. If it is *executable*, it belongs under **`src/`**.
-2. **Orchestrator service:** Everything under **`src/services/orchestrator/`** follows the pattern **`api/`**, **`runtime/`**, **`tests/`** — see [orchestrator README](../src/services/orchestrator/README.md).
-3. **Installable package:** The only Python package built from this repo (today) is **`sde`**, rooted at **`runtime/sde/`**. That is intentional: the service’s runtime *is* the SDE library.
+2. **Orchestrator service:** Layout matches the OS doc: **`orchestrator/api/`**, **`orchestrator/runtime/`**, **`tests/`** under `src/services/orchestrator/` — see [orchestrator README](../src/services/orchestrator/README.md).
+3. **Installable artifact:** The wheel is published as **`sde`** for CLI continuity; Python imports use **`orchestrator`** (e.g. `from orchestrator.api import execute_single_task`).
 4. **Demos:** Local demos are **gitignored** under **`demo_apps/`**; copy from **`docs/templates/sde-demo/`** when you need a runnable tree (see template README there).
 5. **Benchmarks:** Default suite path in docs is **`data/benchmark-tasks.jsonl`**. Paths in task prompts may reference **`demo_apps/sde-demo/`** after you copy the template.
 
@@ -108,7 +108,7 @@ From the repository root:
 
 - **Small changes:** Match existing style; keep imports at top of files; extend tests beside **`src/services/orchestrator/tests/unit/`**.
 - **Contracts:** If you change artifact names or schemas, update **`docs/sde/implementation-contract.md`** and any **`docs/coding-agent/*.md`** that references those paths, then adjust **`cto_gates.py`** and tests.
-- **CI:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `compileall` on `runtime/sde` and pytest — keep both green.
+- **CI:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `compileall` on `src/services/orchestrator/orchestrator` and pytest — keep both green.
 
 ---
 

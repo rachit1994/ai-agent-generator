@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import time
 
-import sde.model_adapter as model_adapter
-from sde.safeguards import refusal_for_unsafe, validate_task_text
-from sde.types import Score, TraceEvent
-from sde.utils import ms_to_iso
+import orchestrator.runtime.model_adapter as model_adapter
+from orchestrator.runtime.safeguards import refusal_for_unsafe, validate_task_text
+from orchestrator.runtime.types import Score, TraceEvent
+from orchestrator.runtime.utils import ms_to_iso
 
 
 def _stage(

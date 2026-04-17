@@ -140,9 +140,9 @@ The tree above is the **target** OS layout. In *this* repo today, the pieces tha
 
 | Target (master doc) | Current path in this repo |
 |---------------------|---------------------------|
-| `src/services/orchestrator/` service shell | `src/services/orchestrator/` — contains `api/`, `runtime/`, `tests/`, `README.md` per service atomicity rules. |
-| Orchestrator `runtime/` | `src/services/orchestrator/runtime/` — Python package **`sde`** (`runtime/sde/`) is the local SDE CLI and benchmark runtime; installable via `pyproject.toml` `[tool.hatch.build.targets.wheel]`. |
-| `outputs/runs/<run-id>/` | **Repository root** `outputs/runs/<run-id>/` only (gitignored). The CLI resolves this via `sde.utils.outputs_base()`; do not add a second `outputs/` tree under `src/`. |
+| `src/services/orchestrator/` service shell | `src/services/orchestrator/` — contains **`orchestrator/api/`** (public surface), **`orchestrator/runtime/`** (implementation), **`tests/`**, `README.md` per service atomicity rules. |
+| Orchestrator `api/` + `runtime/` | **`src/services/orchestrator/orchestrator/api/`** and **`…/orchestrator/runtime/`** — import package **`orchestrator`**; published wheel name **`sde`** with `sde` / `agent` CLI scripts (`pyproject.toml`). |
+| `outputs/runs/<run-id>/` | **Repository root** `outputs/runs/<run-id>/` only (gitignored). The CLI resolves this via `orchestrator.runtime.utils.outputs_base()`; do not add a second `outputs/` tree under `src/`. |
 | `src/data/` … benchmark suites | `data/` at repo root (e.g. `data/benchmark-tasks.jsonl`). |
 | Coding-agent extension specs | `docs/coding-agent/*.md` only — no `docs/vN/` directories. |
 | SDE baseline (CLI contract) | `docs/sde/` |

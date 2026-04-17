@@ -1,7 +1,7 @@
 # `src/services`
 
-- Purpose: Service implementations and service-level composition code.
-- Scope: Folder path is `src/services`.
-- Should contain: Should contain implementation files, schemas, tests, or docs directly relevant to `services`.
-- Should not contain: Should not contain unrelated domain logic or artifacts owned by sibling folders under `src/`.
-- Keep files here focused, small, and aligned with this folder contract.
+Service implementations live here. Each service follows **`api/`**, **`runtime/`**, **`tests/`** (see [operating-system folder structure](../../docs/operating-system-folder-structure.md)).
+
+## Orchestrator
+
+[`orchestrator/`](orchestrator/) — local SDE runtime: import package **`orchestrator`**, wheel **`sde`**, CLIs **`sde`** / **`agent`**.

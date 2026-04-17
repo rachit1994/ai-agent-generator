@@ -1,6 +1,6 @@
 # SDE — Multi-agent build map
 
-The execution extension is delivered by **multiple implementation roles** coordinated by the orchestrator. This map ties **roles** to **modules** so ownership stays clear under `src/services/orchestrator/runtime/sde/` (aligned to `docs/operating-system-folder-structure.md`).
+The execution extension is delivered by **multiple implementation roles** coordinated by the orchestrator. This map ties **roles** to **modules** so ownership stays clear under `src/services/orchestrator/orchestrator/runtime/` (aligned to `docs/operating-system-folder-structure.md`).
 
 ## Roles
 

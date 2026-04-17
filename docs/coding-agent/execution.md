@@ -43,7 +43,7 @@ Baseline contracts are in `docs/sde/what.md` and `docs/sde/implementation-contra
 | Token/context | Per-task token cap in run config | Per-stage input/output budgets, `token_context.json`, no silent truncation |
 | Readiness | Verdict from benchmark metrics | Strict balanced scores plus hard-stops; CTO gates remain `validating` until evidence thresholds pass |
 
-This extension stays aligned with orchestrator code under `src/services/orchestrator/runtime/sde/`; it does not require the full master OS service tree to exist before validation.
+This extension stays aligned with orchestrator code under `src/services/orchestrator/orchestrator/runtime/`; it does not require the full master OS service tree to exist before validation.
 
 ## Folder-Structure Compliance
 
@@ -74,7 +74,7 @@ Optional baseline-aligned files remain allowed when the pipeline emits them: `an
 
 Contract JSON schemas may live under `src/contracts/` when implemented; this spec defines required logical fields so validators can be added without ambiguity.
 
-Runtime validation helper (for CI and local checks): `sde.cto_gates.validate_execution_run_directory` must return `ok: true` and `validation_ready: true` on a reference green run.
+Runtime validation helper (for CI and local checks): `orchestrator.runtime.cto_gates.validate_execution_run_directory` must return `ok: true` and `validation_ready: true` on a reference green run.
 
 ## Functional Requirements
 

@@ -1,6 +1,6 @@
 import pytest
 
-from sde.eval import aggregate_metrics, root_cause_distribution, strict_gate_decision, verdict_for
+from orchestrator.runtime.eval import aggregate_metrics, root_cause_distribution, strict_gate_decision, verdict_for
 
 
 def event(mode: str, passed: bool, latency: int) -> dict:
