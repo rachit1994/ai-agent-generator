@@ -4,7 +4,7 @@ import json
 import time
 
 from agent_mvp.model_adapter import invoke_model
-from agent_mvp.safeguards import refusal_for_unsafe, validate_structured_output, validate_task_text
+from agent_mvp.safeguards import classify_output_failure, refusal_for_unsafe, validate_structured_output, validate_task_text
 from agent_mvp.types import Score, TraceEvent
 from agent_mvp.utils import ms_to_iso
 
@@ -19,6 +19,7 @@ def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, l
         output_obj = refusal
     else:
         started_executor_ms = int(time.time() * 1000)
+        timeout_ms = getattr(config.budgets, "executor_timeout_ms", getattr(config.budgets, "timeout_ms", 90000))
         model_resp = invoke_model(
             prompt=(
                 "Output ONLY a single valid JSON object (no markdown, no prose) with keys "
@@ -31,11 +32,16 @@ def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, l
             model=config.implementation_model,
             provider=config.provider,
             provider_base_url=config.provider_base_url,
-            timeout_ms=config.budgets.timeout_ms,
+            timeout_ms=timeout_ms,
+            options={"temperature": 0, "top_p": 1, "seed": 42},
         )
         raw = model_resp["text"]
         output_obj = validate_structured_output(raw)
         ended_executor_ms = int(time.time() * 1000)
+        executor_errors: list[str] = []
+        model_error = model_resp.get("error")
+        if isinstance(model_error, str) and model_error:
+            executor_errors.append("pipeline_timeout" if "timeout" in model_error.lower() else "evaluator_error")
         events.append(
             TraceEvent(
                 run_id=run_id,
@@ -51,12 +57,13 @@ def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, l
                 token_output=0,
                 estimated_cost_usd=0,
                 retry_count=0,
-                errors=[],
+                errors=executor_errors,
                 score=Score(passed=True, reliability=1.0, validity=1.0),
                 metadata={
                     "attempt": 0,
                     "agent": {"name": "baseline_executor", "type": "llm", "role": "executor"},
                     "raw_response_excerpt": raw[:200],
+                    "model_error": model_error,
                 },
             ).to_dict()
         )
@@ -78,11 +85,18 @@ def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, l
                 model=config.implementation_model,
                 provider=config.provider,
                 provider_base_url=config.provider_base_url,
-                timeout_ms=config.budgets.timeout_ms,
+                timeout_ms=timeout_ms,
+                options={"temperature": 0, "top_p": 1, "seed": 42},
             )
             repaired_raw = repair_resp["text"]
             output_obj = validate_structured_output(repaired_raw)
             ended_repair_ms = int(time.time() * 1000)
+            repair_errors: list[str] = []
+            repair_model_error = repair_resp.get("error")
+            if isinstance(repair_model_error, str) and repair_model_error:
+                repair_errors.append("pipeline_timeout" if "timeout" in repair_model_error.lower() else "evaluator_error")
+            if not all(c.get("passed") for c in output_obj["checks"]):
+                repair_errors.append("quality_check_fail")
             events.append(
                 TraceEvent(
                     run_id=run_id,
@@ -98,18 +112,23 @@ def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, l
                     token_output=0,
                     estimated_cost_usd=0,
                     retry_count=retry_count,
-                    errors=["repair_failed"] if not all(c.get("passed") for c in output_obj["checks"]) else [],
+                    errors=repair_errors,
                     score=Score(passed=True, reliability=1.0, validity=1.0),
                     metadata={
                         "attempt": 1,
                         "agent": {"name": "baseline_repairer", "type": "llm", "role": "repair"},
                         "raw_response_excerpt": repaired_raw[:200],
+                        "model_error": repair_model_error,
                     },
                 ).to_dict()
             )
     ended_total_ms = int(time.time() * 1000)
     checks = output_obj["checks"]
     passed_count = sum(1 for c in checks if c.get("passed"))
+    check_pass_map = {str(c.get("name", "unknown")): bool(c.get("passed")) for c in checks if isinstance(c, dict)}
+    failure_reason = classify_output_failure(output_obj)
+    if failure_reason == "none":
+        failure_reason = "none" if all(c.get("passed") for c in checks) else "quality_check_fail"
     event = TraceEvent(
         run_id=run_id,
         task_id=task_id,
@@ -133,6 +152,8 @@ def run_baseline(run_id: str, task_id: str, prompt: str, config) -> tuple[str, l
         metadata={
             "agent": {"name": "baseline_finalizer", "type": "system", "role": "finalize"},
             "raw_response_excerpt": raw[:200],
+            "check_pass_map": check_pass_map,
+            "failure_reason": failure_reason,
         },
     )
     events.append(event.to_dict())

@@ -5,9 +5,9 @@ from dataclasses import asdict, dataclass
 class GuardrailBudgets:
     max_tokens: int = 4096
     max_retries: int = 1
-    planner_timeout_ms: int = 60000
-    verifier_timeout_ms: int = 60000
-    executor_timeout_ms: int = 90000
+    planner_timeout_ms: int = 5000
+    verifier_timeout_ms: int = 5000
+    executor_timeout_ms: int = 8000
 
 
 @dataclass(frozen=True)

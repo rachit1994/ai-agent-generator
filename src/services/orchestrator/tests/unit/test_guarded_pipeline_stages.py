@@ -27,3 +27,17 @@ def test_guarded_pipeline_planner_called_twice_and_sequential(monkeypatch) -> No
     planner_prompt = next(e for e in events if e["stage"] == "planner_prompt")["metadata"]["executor_prompt"]
     assert isinstance(planner_prompt, str) and len(planner_prompt.strip()) > 0
 
+
+def test_guarded_pipeline_fast_path_for_simple_task(monkeypatch) -> None:
+    def _fake_invoke_model(prompt: str, model: str, provider: str, provider_base_url: str, timeout_ms: int, **_kwargs):  # type: ignore[no-untyped-def]
+        if "You are the reviewer." in prompt:
+            return {"text": "{\"passed\": true, \"issues\": [], \"notes\": \"ok\"}", "token_input": 0, "token_output": 0, "error": None}
+        return {"text": "{\"answer\":\"hello\",\"checks\":[{\"name\":\"response_non_empty\",\"passed\":true}],\"refusal\":null}", "token_input": 0, "token_output": 0, "error": None}
+
+    monkeypatch.setattr(model_adapter, "invoke_model", _fake_invoke_model)
+    _, events = run_guarded_pipeline("r2", "t2", "Say hello in one sentence.", DEFAULT_CONFIG)
+    planner_doc_event = next(e for e in events if e["stage"] == "planner_doc")
+    planner_prompt_event = next(e for e in events if e["stage"] == "planner_prompt")
+    assert planner_doc_event["metadata"]["fast_path"] is True
+    assert planner_prompt_event["metadata"]["fast_path"] is True
+

@@ -1,0 +1,186 @@
+{
+  "runId": "2026-04-17T09-48-45-899965+00-00-c59f5db2",
+  "suitePath": "../../../../data/real-workflow-tasks.jsonl",
+  "suiteVersion": "real-workflow-tasks",
+  "mode": "both",
+  "provider": "ollama",
+  "models": {
+    "implementation": "qwen2.5:7b-instruct",
+    "support": "gemma4:latest"
+  },
+  "budgets": {
+    "max_tokens": 4096,
+    "max_retries": 1,
+    "planner_timeout_ms": 5000,
+    "verifier_timeout_ms": 5000,
+    "executor_timeout_ms": 8000
+  },
+  "baselineMetrics": {
+    "passRate": 0.3,
+    "reliability": 0.3,
+    "p50Latency": 16006,
+    "p95Latency": 16008,
+    "avgCost": 0.0,
+    "validityRate": 1.0,
+    "retryFrequency": 0.6
+  },
+  "guardedMetrics": {
+    "passRate": 0.1,
+    "reliability": 0.1,
+    "p50Latency": 16008,
+    "p95Latency": 26053,
+    "avgCost": 0.0,
+    "validityRate": 1.0,
+    "retryFrequency": 0.9
+  },
+  "passRateDeltaPoints": -20.0,
+  "reliabilityDeltaPoints": -20.0,
+  "medianLatencyDeltaPercent": 0.012495314257153568,
+  "rootCauseDistribution": {
+    "baseline": {
+      "none": 3,
+      "contract_parse_error": 6,
+      "refusal_expected": 1
+    },
+    "guarded_pipeline": {
+      "quality_check_fail": 8,
+      "none": 1,
+      "refusal_expected": 1
+    }
+  },
+  "stageLatencyBreakdownMs": {
+    "baseline": {
+      "executor": 69075,
+      "finalize": 117096,
+      "repair": 48020
+    },
+    "guarded_pipeline": {
+      "planner_doc": 25066,
+      "planner_prompt": 25093,
+      "executor": 72046,
+      "verifier": 0,
+      "executor_fix": 63613,
+      "verifier_fix": 0,
+      "finalize": 185865
+    }
+  },
+  "perTaskDeltas": [
+    {
+      "taskId": "rw-001",
+      "baselinePassed": true,
+      "guardedPassed": false,
+      "baselineLatencyMs": 7587,
+      "guardedLatencyMs": 22383,
+      "passDelta": -1,
+      "latencyDeltaMs": 14796
+    },
+    {
+      "taskId": "rw-002",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16008,
+      "guardedLatencyMs": 26046,
+      "passDelta": 0,
+      "latencyDeltaMs": 10038
+    },
+    {
+      "taskId": "rw-003",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16010,
+      "guardedLatencyMs": 26053,
+      "passDelta": 0,
+      "latencyDeltaMs": 10043
+    },
+    {
+      "taskId": "rw-004",
+      "baselinePassed": true,
+      "guardedPassed": false,
+      "baselineLatencyMs": 5761,
+      "guardedLatencyMs": 26056,
+      "passDelta": -1,
+      "latencyDeltaMs": 20295
+    },
+    {
+      "taskId": "rw-005",
+      "baselinePassed": false,
+      "guardedPassed": true,
+      "baselineLatencyMs": 16007,
+      "guardedLatencyMs": 11260,
+      "passDelta": 1,
+      "latencyDeltaMs": -4747
+    },
+    {
+      "taskId": "rw-006",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 0,
+      "guardedLatencyMs": 1,
+      "passDelta": 0,
+      "latencyDeltaMs": 1
+    },
+    {
+      "taskId": "rw-007",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 16006,
+      "passDelta": 0,
+      "latencyDeltaMs": 0
+    },
+    {
+      "taskId": "rw-008",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 16005,
+      "passDelta": 0,
+      "latencyDeltaMs": -1
+    },
+    {
+      "taskId": "rw-009",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 16008,
+      "passDelta": 0,
+      "latencyDeltaMs": 2
+    },
+    {
+      "taskId": "rw-010",
+      "baselinePassed": true,
+      "guardedPassed": false,
+      "baselineLatencyMs": 7705,
+      "guardedLatencyMs": 26047,
+      "passDelta": -1,
+      "latencyDeltaMs": 18342
+    }
+  ],
+  "incrementalRoi": {
+    "conservative": -50.01249531425715,
+    "baseCase": -40.01249531425715,
+    "aggressive": -30.01249531425715
+  },
+  "gateDecision": {
+    "decision": "stop",
+    "checks": {
+      "passRateDelta": false,
+      "reliabilityDelta": false,
+      "latencyOverhead": true,
+      "incrementalRoiBaseCase": false
+    },
+    "metrics": {
+      "passRateDeltaPoints": -20.0,
+      "reliabilityDeltaPoints": -20.0,
+      "medianLatencyDeltaPercent": 0.012495314257153568,
+      "incrementalRoiBaseCase": -40.01249531425715
+    },
+    "thresholds": {
+      "passRateDeltaPoints": 15.0,
+      "reliabilityDeltaPoints": 15.0,
+      "maxLatencyOverheadPercent": 25.0,
+      "incrementalRoiBaseCase": 0.0
+    }
+  },
+  "verdict": "rejected"
+}

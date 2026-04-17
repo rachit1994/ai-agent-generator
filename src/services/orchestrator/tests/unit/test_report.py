@@ -43,7 +43,12 @@ def test_benchmark_report_support(tmp_path, monkeypatch) -> None:
             "medianLatencyDeltaPercent": 0,
             "baselineMetrics": {"passRate": 0},
             "guardedMetrics": {"passRate": 1},
+            "reliabilityDeltaPoints": 10,
             "perTaskDeltas": [],
+            "rootCauseDistribution": {"baseline": {"quality_check_fail": 1}, "guarded_pipeline": {}},
+            "stageLatencyBreakdownMs": {"baseline": {"finalize": 10}, "guarded_pipeline": {"finalize": 12}},
+            "incrementalRoi": {"conservative": -1, "baseCase": 1, "aggressive": 2},
+            "gateDecision": {"decision": "continue_and_scale", "checks": {"passRateDelta": True}},
         },
     )
     report = generate_report(run_id)
@@ -70,7 +75,12 @@ def test_benchmark_report_inconclusive_recommends_continue(tmp_path, monkeypatch
             "medianLatencyDeltaPercent": 0,
             "baselineMetrics": {"passRate": 0},
             "guardedMetrics": {"passRate": 0.05},
+            "reliabilityDeltaPoints": 5,
             "perTaskDeltas": [],
+            "rootCauseDistribution": {"baseline": {"quality_check_fail": 20}, "guarded_pipeline": {"quality_check_fail": 19}},
+            "stageLatencyBreakdownMs": {"baseline": {"finalize": 200}, "guarded_pipeline": {"finalize": 210}},
+            "incrementalRoi": {"conservative": -2, "baseCase": -1, "aggressive": 0},
+            "gateDecision": {"decision": "stop", "checks": {"passRateDelta": False}},
         },
     )
     generate_report(run_id)

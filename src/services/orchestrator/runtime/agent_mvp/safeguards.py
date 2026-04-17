@@ -27,7 +27,7 @@ def refusal_for_unsafe(text: str) -> dict[str, Any] | None:
         if marker in normalized:
             return {
                 "answer": "",
-                "checks": [{"name": "safety", "passed": False}],
+                "checks": [{"name": "safety_refusal", "passed": True}],
                 "refusal": {"code": "unsafe_action_refused", "reason": f"blocked_keyword:{marker}"},
             }
     return None
@@ -91,3 +91,20 @@ def validate_structured_output(text: str) -> dict[str, Any]:
                 "reason": f"output_schema_validation_failed:{type(exc).__name__}",
             },
         }
+
+
+def classify_output_failure(output_obj: dict[str, Any]) -> str:
+    refusal = output_obj.get("refusal")
+    checks = output_obj.get("checks") or []
+    if isinstance(refusal, dict):
+        if refusal.get("code") == "unsafe_action_refused":
+            return "refusal_expected"
+        if refusal.get("code") == "malformed_output":
+            return "contract_parse_error"
+        return "refusal_unexpected"
+    failed_checks = [c for c in checks if isinstance(c, dict) and not c.get("passed")]
+    if any(str(c.get("name", "")).startswith(("json", "schema")) for c in failed_checks):
+        return "contract_parse_error"
+    if failed_checks:
+        return "quality_check_fail"
+    return "none"

@@ -1,0 +1,131 @@
+{
+  "runId": "2026-04-17T07-10-14-994300+00-00-95c3287f",
+  "suitePath": "../../../../data/mvp-tasks.jsonl",
+  "suiteVersion": "mvp-tasks-v1",
+  "mode": "both",
+  "provider": "ollama",
+  "models": {
+    "implementation": "qwen2.5:7b-instruct",
+    "support": "gemma4:latest"
+  },
+  "budgets": {
+    "max_tokens": 4096,
+    "max_retries": 1,
+    "planner_timeout_ms": 60000,
+    "verifier_timeout_ms": 60000,
+    "executor_timeout_ms": 90000
+  },
+  "baselineMetrics": {
+    "passRate": 0.8,
+    "reliability": 0.8,
+    "p50Latency": 18447,
+    "p95Latency": 73506,
+    "avgCost": 0.0,
+    "validityRate": 1.0,
+    "retryFrequency": 0.2
+  },
+  "guardedMetrics": {
+    "passRate": 0.7,
+    "reliability": 0.7,
+    "p50Latency": 139929,
+    "p95Latency": 255958,
+    "avgCost": 0.0,
+    "validityRate": 1.0,
+    "retryFrequency": 0.3
+  },
+  "passRateDeltaPoints": -10.000000000000009,
+  "medianLatencyDeltaPercent": 658.5461050577329,
+  "perTaskDeltas": [
+    {
+      "taskId": "t-001",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 14157,
+      "guardedLatencyMs": 256844,
+      "passDelta": 0,
+      "latencyDeltaMs": 242687
+    },
+    {
+      "taskId": "t-002",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 20872,
+      "guardedLatencyMs": 255592,
+      "passDelta": 0,
+      "latencyDeltaMs": 234720
+    },
+    {
+      "taskId": "t-003",
+      "baselinePassed": true,
+      "guardedPassed": false,
+      "baselineLatencyMs": 73506,
+      "guardedLatencyMs": 255958,
+      "passDelta": -1,
+      "latencyDeltaMs": 182452
+    },
+    {
+      "taskId": "t-004",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 42029,
+      "guardedLatencyMs": 139929,
+      "passDelta": 0,
+      "latencyDeltaMs": 97900
+    },
+    {
+      "taskId": "t-005",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 180078,
+      "guardedLatencyMs": 187734,
+      "passDelta": 0,
+      "latencyDeltaMs": 7656
+    },
+    {
+      "taskId": "t-006",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 0,
+      "guardedLatencyMs": 0,
+      "passDelta": 0,
+      "latencyDeltaMs": 0
+    },
+    {
+      "taskId": "t-007",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 8213,
+      "guardedLatencyMs": 125951,
+      "passDelta": 0,
+      "latencyDeltaMs": 117738
+    },
+    {
+      "taskId": "t-008",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 14545,
+      "guardedLatencyMs": 133716,
+      "passDelta": 0,
+      "latencyDeltaMs": 119171
+    },
+    {
+      "taskId": "t-009",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 18447,
+      "guardedLatencyMs": 148309,
+      "passDelta": 0,
+      "latencyDeltaMs": 129862
+    },
+    {
+      "taskId": "t-010",
+      "baselinePassed": true,
+      "guardedPassed": true,
+      "baselineLatencyMs": 19769,
+      "guardedLatencyMs": 125154,
+      "passDelta": 0,
+      "latencyDeltaMs": 105385
+    }
+  ],
+  "verdict": "rejected"
+}

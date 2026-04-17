@@ -1,0 +1,24 @@
+{
+  "recommendation": "stop",
+  "gateDecision": {
+    "decision": "stop",
+    "checks": {
+      "passRateDelta": false,
+      "reliabilityDelta": false,
+      "latencyOverhead": true,
+      "incrementalRoiBaseCase": false
+    },
+    "metrics": {
+      "passRateDeltaPoints": 0.0,
+      "reliabilityDeltaPoints": -4.999999999999999,
+      "medianLatencyDeltaPercent": 4.36256928594718,
+      "incrementalRoiBaseCase": -9.36256928594718
+    },
+    "thresholds": {
+      "passRateDeltaPoints": 15.0,
+      "reliabilityDeltaPoints": 15.0,
+      "maxLatencyOverheadPercent": 25.0,
+      "incrementalRoiBaseCase": 0.0
+    }
+  }
+}

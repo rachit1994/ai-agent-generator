@@ -1,6 +1,6 @@
 import pytest
 
-from agent_mvp.eval import aggregate_metrics, verdict_for
+from agent_mvp.eval import aggregate_metrics, root_cause_distribution, strict_gate_decision, verdict_for
 
 
 def event(mode: str, passed: bool, latency: int) -> dict:
@@ -34,3 +34,20 @@ def test_verdict_inconclusive_small_positive_improvement_no_regressions() -> Non
     baseline = aggregate_metrics(baseline_events)
     guarded = aggregate_metrics(guarded_events)
     assert verdict_for(baseline, guarded) == "inconclusive"
+
+
+def test_root_cause_distribution_reads_finalize_metadata() -> None:
+    events = [
+        {"stage": "finalize", "metadata": {"failure_reason": "quality_check_fail"}},
+        {"stage": "finalize", "metadata": {"failure_reason": "quality_check_fail"}},
+        {"stage": "finalize", "metadata": {"failure_reason": "pipeline_timeout"}},
+    ]
+    assert root_cause_distribution(events) == {"quality_check_fail": 2, "pipeline_timeout": 1}
+
+
+def test_strict_gate_decision_stop_when_thresholds_fail() -> None:
+    baseline = {"passRate": 0.2, "reliability": 0.2, "p50Latency": 100}
+    guarded = {"passRate": 0.25, "reliability": 0.25, "p50Latency": 180}
+    decision = strict_gate_decision(baseline, guarded, roi_base_case=-1.0)
+    assert decision["decision"] == "stop"
+    assert decision["checks"]["incrementalRoiBaseCase"] is False

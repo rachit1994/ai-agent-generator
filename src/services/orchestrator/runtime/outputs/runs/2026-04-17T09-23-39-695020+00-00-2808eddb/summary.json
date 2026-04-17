@@ -1,0 +1,187 @@
+{
+  "runId": "2026-04-17T09-23-39-695020+00-00-2808eddb",
+  "suitePath": "../../../../data/real-workflow-tasks.jsonl",
+  "suiteVersion": "real-workflow-tasks",
+  "mode": "both",
+  "provider": "ollama",
+  "models": {
+    "implementation": "qwen2.5:7b-instruct",
+    "support": "gemma4:latest"
+  },
+  "budgets": {
+    "max_tokens": 4096,
+    "max_retries": 1,
+    "planner_timeout_ms": 5000,
+    "verifier_timeout_ms": 5000,
+    "executor_timeout_ms": 8000
+  },
+  "baselineMetrics": {
+    "passRate": 0.1,
+    "reliability": 0.15,
+    "p50Latency": 16006,
+    "p95Latency": 16011,
+    "avgCost": 0.0,
+    "validityRate": 1.0,
+    "retryFrequency": 0.8
+  },
+  "guardedMetrics": {
+    "passRate": 0.3,
+    "reliability": 0.3,
+    "p50Latency": 16005,
+    "p95Latency": 26053,
+    "avgCost": 0.0,
+    "validityRate": 1.0,
+    "retryFrequency": 0.7
+  },
+  "passRateDeltaPoints": 20.0,
+  "reliabilityDeltaPoints": 15.0,
+  "medianLatencyDeltaPercent": -0.006247657128576784,
+  "rootCauseDistribution": {
+    "baseline": {
+      "none": 1,
+      "contract_parse_error": 7,
+      "quality_check_fail": 1,
+      "refusal_expected": 1
+    },
+    "guarded_pipeline": {
+      "quality_check_fail": 6,
+      "none": 3,
+      "refusal_expected": 1
+    }
+  },
+  "stageLatencyBreakdownMs": {
+    "baseline": {
+      "executor": 71729,
+      "finalize": 135676,
+      "repair": 63945
+    },
+    "guarded_pipeline": {
+      "planner_doc": 25075,
+      "planner_prompt": 25106,
+      "executor": 70936,
+      "verifier": 10029,
+      "executor_fix": 49448,
+      "verifier_fix": 0,
+      "finalize": 180648
+    }
+  },
+  "perTaskDeltas": [
+    {
+      "taskId": "rw-001",
+      "baselinePassed": true,
+      "guardedPassed": false,
+      "baselineLatencyMs": 7696,
+      "guardedLatencyMs": 24035,
+      "passDelta": -1,
+      "latencyDeltaMs": 16339
+    },
+    {
+      "taskId": "rw-002",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 26043,
+      "passDelta": 0,
+      "latencyDeltaMs": 10037
+    },
+    {
+      "taskId": "rw-003",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16012,
+      "guardedLatencyMs": 26046,
+      "passDelta": 0,
+      "latencyDeltaMs": 10034
+    },
+    {
+      "taskId": "rw-004",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 15924,
+      "guardedLatencyMs": 26083,
+      "passDelta": 0,
+      "latencyDeltaMs": 10159
+    },
+    {
+      "taskId": "rw-005",
+      "baselinePassed": false,
+      "guardedPassed": true,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 12310,
+      "passDelta": 1,
+      "latencyDeltaMs": -3696
+    },
+    {
+      "taskId": "rw-006",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 0,
+      "guardedLatencyMs": 0,
+      "passDelta": 0,
+      "latencyDeltaMs": 0
+    },
+    {
+      "taskId": "rw-007",
+      "baselinePassed": false,
+      "guardedPassed": true,
+      "baselineLatencyMs": 16011,
+      "guardedLatencyMs": 11449,
+      "passDelta": 1,
+      "latencyDeltaMs": -4562
+    },
+    {
+      "taskId": "rw-008",
+      "baselinePassed": false,
+      "guardedPassed": true,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 12624,
+      "passDelta": 1,
+      "latencyDeltaMs": -3382
+    },
+    {
+      "taskId": "rw-009",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16009,
+      "guardedLatencyMs": 16005,
+      "passDelta": 0,
+      "latencyDeltaMs": -4
+    },
+    {
+      "taskId": "rw-010",
+      "baselinePassed": false,
+      "guardedPassed": false,
+      "baselineLatencyMs": 16006,
+      "guardedLatencyMs": 26053,
+      "passDelta": 0,
+      "latencyDeltaMs": 10047
+    }
+  ],
+  "incrementalRoi": {
+    "conservative": 25.0,
+    "baseCase": 35.0,
+    "aggressive": 45.0
+  },
+  "gateDecision": {
+    "decision": "continue_and_scale",
+    "checks": {
+      "passRateDelta": true,
+      "reliabilityDelta": true,
+      "latencyOverhead": true,
+      "incrementalRoiBaseCase": true
+    },
+    "metrics": {
+      "passRateDeltaPoints": 20.0,
+      "reliabilityDeltaPoints": 15.0,
+      "medianLatencyDeltaPercent": -0.006247657128576784,
+      "incrementalRoiBaseCase": 35.0
+    },
+    "thresholds": {
+      "passRateDeltaPoints": 15.0,
+      "reliabilityDeltaPoints": 15.0,
+      "maxLatencyOverheadPercent": 25.0,
+      "incrementalRoiBaseCase": 0.0
+    }
+  },
+  "verdict": "supported"
+}

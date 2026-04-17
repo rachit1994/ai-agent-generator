@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from agent_mvp.config import DEFAULT_CONFIG, config_snapshot
-from agent_mvp.eval import aggregate_metrics, verdict_for
+from agent_mvp.eval import aggregate_metrics, root_cause_distribution, stage_latency_breakdown, strict_gate_decision, verdict_for
 from agent_mvp.modes.baseline import run_baseline
 from agent_mvp.modes.guarded import run_guarded
 from agent_mvp.safeguards import validate_task_payload
@@ -70,10 +70,20 @@ def run_benchmark(suite_path: str, mode: str = "both") -> dict:
                 "latencyDeltaMs": (g["latency_ms"] if g else 0) - (b["latency_ms"] if b else 0),
             }
         )
+    decision = None
+    roi = {"conservative": None, "baseCase": None, "aggressive": None}
+    if mode == "both" and baseline_metrics and guarded_metrics:
+        # Value proxy uses reliability + pass-rate lift; cost proxy uses latency overhead.
+        pass_delta_points = (guarded_metrics["passRate"] - baseline_metrics["passRate"]) * 100
+        reliability_delta_points = (guarded_metrics["reliability"] - baseline_metrics["reliability"]) * 100
+        latency_cost_proxy = max(median_latency_delta_percent or 0, 0)
+        base_roi = (pass_delta_points + reliability_delta_points) - latency_cost_proxy
+        roi = {"conservative": base_roi - 10, "baseCase": base_roi, "aggressive": base_roi + 10}
+        decision = strict_gate_decision(baseline_metrics, guarded_metrics, roi_base_case=base_roi)
     summary = {
         "runId": run_id,
         "suitePath": suite_path,
-        "suiteVersion": "mvp-tasks-v1",
+        "suiteVersion": Path(suite_path).stem,
         "mode": mode,
         "provider": DEFAULT_CONFIG.provider,
         "models": {"implementation": DEFAULT_CONFIG.implementation_model, "support": DEFAULT_CONFIG.support_model},
@@ -81,8 +91,21 @@ def run_benchmark(suite_path: str, mode: str = "both") -> dict:
         "baselineMetrics": baseline_metrics,
         "guardedMetrics": guarded_metrics,
         "passRateDeltaPoints": pass_rate_delta_points,
+        "reliabilityDeltaPoints": None
+        if mode != "both" or not baseline_metrics or not guarded_metrics
+        else (guarded_metrics["reliability"] - baseline_metrics["reliability"]) * 100,
         "medianLatencyDeltaPercent": median_latency_delta_percent,
+        "rootCauseDistribution": {
+            "baseline": root_cause_distribution(baseline_events),
+            "guarded_pipeline": root_cause_distribution(guarded_events),
+        },
+        "stageLatencyBreakdownMs": {
+            "baseline": stage_latency_breakdown(baseline_events),
+            "guarded_pipeline": stage_latency_breakdown(guarded_events),
+        },
         "perTaskDeltas": per_task,
+        "incrementalRoi": roi,
+        "gateDecision": decision,
         "verdict": verdict,
     }
     write_json(out / "config-snapshot.json", config_snapshot())
