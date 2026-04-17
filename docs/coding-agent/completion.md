@@ -104,6 +104,73 @@ For V3-class runs, `summary.json` → `balanced_gates.hard_stops` **must** list 
 4. If `passed: false`, orchestrator **does not** advance; it schedules remediation **for the same `step_id`** or opens a `plan_amendment` per V2 HS09.
 5. Only after `passed: true` may `progress.json` advance `last_completed_step_id`.
 
+## How the build loop works in practice (concrete flow)
+
+This section describes **how** V3 achieves run-to-completion for a multi-feature full-stack task. See [action-plan.md](../onboarding/action-plan.md) §2 Stages 3–5 for the full context.
+
+### The step loop (Stage 3)
+
+```
+while pending_steps exist in project_plan.json:
+  step = next step where all depends_on are completed
+  if no step is ready and lanes are blocked:
+    terminal_reason = remediation_required; break
+
+  Implementor agent receives:
+    - step_id, scope description, file paths from plan
+    - current repo state (or relevant subset)
+    - learning_events relevant to this step (from V2)
+    - any prior reviewer findings for retries
+
+  Implementor writes code/tests/docs → file writes traced
+
+  Reviewer agent receives:
+    - the diff produced by Implementor
+    - the plan step's acceptance criteria
+    - relevant learning_events
+
+  Reviewer produces step_reviews/<step_id>.json:
+    passed: true → progress advances, next step issued
+    passed: false → findings fed back to Implementor
+      retry (max N per step, default 2)
+      all retries exhausted → step blocked
+```
+
+**Separation of duties:** Implementor and Reviewer are **separate LLM calls** with **different personas**. The Implementor cannot mark its own work as passed. This mirrors a company where a junior engineer submits a PR and a different engineer reviews it.
+
+**Bounded retries:** Each step has at most N retries (configurable). This prevents infinite loops while giving the Implementor a chance to fix reviewer findings. After exhaustion, the step blocks with `remediation_required` and specific findings — the system does not silently give up.
+
+### Verification (Stage 4)
+
+```
+After all plan steps pass review (or on configured cadence):
+  Orchestrator runs verification commands from plan metadata:
+    - test runner (pytest, jest, etc.)
+    - linter (ruff, eslint, etc.)
+    - typecheck (mypy, tsc, etc.)
+    - build command if applicable
+
+  Results → verification_bundle.json
+  If passed: false:
+    Map failures to steps (from file paths in error output)
+    Re-enter step loop for those steps with failure context
+    Re-review after fix
+  If passed: true:
+    Proceed to Definition of Done
+```
+
+**Verification is not optional:** If `definition_of_done.checks` includes `verification: true` (default for any plan that generates code), skipping or faking verification is HS14.
+
+### Run-to-completion (Stage 5)
+
+The system **does not stop** until one of:
+- `definition_of_done.all_required_passed == true` → status `completed_review_pass`
+- Budget exhaustion (token, time, retry) → status `incomplete`, reason `exhausted_budget`
+- Human block required → status `incomplete`, reason `blocked_human`
+- Safety veto → status `incomplete`, reason `safety_veto`
+
+**Terminal honesty (HS15):** Claiming `completed_review_pass` while any DoD check is red or any hard-stop is violated is itself a hard-stop violation. The orchestrator (deterministic Python) computes the status from artifact state, not from LLM opinion.
+
 ## Strict Balanced Gate Model (V3)
 
 Same category minimums as V1 (85/85/85, composite ≥ 90) for validation-ready unless org profile tightens (e.g. Governance ≥ 90 for regulated workloads)—if tightened, document in `project_plan.json` metadata.

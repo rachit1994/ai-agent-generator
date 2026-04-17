@@ -2,7 +2,7 @@
 
 ## Goal
 
-Deliver **policy-gated learning**, **evaluation**, and **agent lifecycle** mechanics from [docs/AI-Professional-Evolution-Master-Architecture.md](../AI-Professional-Evolution-Master-Architecture.md): **§6 Agent Lifecycle**, **§9 Learning & Evolution Engine**, **§13 Evaluation Framework**, **§11 Guardrails** (review gating, risk budgets), and **§17 Phase 1–3** themes (single-agent evolution through autonomous learning with bounded risk).
+Deliver **policy-gated learning**, **evaluation**, and **agent lifecycle** mechanics from [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md): **§6 Agent Lifecycle**, **§9 Learning & Evolution Engine**, **§13 Evaluation Framework**, **§11 Guardrails** (review gating, risk budgets), and **§17 Phase 1–3** themes (single-agent evolution through autonomous learning with bounded risk).
 
 **Architecture traceability:** **§6**, **§9**, **§11**, **§13**, **§14** (promotion / hard gates where applicable), **§17 Phases 1–3**, **§19** improvements around causal closure and adaptation control plane.
 
@@ -69,6 +69,100 @@ Full mapping: [docs/research/self-improvement-research-alignment.md](../research
 | Governance | HS25–HS28, promotion packages | Safety veto events (V4) |
 | Delivery | practice evaluation results | V3 verification where combined |
 | Reliability | rolling evaluation windows | §14 metrics feeds |
+
+## How self-improvement and progression work in practice (concrete flow)
+
+This section describes **how** V6 implements the "junior engineers who learn and grow" model. See [action-plan.md](../onboarding/action-plan.md) §2 Stage 6 and §3.
+
+### Learning across runs (how the system gets better)
+
+```
+Run N completes (pass or fail):
+  → Reflection agent examines:
+      - Which steps failed review? Why?
+      - Which verification commands failed? Root cause?
+      - What learning_events were captured?
+      - What was the time/token cost of rework?
+
+  → Reflection bundle produced:
+      learning/reflection_bundle.json:
+        root_causes: ["auth middleware missed JWT expiry check"]
+        evidence_links: [event_id_1, step_review_id_3]
+        blast_radius: "auth-related steps in future runs"
+        proposed_intervention: "add JWT expiry to reviewer checklist"
+        causal_closure_checklist: {
+          failure_class: true,
+          root_cause_evidence: true,
+          intervention_mapped: true,
+          post_fix_verified: true (from rerun)
+        }
+
+  → If causal_closure complete (HS25 satisfied):
+      Lesson enters practice queue or memory (V5)
+  → If incomplete:
+      Stays in reflection; no promotion of the lesson
+```
+
+### Practice loop (how gaps are closed)
+
+```
+Reflection identifies gap: "agent consistently fails auth edge cases"
+  → PracticeAgent generates targeted tasks:
+      practice/task_spec.json:
+        gap_detection_ref: reflection_bundle_id
+        task: "Implement JWT refresh with expiry, revocation, and race conditions"
+        acceptance_criteria: [...]
+
+  → Agent executes practice task (same V1–V3 gates apply)
+  → practice/evaluation_result.json: passed or failed
+
+  → If passed: capability node updated, gap marked addressed
+  → If failed: gap remains open, practice repeats (bounded)
+```
+
+**HS27 enforcement:** Practice tasks cannot exist without a `gap_detection_ref`. Random practice is not permitted — every practice task traces back to a verified weakness.
+
+### Promotion mechanics (how agents earn trust)
+
+```
+After sustained performance (rolling window of N runs):
+  → Evaluator agent (independent from Implementor/Reviewer) assesses:
+      - Step review pass rate
+      - Verification pass rate
+      - Rework frequency
+      - Practice completion rate
+      - Learning event quality
+
+  → Promotion package assembled:
+      lifecycle/promotion_package.json:
+        current_stage: "junior"
+        proposed_stage: "mid-level"
+        evidence_window: [run_id_1 ... run_id_N]
+        independent_evaluator_signal_ids: [eval_id_1]
+        capability_scores: { ... }
+
+  → Independent reviewer signs off (HS26: no self-approval)
+  → If approved: stage advances, autonomy expands per permission matrix
+  → If denied: hold_package.json with reasons and development plan
+```
+
+**What promotion means concretely:** A "mid-level" agent gets wider file scope, fewer mandatory review interventions (e.g. review every 3rd step instead of every step), and access to higher-risk operations. But it still cannot self-approve promotions, bypass safety, or write outside its lease.
+
+### Canary for learning updates (how changes are tested)
+
+```
+When a policy or prompt change is proposed from reflection:
+  → Canary run: same task suite, new policy, shadow mode
+      learning/canary_report.json:
+        shadow_metrics: { pass_rate, rework_rate, token_cost }
+        baseline_metrics: { ... from previous runs }
+        promote: true/false (based on regression threshold)
+
+  → If promote: true → policy update applied to future runs
+  → If promote: false → change rejected with specific regressions
+```
+
+**HS28 enforcement:** When `learning_promotion_requires_canary: true`, no policy/prompt change goes live without a passing canary. This prevents the system from "learning" its way into worse performance.
 
 ## Execution Profiles
 

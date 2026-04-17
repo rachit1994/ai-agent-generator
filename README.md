@@ -4,10 +4,13 @@ This repository defines the full production architecture for an AI Professional 
 
 Primary source of truth:
 - `docs/AI-Professional-Evolution-Master-Architecture.md`
+- `docs/action-plan.md` — **product goal**, version rollup (V1–V7 as one delivery), global precedence (safety before learning/speed), parallel agents, phased plan, capability metrics
 - `docs/architecture-goal-completion.md` — how finishing all `docs/coding-agent/*` extensions relates to **full** master-doc completion (§14, §17, §28)
 
 Supporting implementation docs:
-- `docs/developer-walkthrough.md` — **start here for code orientation** (reading order, folder map, CLI flow, first-day checklist)
+- `docs/start-here-reading-the-docs.md` — **easy doc on-ramp** (glossary, why the project, what V1–V7 mean, simple reading order)
+- `docs/start-here-reading-the-code.md` — **easy code on-ramp** (where Python lives, which files to open first, what is built vs planned)
+- `docs/developer-walkthrough.md` — **engineer onboarding** (reading order, folder map, CLI flow, first-day checklist)
 - `docs/operating-system-folder-structure.md`
 - `docs/swarm-token-and-system-requirements-math.md`
 - `docs/coding-agent/execution.md` — per-run artifacts, balanced CTO gates, HS01–HS06
@@ -281,7 +284,9 @@ Major services include:
 Canonical OS-style structure is defined in:
 - `docs/operating-system-folder-structure.md`
 
-Key roots:
+In **this** repository, `src/` is intentionally **flat** (`orchestrator` + `sde_*` packages only); empty scaffold folders from the master diagram are omitted until implemented — see the “This repository” section in the doc above.
+
+Key roots (master vision):
 - `contracts/` (versioned schemas),
 - `services/` (extraction-ready service units),
 - `agents/` (role executors),

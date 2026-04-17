@@ -23,7 +23,7 @@ jobs:
         run: uv sync --group dev
 
       - name: Lint
-        run: uv run python -m compileall src/services/orchestrator/orchestrator
+        run: uv run python -m compileall src
 
       - name: Test
         run: uv run pytest

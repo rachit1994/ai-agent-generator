@@ -2,7 +2,7 @@
 
 ## Goal
 
-Complete the **multi-agent**, **identity/authorization**, **federated orchestration**, and **organization-level** objectives of [docs/AI-Professional-Evolution-Master-Architecture.md](../AI-Professional-Evolution-Master-Architecture.md): **§5 Agent Organization Model**, **§15** (identity, federated orchestration), **§16 Scalability Strategy**, and **§17 Phase 2–4** (multi-agent evolution through organization intelligence).
+Complete the **multi-agent**, **identity/authorization**, **federated orchestration**, and **organization-level** objectives of [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md): **§5 Agent Organization Model**, **§15** (identity, federated orchestration), **§16 Scalability Strategy**, and **§17 Phase 2–4** (multi-agent evolution through organization intelligence).
 
 **Architecture traceability:** **§5**, **§15** (IAM, orchestration), **§16**, **§17 Phases 2–4**, **§19** items (identity plane, federated orchestration, career strategy layer).
 
@@ -63,6 +63,81 @@ Multi-agent self-improvement amplifies **credit assignment** and **evaluator gam
 | Safety / IAM | HS29–HS32, `iam/action_audit.jsonl` | Safety veto events |
 | Reliability | lease + heartbeat metrics | §14 resource / deadlock controls |
 | Replay | all V7 decisions as V4 events | `replay_manifest.json` |
+
+## How multi-agent spawning works in practice (concrete flow)
+
+This section describes **how** V7 enables "spawn as many agents as needed" for a full-stack task. See [action-plan.md](../onboarding/action-plan.md) §2 Stage 2 and §3.
+
+### Workstream decomposition
+
+```
+project_plan.json (from V2)
+  → Orchestrator groups step_ids by file-scope independence:
+      Lane A: frontend/**  (steps 1, 4, 7)
+      Lane B: api/**       (steps 2, 5, 8)
+      Lane C: db/**        (steps 3, 6)
+      Lane D: infra/**     (steps 9, 10)
+      Lane E: docs/**      (steps 11, 12)
+  → Cross-lane dependencies from depends_on:
+      step 5 (api) depends on step 3 (db schema)
+      step 7 (frontend) depends on step 5 (api contract)
+```
+
+### Agent spawning and lease acquisition
+
+```
+For each lane:
+  Orchestrator spawns Implementor agent with:
+    - lane_id, file_scope (glob pattern)
+    - step_queue (ordered step_ids for this lane)
+    - lease on file_scope: no other agent may write here
+    - heartbeat interval (default 60s)
+    - token budget for the lane
+
+  Lease record in coordination/lease_table.json:
+    { lane_id, file_scope, agent_id, acquired_at, heartbeat_due, epoch }
+```
+
+### Parallel execution with dependency gates
+
+```
+All lanes start simultaneously.
+Each lane runs the V3 step loop independently:
+  Implementor writes → Reviewer reviews → progress advances
+
+When lane B reaches step 5 (depends on step 3 in lane C):
+  Lane B blocks until lane C's step 3 has passing step_review
+  Orchestrator checks dependency status before issuing the step
+  If lane C is blocked: lane B also blocks (cascading dependency)
+
+Cross-lane interfaces (API contracts, DB schema):
+  Defined as "contract steps" in project_plan.json
+  Contract step produces a schema/interface file
+  Dependent lanes receive that file as input context
+```
+
+### Lease enforcement and failure handling
+
+```
+If agent in lane A stalls (no heartbeat for 2× interval):
+  Lease expires → orchestrator marks lane as stalled
+  Options (configurable):
+    1. Reassign lane to new agent instance
+    2. Block lane with reason "agent_stalled"
+    3. Merge remaining steps into another lane
+
+If two agents attempt to write the same file:
+  Second write is rejected (HS29) — lease violation
+  Orchestrator logs conflict and blocks the offending step
+```
+
+### Bounded concurrency
+
+- `max_concurrent_agents` in run config (default: number of independent lanes, capped by host resources).
+- Excess lanes queue by priority (critical-path lanes first).
+- Each lane has its own token budget; total budget across lanes ≤ run budget.
+
+**Key insight:** Speed comes from **parallel lanes**, not from skipping reviews. Each lane independently respects all V1–V3 gates. The orchestrator adds V7 coordination (leases, heartbeats, IAM) on top.
 
 ## Execution Profiles
 

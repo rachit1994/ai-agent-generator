@@ -12,7 +12,7 @@ Use this with `00-master-sequence.md` to control progression.
 - CLI commands parse correctly.
 - Run-id and output directory logic are stable.
 - Adapter supports provider abstraction with metadata.
-- Implementation uses Python package paths (`src/services/orchestrator/orchestrator/runtime/...`) rather than TS paths.
+- Implementation uses Python package paths (`src/orchestrator/runtime/...`) rather than TS paths.
 - `qwen2.5:7b-instruct` is used for implementation prompts.
 
 ## Phase 2 (Prompts 06-07)

@@ -1,18 +1,18 @@
 # SDE — Multi-agent build map
 
-The execution extension is delivered by **multiple implementation roles** coordinated by the orchestrator. This map ties **roles** to **modules** so ownership stays clear under `src/services/orchestrator/orchestrator/runtime/` (aligned to `docs/operating-system-folder-structure.md`).
+The execution extension is delivered by **multiple implementation roles** coordinated by the orchestrator. This map ties **roles** to **modules** so ownership stays clear under `src/sde_*` packages and `src/orchestrator/` (aligned to `docs/architecture/operating-system-folder-structure.md`).
 
 ## Roles
 
 | Agent role | Responsibility | Primary modules |
 |------------|----------------|-----------------|
 | **PlanningAgent** (singleton) | Emits sequential + parallel plan; does not mutate runtime. | [`pipeline-plan.md`](pipeline-plan.md), [`docs/coding-agent/execution.md`](../coding-agent/execution.md) |
-| **PlannerDoc** | Markdown plan, API/data/security/test notes. | `modes/guarded_pipeline.py` (`planner_doc` stage) |
-| **PlannerPrompt** | Executor-bound prompt from plan. | `modes/guarded_pipeline.py` (`planner_prompt` stage) |
-| **Executor** | Code / structured answer. | `modes/guarded_pipeline.py`, `modes/baseline.py`, `model_adapter.py` |
-| **Verifier** | Quality and policy checks on executor output. | `modes/guarded_pipeline.py` (`verifier`, `verifier_fix`) |
-| **GateEvaluator** | CTO strict gates, `balanced_gates`, hard-stops HS01–HS06. | `cto_gates.py` |
-| **RunArchivist** | Traces, orchestration JSONL, `run.log`, `report.md`. | `runner.py`, `storage.py`, `run_logging.py`, `report.py` |
+| **PlannerDoc** | Markdown plan, API/data/security/test notes. | `sde_modes/modes/guarded_pipeline/planner.py` (`planner_doc` stage) |
+| **PlannerPrompt** | Executor-bound prompt from plan. | `sde_modes/modes/guarded_pipeline/planner.py` (`planner_prompt` stage) |
+| **Executor** | Code / structured answer. | `sde_modes/modes/guarded_pipeline/executor.py`, `sde_modes/modes/baseline/pipeline.py`, `sde_foundations/model_adapter.py` |
+| **Verifier** | Quality and policy checks on executor output. | `sde_modes/modes/guarded_pipeline/verify_pass.py` (`verifier`, `verifier_fix`) |
+| **GateEvaluator** | CTO strict gates, `balanced_gates`, hard-stops HS01–HS06. | `sde_gates/` (`hard_stops.py`, `balanced_gates.py`, `review.py`, …) |
+| **RunArchivist** | Traces, orchestration JSONL, `run.log`, `report.md`. | `sde_pipeline/runner/single_task.py`, `sde_foundations/storage.py`, `sde_pipeline/run_logging.py`, `sde_pipeline/report.py` |
 
 ## Handoff contracts
 

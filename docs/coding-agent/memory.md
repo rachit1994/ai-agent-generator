@@ -2,7 +2,7 @@
 
 ## Goal
 
-Implement the **policy-governed memory subsystem** described in [docs/AI-Professional-Evolution-Master-Architecture.md](../AI-Professional-Evolution-Master-Architecture.md) **§8 Memory Architecture** and **§3 / §9** feedback loops: **episodic**, **semantic**, and **skill** memory with explicit **write/retrieve policy**, **provenance**, **confidence**, and **quality metrics**—without unconstrained self-modification (master **§2 Non-Goals**).
+Implement the **policy-governed memory subsystem** described in [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) **§8 Memory Architecture** and **§3 / §9** feedback loops: **episodic**, **semantic**, and **skill** memory with explicit **write/retrieve policy**, **provenance**, **confidence**, and **quality metrics**—without unconstrained self-modification (master **§2 Non-Goals**).
 
 **Architecture traceability:** **§8** (types, retrieval, write, lifecycle, quality), **§18** mitigations (memory corruption), **§17 Phase 1** (memory subsystem for single-agent evolution).
 
@@ -58,6 +58,37 @@ See [docs/research/self-improvement-research-alignment.md](../research/self-impr
 | HS22 | **Unresolved contradiction** | Two active facts in scope without `contradiction_resolved` event |
 | HS23 | **Autonomy or permission expansion** without **skill / capability evidence** | Permission matrix update event without prerequisite capability events |
 | HS24 | **Memory quality metrics absent** in `local-prod` profile with memory enabled | Config flag `memory_enabled_production: true` but no `memory/quality_metrics.json` emit |
+
+## How memory supports full-stack delivery (concrete flow)
+
+Memory enables the system to get better **across** runs. See [action-plan.md](../onboarding/action-plan.md) §2 Stage 8.
+
+```
+Run N builds a Next.js + Express app. During implementation:
+  - Auth middleware step fails review twice (JWT expiry edge case)
+  - Reviewer finding: "missing token refresh handling"
+  - Learning event captured in learning_events.jsonl
+
+After Run N completes:
+  - Reflection (V6) extracts root cause → episodic memory write:
+      "Next.js + Express auth: always handle JWT refresh in middleware"
+      provenance: run_N, step_review_id_7, learning_event_id_12
+
+Run N+1 builds a different app (React + Express):
+  - Planner receives memory retrieval for "auth middleware" context
+  - retrieval_bundle.json includes the episodic memory with provenance
+  - Planner's question_workbook includes "JWT refresh handling?"
+  - Implementor receives the lesson as context for auth steps
+  → Fewer review failures on auth-related code
+
+If conflicting memory exists:
+  - Old memory: "always use session-based auth"
+  - New memory: "stateless JWT preferred for API-first"
+  → Contradiction detected → quarantine.jsonl
+  → Resolution event required before either is served (HS22)
+```
+
+**Institutional memory, not scratchpad:** Every memory write has provenance (which run, which event, which review). Memories without provenance are rejected (HS21). This prevents the system from "remembering" hallucinated facts.
 
 ## Memory Types (Contract Summary)
 

@@ -9,10 +9,10 @@
 - Protocol and controls: `docs/sde/decision/ab-protocol-and-controls.md`
 - Scorecard: `docs/sde/decision/ab-decision-scorecard.md`
 - Economics: `docs/sde/decision/incremental-economics.md`
-- Synthetic run A summary: `src/services/orchestrator/runtime/outputs/runs/2026-04-17T09-13-13-321916+00-00-58e32b49/summary.json`
-- Synthetic run B summary: `src/services/orchestrator/runtime/outputs/runs/2026-04-17T09-18-26-539178+00-00-449ebc7d/summary.json`
-- Real-workflow run A summary: `src/services/orchestrator/runtime/outputs/runs/2026-04-17T09-23-39-695020+00-00-2808eddb/summary.json`
-- Real-workflow run B summary: `src/services/orchestrator/runtime/outputs/runs/2026-04-17T09-29-04-855234+00-00-21a17b33/summary.json`
+- Synthetic run A summary: `outputs/runs/2026-04-17T09-13-13-321916+00-00-58e32b49/summary.json` (repo root)
+- Synthetic run B summary: `outputs/runs/2026-04-17T09-18-26-539178+00-00-449ebc7d/summary.json`
+- Real-workflow run A summary: `outputs/runs/2026-04-17T09-23-39-695020+00-00-2808eddb/summary.json`
+- Real-workflow run B summary: `outputs/runs/2026-04-17T09-29-04-855234+00-00-21a17b33/summary.json`
 
 ## Rationale
 - Some runs pass strict technical/economic gates, but repeated runs are not consistent.

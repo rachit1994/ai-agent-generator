@@ -48,7 +48,7 @@ Implement CLI command surface skeleton:
 - sde run
 - sde benchmark
 - sde report
-Use Python package structure under `src/services/orchestrator/orchestrator/runtime/cli/`.
+Use Python package structure under `src/orchestrator/runtime/cli/`.
 Add tests for command parsing and invalid argument handling.
 ```
 

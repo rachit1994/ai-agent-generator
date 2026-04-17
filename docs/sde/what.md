@@ -5,8 +5,10 @@
 Build a local CLI SDE baseline that tests whether guardrails + a staged execution
 pipeline improve outcomes versus a plain one-shot baseline.
 
+**Product trajectory (north star):** SDE grows into the **single orchestrator** that drives **full-stack product delivery** the way a small company would: **parallel junior-class agents**, mandatory **reviews and verification**, **governed self-learning**, and **gates that support reliable production pushes**. Staged specs **V1–V7** under `docs/coding-agent/` are **one combined roadmap** toward that outcome; **V1 execution safety always dominates**. See [../onboarding/action-plan.md](../onboarding/action-plan.md) and [../architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md).
+
 Implementation language/runtime:
-- Python 3 CLI (installable import package **`orchestrator`** under `src/services/orchestrator/orchestrator/`; wheel / CLI names remain **`sde`** / **`agent`** per `pyproject.toml`).
+- Python 3 CLI (installable import package **`orchestrator`** under `src/orchestrator/`; wheel / CLI names remain **`sde`** / **`agent`** per `pyproject.toml`).
 
 ## Timebox And Environment
 
@@ -82,24 +84,22 @@ Suggested code layout:
 
 ```text
 src/
-  services/
-    orchestrator/
-      api/
-      runtime/
-        sde/
-          cli/
-          modes/
-          config.py
-          runner.py
-          benchmark.py
-          report.py
-          model_adapter.py
-          safeguards.py
-          eval.py
-          storage.py
-          types.py
-      tests/
-        unit/
+  orchestrator/
+    api/
+    runtime/
+      cli/
+    tests/
+      unit/
+  sde_pipeline/
+    runner/
+    benchmark/
+    config.py
+    report.py
+    run_logging.py
+  sde_modes/
+    modes/
+  sde_gates/
+  sde_foundations/
 data/
   benchmark-tasks.jsonl
 outputs/
@@ -154,11 +154,13 @@ Verdict:
 
 ## Out Of Scope
 
-- Multi-agent lifecycle systems.
-- Distributed/event-sourced production architecture.
-- Cloud deployment and scaling.
+This section lists what the **baseline SDE release described in this document** does not yet implement. Those capabilities are **in scope for the program** under [../onboarding/action-plan.md](../onboarding/action-plan.md) and later `docs/coding-agent/*` extensions—not abandoned.
+
+- Multi-agent lifecycle systems (see V7 [../coding-agent/organization.md](../coding-agent/organization.md)).
+- Distributed/event-sourced production architecture (see V4 [../coding-agent/events.md](../coding-agent/events.md)).
+- Cloud deployment and scaling (optional; `local-prod` remains the production profile per master doc).
 - UI/dashboard work.
-- Production-grade org authz/policy systems.
+- Production-grade org authz/policy systems (see V7).
 
 ## Definition Of Done
 

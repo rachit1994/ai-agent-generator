@@ -23,7 +23,7 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 
 ## Phase 1 - CLI Skeleton And Single Task Run
 
-- [x] Create CLI entrypoint module under `src/services/orchestrator/orchestrator/runtime/cli/`.
+- [x] Create CLI entrypoint module under `src/orchestrator/runtime/cli/`.
 - [x] Add `sde run` command parsing.
 - [x] Add `sde benchmark` command parsing.
 - [x] Add `sde report` command parsing.

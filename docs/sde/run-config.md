@@ -15,7 +15,7 @@
 
 ## Per-run artifacts (written under `outputs/runs/<run-id>/`)
 
-Runs resolve the `outputs/` directory by walking up from the current working directory until a `pyproject.toml` is found (repo root), so artifacts land in **repository-root** `outputs/` even when the CLI is launched from `src/services/orchestrator/runtime/`. Override with env **`SDE_OUTPUTS_ROOT`** (absolute path to the `outputs` directory that will contain `runs/`).
+Runs resolve the `outputs/` directory by walking up from the current working directory until a `pyproject.toml` is found (repo root), so artifacts land in **repository-root** `outputs/` even when the CLI is launched from `src/orchestrator/runtime/` (or any subdirectory). Override with env **`SDE_OUTPUTS_ROOT`** (absolute path to the `outputs` directory that will contain `runs/`).
 
 - `orchestration.jsonl`: stage-by-stage log (agent name/type/role, attempts, retries, errors, excerpts)
 - `answer.txt`: the raw `answer` string emitted by the mode

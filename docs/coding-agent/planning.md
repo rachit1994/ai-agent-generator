@@ -6,8 +6,10 @@ Extend V1 so SDE can drive a **production-leaning full-stack application** in th
 
 **Priority order (V2 product posture):**
 
-1. **Self-learning (first priority)** — Every major phase must **produce durable learning artifacts** (`learning_events.jsonl` and optional `learning_synthesis.md`): capture what was tried, what failed, what was inferred from research, and what the next run should do differently. Time and token budget should **prefer allocating margin to learning capture and synthesis** over shaving latency on mechanical steps. Optional **playbook deltas** (human-reviewable text or structured hints only) may append under `.agent/sde/` when the plan allows.
-2. **Absolute safety floor (non-bypassable)** — Learning must **never** override **HS03**, **HS04**, **HS06**, or token/context integrity from V1; unsafe or ungoverned “learning” is invalid.
+Global ordering is defined in [action-plan.md](../onboarding/action-plan.md) §2. Within V2, priorities are:
+
+1. **Absolute safety floor (V1 / non-bypassable)** — [execution.md](execution.md) **HS01–HS06** and token/context integrity **always** win. “Self-learning first” means **first among planning activities inside the safe envelope**—not above execution safety. Learning must **never** override **HS03**, **HS04**, **HS06**, or any V1 gate; unsafe or ungoverned “learning” is invalid.
+2. **Motivated self-learning (primary planning priority)** — Every major phase must **produce durable learning artifacts** (`learning_events.jsonl` and optional `learning_synthesis.md`): capture what was tried, what failed, what was inferred from research, and what the next run should do differently. Time and token budget should **prefer allocating margin to learning capture and synthesis** over shaving latency on mechanical steps—**after** V1 gates are satisfied for the run. Optional **playbook deltas** (human-reviewable text or structured hints only) may append under `.agent/sde/` when the plan allows.
 3. **Planning quality and gate completeness** — Question policy, doc pack, doc review, and plan lock remain mandatory before implementation; learning **informs** them and is **recorded** when they change (e.g. `plan_amendment` rationale linked to `learning_events.jsonl` entries).
 4. **Wall-clock speed (last)** — Optional performance budgets apply only after learning minima for the active **LearningFirstProfile** (see Execution Profiles) are met; speed must not cap learning below those minima.
 
@@ -146,13 +148,65 @@ Any single violation blocks V2 readiness. HS01–HS06 definitions match [docs/co
 5. **Doc pack:** Minimum recommended files (adjust to product): `docs/product-brief.md`, `docs/architecture.md`, `docs/test-plan.md`; all listed in manifest with hashes.
 6. **Doc review:** Automated + optional human sign-off; failures produce `required_fixes` in `review.json`.
 7. **Plan lock:** `project_plan.json` lists phases; each phase lists atomic `step_id` entries (execution deferred to V3) with `implementation_allowed` flags.
-8. **Self-learning (priority workstream):** Structured events are **mandatory** under LearningFirstProfile minima; synthesis and playbook deltas are optional. No automatic **policy** promotion without human or gated workflow (V6+); learning **content** may feed questions and docs freely within safety bounds.
+8. **Self-learning (priority planning workstream, inside V1 envelope):** Structured events are **mandatory** under LearningFirstProfile minima; synthesis and playbook deltas are optional. No automatic **policy** promotion without human or gated workflow (V6+); learning **content** may feed questions and docs freely within safety bounds ([action-plan.md](../onboarding/action-plan.md) §2).
 
-## Self-Learning (Bounded, V2 priority)
+## How planning and learning work in practice (concrete flow)
+
+This section describes **how** V2 drives the planning stage before code is written, and how learning feeds back **within** a run. See [action-plan.md](../onboarding/action-plan.md) §2 Stage 1.
+
+### The planning pipeline
+
+```
+User prompt arrives at orchestrator
+  → Planner agent (junior role) produces:
+      1. discovery.json — constraints, stack, non-goals
+         Learning event: "hypothesis: X; unknown: Y"
+      2. research_digest.md — competitive scan, patterns
+         Learning event: "rejected alternative A because B"
+      3. question_workbook.jsonl — unknowns surfaced
+         Learning event: "question Q revealed constraint C"
+      4. Doc files (product brief, architecture, test plan)
+      5. doc_pack_manifest.json with content hashes
+
+  → Reviewer agent (separate call) evaluates doc pack:
+      doc_review.json: passed or failed with required_fixes
+      Learning event: "review found gap X; lesson: Y"
+
+      If failed: Planner revises, resubmits (max 3 retries)
+      If still failing: blocked_human
+
+  → On pass: project_plan.json locked
+      Phases, step_ids, depends_on, rollback_hints
+      Learning event: "plan structure decision: Z because W"
+```
+
+### How learning feeds back within the same run
+
+```
+learning_events.jsonl accumulates throughout planning.
+When the build loop (V3) begins:
+
+  For each step, the Implementor receives:
+    - step scope from project_plan.json
+    - relevant learning_events (filtered by phase/topic)
+
+  Example: step is "implement auth middleware"
+    Learning event from planning: "rejected session-based auth
+    because stateless JWT aligns better with API-first architecture"
+    → Implementor receives this context → avoids the rejected path
+
+  After each step review:
+    Learning event: "step N review finding: missed edge case X"
+    → Available to subsequent steps in the same lane
+```
+
+**Motivated learning:** The system **must** spend tokens on learning capture. This is not optional overhead — it is the mechanism by which run N+1 avoids run N's mistakes. But it operates **inside** V1 token budgets (HS06), never above them.
+
+## Self-Learning (Bounded; first among planning activities when safe)
 
 - Append-only `learning_events.jsonl`; each line: `event_id`, `type` (`episode` \| `synthesis` \| `playbook_hint`), `refs` (trace line or path), `created_at`, optional `phase`, no executable payload.
 - **LearningFirstProfile minima (default for V2-class runs when `run_profile` is unset or `learning_first`):** at least **8** valid lines in `learning_events.jsonl` by plan lock, with **≥1** line after discovery, **≥1** after research/differentiation, **≥1** after question policy gate, **≥1** after doc review (pass or fail). Fewer lines **fails HS10** when profile is `learning_first`.
-- Max size per run configurable; default **512 KiB** total append for `learning_events.jsonl` per run window (increased from prior 256 KiB to reflect learning priority); `playbook_delta.jsonl` shares the same cap unless split in config.
+- Max size per run configurable; default **512 KiB** total append for `learning_events.jsonl` per run window (reflects motivated learning within token budgets—**subordinate** to V1 HS03/HS06); `playbook_delta.jsonl` shares the same cap unless split in config.
 - Learning **never** bypasses HS04 or token/context integrity (HS03, HS06).
 
 ## External research alignment (self-learning and refinement)

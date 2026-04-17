@@ -2,10 +2,13 @@
 requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+dev-mode-dirs = ["src"]
+
 [project]
 name = "sde"
-version = "0.2.0"
-description = "SDE: local CLI for guarded vs baseline benchmarking (orchestrator runtime)"
+version = "0.3.0"
+description = "SDE: local CLI orchestrator toward full-stack, gated delivery (guarded vs baseline; coding-agent V1–V7 roadmap in docs)"
 requires-python = ">=3.10"
 dependencies = []
 
@@ -17,7 +20,13 @@ agent = "orchestrator.runtime.cli.main:main"
 dev = ["pytest>=8.0.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/services/orchestrator/tests/unit"]
+testpaths = ["src/orchestrator/tests/unit"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/services/orchestrator/orchestrator"]
+packages = [
+  "src/orchestrator",
+  "src/sde_foundations",
+  "src/sde_gates",
+  "src/sde_modes",
+  "src/sde_pipeline",
+]

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Satisfy the **event-sourced execution and audit spine** of [docs/AI-Professional-Evolution-Master-Architecture.md](../AI-Professional-Evolution-Master-Architecture.md) **§12 Event-Sourced Architecture**, **§15 Production Architecture** (storage/orchestration foundations), and **§17 Phase 0 — Core Runtime** exit themes: append-only events, **replay fail-closed**, **replay manifests**, and **kill switch** visibility—while inheriting V1–V3 contracts wherever coding-agent runs still apply.
+Satisfy the **event-sourced execution and audit spine** of [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) **§12 Event-Sourced Architecture**, **§15 Production Architecture** (storage/orchestration foundations), and **§17 Phase 0 — Core Runtime** exit themes: append-only events, **replay fail-closed**, **replay manifests**, and **kill switch** visibility—while inheriting V1–V3 contracts wherever coding-agent runs still apply.
 
 **Architecture traceability:** Master sections **§12**, **§14** (stability / replay drift), **§15** (local runtime, storage), **§17 Phase 0**, **§19.D P0** (Event Store Contract v1, release gates).
 
@@ -70,6 +70,28 @@ V4 validation-ready posture for **platform slice** requires, in addition to V1 b
 
 - `ReplayCriticalDriftCount == 0` for manifests marked **critical** in config.
 - `UnsafeActionRate` budgets still enforced at orchestration boundary (feeds Governance).
+
+## How the event trail works in practice (concrete flow)
+
+Every decision in Stages 1–6 ([action-plan.md](../onboarding/action-plan.md) §2) produces events. V4 makes the event trail a **contract**, not just logs.
+
+```
+During a run:
+  Each pipeline stage emits → traces.jsonl (V1)
+  Each step review emits → orchestration.jsonl (V3)
+  Each lease acquire/release emits → platform events (V7)
+  Each learning event emits → learning_events.jsonl (V2)
+
+V4 wraps these in event envelopes with:
+  event_id, aggregate_id, causation_id, contract_version, occurred_at
+
+After a run (or on cadence):
+  Replay job reads events → rebuilds state
+  Compares to replay_manifest.json (expected hash chain)
+  If mismatch: HS18 fires, drift count > 0 → blocks promotion
+```
+
+**Why this matters for full-stack delivery:** When the system produces a working app, you can answer "why did it choose Next.js over Remix?" by tracing: user prompt → discovery event → research event → plan lock event → step implementation events. Every decision is attributable.
 
 ## Execution Profiles
 

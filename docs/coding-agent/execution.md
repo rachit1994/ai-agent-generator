@@ -2,6 +2,8 @@
 
 ## Goal
 
+**Global precedence:** V1 (this spec, HS01–HS06) is the **non-bypassable trust base** for all later coding-agent extensions. Nothing in V2–V7 may trade away execution safety, token/context integrity, or balanced gate evidence for speed or learning volume. See [action-plan.md](../onboarding/action-plan.md) §2.
+
 Deliver the coding-agent **execution extension** as a local-first orchestration runtime that can:
 - run long tasks reliably,
 - run the same task multiple times with reproducible artifacts,
@@ -43,12 +45,12 @@ Baseline contracts are in `docs/sde/what.md` and `docs/sde/implementation-contra
 | Token/context | Per-task token cap in run config | Per-stage input/output budgets, `token_context.json`, no silent truncation |
 | Readiness | Verdict from benchmark metrics | Strict balanced scores plus hard-stops; CTO gates remain `validating` until evidence thresholds pass |
 
-This extension stays aligned with orchestrator code under `src/services/orchestrator/orchestrator/runtime/`; it does not require the full master OS service tree to exist before validation.
+This extension stays aligned with orchestrator code under `src/orchestrator/runtime/`; it does not require the full master OS service tree to exist before validation.
 
 ## Folder-Structure Compliance
 
 This extension does not introduce a new repository layout. It aligns with:
-- `docs/operating-system-folder-structure.md` for long-term target boundaries.
+- `docs/architecture/operating-system-folder-structure.md` for long-term target boundaries.
 - Current baseline implementation roots: `src/`, `docs/`, `data/`, `outputs/`.
 - Local SDE demos: `demo_apps/` (gitignored at repo root); tracked seed at `docs/templates/sde-demo/`.
 - Implementation sequencing and parallel lanes: [`docs/sde/pipeline-plan.md`](../sde/pipeline-plan.md); multi-agent code map: [`docs/sde/multi-agent-build.md`](../sde/multi-agent-build.md).
@@ -72,9 +74,9 @@ All run-scoped artifacts stay under:
 
 Optional baseline-aligned files remain allowed when the pipeline emits them: `answer.txt`, `generated_script.py`, `planner_doc.md`, `executor_prompt.txt`, `verifier_report.json`.
 
-Contract JSON schemas may live under `src/contracts/` when implemented; this spec defines required logical fields so validators can be added without ambiguity.
+Contract JSON schemas may live in a dedicated `contracts/` tree when implemented (see master OS layout in `docs/architecture/operating-system-folder-structure.md`); this spec defines required logical fields so validators can be added without ambiguity.
 
-Runtime validation helper (for CI and local checks): `orchestrator.runtime.cto_gates.validate_execution_run_directory` must return `ok: true` and `validation_ready: true` on a reference green run.
+Runtime validation helper (for CI and local checks): `sde_gates.validate_execution_run_directory` must return `ok: true` and `validation_ready: true` on a reference green run.
 
 ## Functional Requirements
 
@@ -104,6 +106,30 @@ Runtime validation helper (for CI and local checks): `orchestrator.runtime.cto_g
    - runtime applies a deterministic context policy when prompt/context nears model limits.
    - policy order is explicit: prioritize required instructions, then recent task state, then historical context.
    - overflow is handled by structured summarization/compression with provenance references.
+
+## How the runtime drives a full-stack task (concrete flow)
+
+The action plan ([action-plan.md](../onboarding/action-plan.md) §2) describes the end-to-end delivery. V1 execution owns the **foundational loop** that every later version builds on:
+
+```
+User prompt
+  → Orchestrator creates run_id, output directory
+  → Selects mode (baseline or guarded_pipeline)
+  → For each pipeline stage:
+      Pre-check: token budget (HS06), context overflow (HS03)
+      Execute: LLM call with stage-specific persona
+      Post-check: output schema validation, safety scan (HS04)
+      Trace: emit to traces.jsonl (HS05)
+  → Reviewer stage: produces review.json (HS01)
+  → Gate sweep: balanced scores + hard-stops
+  → Terminal state: pass / fail / incomplete with reasons
+```
+
+**Agents as junior engineers:** Each pipeline stage's LLM call uses a **role persona** (planner, implementor, reviewer). The orchestrator is deterministic Python — it enforces order, budgets, and gates. The LLM is the junior who does the creative work; the orchestrator is the process that keeps the junior honest. See [action-plan.md](../onboarding/action-plan.md) §3 for the full role table.
+
+**Continuous gates, not final checkpoint:** Token checks happen **before** every LLM call. Schema validation happens **after** every LLM output. The balanced gate score is computed at run end, but individual hard-stops block progress **immediately** when violated.
+
+**Multi-file delivery:** A full-stack task produces code, tests, docs, configs. All go under `outputs/runs/<run-id>/outputs/`. The `review.json` → `artifact_manifest` lists every expected file with `present: boolean`.
 
 ## Non-Functional Requirements
 
