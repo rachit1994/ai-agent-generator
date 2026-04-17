@@ -134,6 +134,21 @@ repo/
    \- runs/<run-id>/
 ```
 
+## This repository (SDE orchestrator snapshot)
+
+The tree above is the **target** OS layout. In *this* repo today, the pieces that exist map as follows (so paths stay stable without inventing parallel trees):
+
+| Target (master doc) | Current path in this repo |
+|---------------------|---------------------------|
+| `src/services/orchestrator/` service shell | `src/services/orchestrator/` — contains `api/`, `runtime/`, `tests/`, `README.md` per service atomicity rules. |
+| Orchestrator `runtime/` | `src/services/orchestrator/runtime/` — Python package **`sde`** (`runtime/sde/`) is the local SDE CLI and benchmark runtime; installable via `pyproject.toml` `[tool.hatch.build.targets.wheel]`. |
+| `outputs/runs/<run-id>/` | **Repository root** `outputs/runs/<run-id>/` only (gitignored). The CLI resolves this via `sde.utils.outputs_base()`; do not add a second `outputs/` tree under `src/`. |
+| `src/data/` … benchmark suites | `data/` at repo root (e.g. `data/benchmark-tasks.jsonl`). |
+| Coding-agent extension specs | `docs/coding-agent/*.md` only — no `docs/vN/` directories. |
+| SDE baseline (CLI contract) | `docs/sde/` |
+
+As more master-aligned services land, add them under `src/services/<name>/` using the same `api/`, `runtime/`, `tests/` pattern.
+
 ## Service Atomicity Rules
 
 - Every service contains `api/`, `runtime/`, `tests/`, and `README.md`.

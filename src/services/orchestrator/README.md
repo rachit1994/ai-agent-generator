@@ -1,7 +1,16 @@
-# `src/services/orchestrator`
+# Orchestrator service (`src/services/orchestrator`)
 
-- Purpose: Orchestrator contracts and service-specific orchestration interfaces.
-- Scope: Folder path is `src/services/orchestrator`.
-- Should contain: Should contain implementation files, schemas, tests, or docs directly relevant to `services/orchestrator`.
-- Should not contain: Should not contain unrelated domain logic or artifacts owned by sibling folders under `src/`.
-- Keep files here focused, small, and aligned with this folder contract.
+Aligned to [docs/operating-system-folder-structure.md](../../../docs/operating-system-folder-structure.md) **service atomicity**: this folder is one deployable unit with a stable internal layout.
+
+## Layout
+
+| Path | Role |
+|------|------|
+| `api/` | Public import surface and HTTP/RPC boundaries when the service exposes an API. |
+| `runtime/sde/` | **SDE** Python package: local CLI (`sde` / `agent` entrypoints), benchmark runner, CTO gate helpers, orchestration modes. Built as a wheel from repo `pyproject.toml`. |
+| `tests/` | Service tests (`pytest` testpaths point at `tests/unit/`). |
+| `README.md` | This file. |
+
+## Outputs
+
+Run artifacts are written only under **repository root** `outputs/runs/<run-id>/` (see `sde.utils.outputs_base`). They are gitignored; do not commit traces or reports into `src/`.

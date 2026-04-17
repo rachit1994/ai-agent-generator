@@ -4,6 +4,7 @@ This repository defines the full production architecture for an AI Professional 
 
 Primary source of truth:
 - `docs/AI-Professional-Evolution-Master-Architecture.md`
+- `docs/architecture-goal-completion.md` — how finishing all `docs/coding-agent/*` extensions relates to **full** master-doc completion (§14, §17, §28)
 
 Supporting implementation docs:
 - `docs/operating-system-folder-structure.md`
@@ -15,7 +16,7 @@ Supporting implementation docs:
 - `docs/coding-agent/memory.md` — memory subsystem, HS21–HS24 (master §8, §17 Phase 1)
 - `docs/coding-agent/evolution.md` — learning, evaluation, lifecycle, HS25–HS28 (master §6, §9, §13, §17 Phases 1–3)
 - `docs/coding-agent/organization.md` — multi-agent, IAM, federation, HS29–HS32 (master §5, §15–§17 Phases 2–4)
-- `docs/README.md` — reading order and cumulative hard-stop index
+- `docs/README.md` — reading order, extension map, cumulative hard-stop index
 - `docs/research/self-improvement-research-alignment.md` — papers and techniques (self-learning, self-training, alignment) mapped to coding-agent specs
 - `docs/sde/pipeline-plan.md`
 - `docs/sde/multi-agent-build.md`
