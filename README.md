@@ -8,6 +8,18 @@ Primary source of truth:
 Supporting implementation docs:
 - `docs/operating-system-folder-structure.md`
 - `docs/swarm-token-and-system-requirements-math.md`
+- `docs/coding-agent/execution.md` — per-run artifacts, balanced CTO gates, HS01–HS06
+- `docs/coding-agent/planning.md` — self-learning-first planning and documentation gates, HS07–HS12
+- `docs/coding-agent/completion.md` — atomic execution, completion, verification, HS13–HS16
+- `docs/coding-agent/events.md` — event store, replay, lineage, HS17–HS20 (master §12, §17 Phase 0)
+- `docs/coding-agent/memory.md` — memory subsystem, HS21–HS24 (master §8, §17 Phase 1)
+- `docs/coding-agent/evolution.md` — learning, evaluation, lifecycle, HS25–HS28 (master §6, §9, §13, §17 Phases 1–3)
+- `docs/coding-agent/organization.md` — multi-agent, IAM, federation, HS29–HS32 (master §5, §15–§17 Phases 2–4)
+- `docs/README.md` — reading order and cumulative hard-stop index
+- `docs/research/self-improvement-research-alignment.md` — papers and techniques (self-learning, self-training, alignment) mapped to coding-agent specs
+- `docs/sde/pipeline-plan.md`
+- `docs/sde/multi-agent-build.md`
+- `docs/templates/sde-demo/` — tracked seed for local demos under gitignored `demo_apps/`
 
 ---
 

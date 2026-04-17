@@ -1,6 +1,6 @@
 import pytest
 
-from agent_mvp.eval import aggregate_metrics, root_cause_distribution, strict_gate_decision, verdict_for
+from sde.eval import aggregate_metrics, root_cause_distribution, strict_gate_decision, verdict_for
 
 
 def event(mode: str, passed: bool, latency: int) -> dict:

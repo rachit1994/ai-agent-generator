@@ -531,6 +531,22 @@ Roadmap governance:
 - Phase 0.5 contract freeze is mandatory before implementation scale.
 - Phase exits require conformance evidence against operational contracts and release gates.
 
+## Repository version specifications (implementation ladder)
+
+Extension specs under `docs/coding-agent/` (execution through organization) translate this blueprint into staged, CTO-style acceptance criteria, artifacts, and hard-stops. Use them as the conformance spine for roadmap phase exits:
+
+| Spec | Primary architecture mapping |
+|------|------------------------------|
+| [coding-agent/execution.md](coding-agent/execution.md) | Execution contracts, balanced gates, token/context evidence (underpins auditable execution across sections) |
+| [coding-agent/planning.md](coding-agent/planning.md) | Planning and documentation gates before substantive implementation (governance, deliberate quality) |
+| [coding-agent/completion.md](coding-agent/completion.md) | Completion, verification bundles, Definition of Done (production pipeline rigor) |
+| [coding-agent/events.md](coding-agent/events.md) | §12 Event-sourced architecture; §15 local runtime/storage foundations; §17 Phase 0; §14 replay stability; §19.D P0 event store items |
+| [coding-agent/memory.md](coding-agent/memory.md) | §8 Memory architecture; §18 memory risks; §17 Phase 1 memory subsystem |
+| [coding-agent/evolution.md](coding-agent/evolution.md) | §6 Lifecycle; §9 Learning and evolution; §11 Guardrails; §13 Evaluation; §17 Phases 1–3 |
+| [coding-agent/organization.md](coding-agent/organization.md) | §5 Agent organization; §15 identity and authorization; §16 scalability; §17 Phases 2–4 |
+
+Phase exits in §17 should cite concrete evidence paths (artifacts, gate IDs, replay manifests) defined in `docs/coding-agent/execution.md` and `docs/coding-agent/planning.md` through `docs/coding-agent/organization.md`. See also [docs/README.md](README.md) for reading order.
+
 ---
 
 # 18. Risks

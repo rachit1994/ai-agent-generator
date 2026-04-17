@@ -119,3 +119,10 @@ otel-export/
 # evidence/.local/
 
 /outputs/
+
+# SDE run artifacts under the orchestrator package (legacy cwd-relative runs); root
+# ``/outputs/`` is canonical — see ``sde.utils.outputs_base``.
+src/services/orchestrator/runtime/outputs/
+
+# Local SDE demo applications (not committed; seed from docs/templates/sde-demo)
+/demo_apps/

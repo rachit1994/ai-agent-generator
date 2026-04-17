@@ -4,9 +4,10 @@ import json
 from pathlib import Path
 
 import sde.runner as runner
+from sde.cto_gates import validate_execution_run_directory
 
 
-def test_execute_single_task_writes_artifacts(tmp_path: Path, monkeypatch) -> None:
+def test_execute_single_task_emits_cto_artifacts_and_passes_gates(tmp_path: Path, monkeypatch) -> None:
     def _fake_run_baseline(run_id: str, task_id: str, prompt: str, config):  # type: ignore[no-untyped-def]
         output_obj = {
             "answer": "```python\nprint('hello')\n```",
@@ -39,8 +40,13 @@ def test_execute_single_task_writes_artifacts(tmp_path: Path, monkeypatch) -> No
     result = runner.execute_single_task("ignored", "baseline")
     output_dir = Path(result["output_dir"])
 
-    assert (output_dir / "answer.txt").exists()
-    assert (output_dir / "generated_script.py").exists()
-    assert (output_dir / "orchestration.jsonl").exists()
-    assert (output_dir / "run.log").exists()
+    assert (output_dir / "review.json").is_file()
+    assert (output_dir / "token_context.json").is_file()
+    summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
+    assert "balanced_gates" in summary
+    assert summary["quality"]["validation_ready"] is True
 
+    gate = validate_execution_run_directory(output_dir, mode="baseline")
+    assert gate["validation_ready"] is True
+    assert gate["ok"] is True
+    assert not gate["errors"]

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import agent_mvp.model_adapter as model_adapter
-from agent_mvp.config import DEFAULT_CONFIG
-from agent_mvp.modes.guarded_pipeline import run_guarded_pipeline
+import sde.model_adapter as model_adapter
+from sde.config import DEFAULT_CONFIG
+from sde.modes.guarded_pipeline import run_guarded_pipeline
 
 
 def test_guarded_pipeline_planner_called_twice_and_sequential(monkeypatch) -> None:

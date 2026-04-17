@@ -5,13 +5,13 @@ build-backend = "hatchling.build"
 [project]
 name = "sde"
 version = "0.2.0"
-description = "SDE: local CLI MVP for guarded vs baseline benchmarking"
+description = "SDE: local CLI for guarded vs baseline benchmarking (orchestrator runtime)"
 requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
-sde = "agent_mvp.cli.main:main"
-agent = "agent_mvp.cli.main:main"
+sde = "sde.cli.main:main"
+agent = "sde.cli.main:main"
 
 [dependency-groups]
 dev = ["pytest>=8.0.0"]
@@ -20,4 +20,4 @@ dev = ["pytest>=8.0.0"]
 testpaths = ["src/services/orchestrator/tests/unit"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/services/orchestrator/runtime/agent_mvp"]
+packages = ["src/services/orchestrator/runtime/sde"]

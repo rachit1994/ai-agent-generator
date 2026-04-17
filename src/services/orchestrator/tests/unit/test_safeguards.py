@@ -1,4 +1,4 @@
-from agent_mvp.safeguards import validate_structured_output, validate_task_text
+from sde.safeguards import validate_structured_output, validate_task_text
 
 
 def test_rejects_empty_task() -> None:

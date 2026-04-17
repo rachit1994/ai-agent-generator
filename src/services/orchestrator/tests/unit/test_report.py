@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from agent_mvp.report import generate_report
-from agent_mvp.storage import ensure_dir, write_json
+from sde.report import generate_report
+from sde.storage import ensure_dir, write_json
 
 
 def test_single_run_report_support(tmp_path, monkeypatch) -> None:
@@ -20,7 +20,7 @@ def test_single_run_report_support(tmp_path, monkeypatch) -> None:
         },
     )
     report = generate_report(run_id)
-    assert "MVP Run Report" in report
+    assert "SDE run report" in report
 
 
 def test_benchmark_report_support(tmp_path, monkeypatch) -> None:
@@ -35,8 +35,8 @@ def test_benchmark_report_support(tmp_path, monkeypatch) -> None:
             "provider": "ollama",
             "mode": "both",
             "models": {"implementation": "q", "support": "g"},
-            "suitePath": "./data/mvp-tasks.jsonl",
-            "suiteVersion": "v1",
+            "suitePath": "./data/benchmark-tasks.jsonl",
+            "suiteVersion": "benchmark-tasks",
             "budgets": {"max_tokens": 1, "max_retries": 1, "timeout_ms": 1},
             "verdict": "supported",
             "passRateDeltaPoints": 10,
@@ -52,7 +52,7 @@ def test_benchmark_report_support(tmp_path, monkeypatch) -> None:
         },
     )
     report = generate_report(run_id)
-    assert "MVP Decision Report" in report
+    assert "SDE decision report" in report
 
 
 def test_benchmark_report_inconclusive_recommends_continue(tmp_path, monkeypatch) -> None:
@@ -67,8 +67,8 @@ def test_benchmark_report_inconclusive_recommends_continue(tmp_path, monkeypatch
             "provider": "ollama",
             "mode": "both",
             "models": {"implementation": "q", "support": "g"},
-            "suitePath": "./data/mvp-tasks.jsonl",
-            "suiteVersion": "v1",
+            "suitePath": "./data/benchmark-tasks.jsonl",
+            "suiteVersion": "benchmark-tasks",
             "budgets": {"max_tokens": 1, "max_retries": 1, "timeout_ms": 1},
             "verdict": "inconclusive",
             "passRateDeltaPoints": 5,

@@ -2,9 +2,9 @@ import json
 from datetime import datetime
 from types import SimpleNamespace
 
-from agent_mvp.modes import baseline as baseline_mode
-from agent_mvp.modes import guarded as guarded_mode
-from agent_mvp.modes import guarded_pipeline as guarded_pipeline_mode
+from sde.modes import baseline as baseline_mode
+from sde.modes import guarded as guarded_mode
+from sde.modes import guarded_pipeline as guarded_pipeline_mode
 
 
 def _dt(iso: str) -> datetime:
