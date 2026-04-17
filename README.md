@@ -7,6 +7,7 @@ Primary source of truth:
 - `docs/architecture-goal-completion.md` — how finishing all `docs/coding-agent/*` extensions relates to **full** master-doc completion (§14, §17, §28)
 
 Supporting implementation docs:
+- `docs/developer-walkthrough.md` — **start here for code orientation** (reading order, folder map, CLI flow, first-day checklist)
 - `docs/operating-system-folder-structure.md`
 - `docs/swarm-token-and-system-requirements-math.md`
 - `docs/coding-agent/execution.md` — per-run artifacts, balanced CTO gates, HS01–HS06

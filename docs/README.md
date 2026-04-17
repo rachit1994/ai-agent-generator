@@ -1,5 +1,11 @@
 # Documentation index
 
+## New to the codebase?
+
+Start with **[Developer walkthrough](developer-walkthrough.md)** — reading order, repository map, where the CLI enters the code, how `outputs/` works, and a first-day checklist.
+
+---
+
 ## Extension map (single canonical tree)
 
 All coding-agent capability specs live under **`docs/coding-agent/`** — no `docs/v1/`-style directories or numbered mirrors.

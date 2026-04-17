@@ -1,7 +1,12 @@
 # `src`
 
-- Purpose: Top-level source tree for the coding agent system.
-- Scope: Folder path is `src`.
-- Should contain: Should contain only domain-organized subfolders (services, contracts, runtime, tools, tests).
-- Should not contain: Should not contain build outputs, run artifacts, or temporary caches.
-- Keep files here focused, small, and aligned with this folder contract.
+Top-level source tree for this repository: **services**, future **contracts**, **tools**, and **tests** — not run artifacts or caches.
+
+## Where to look first
+
+- **Runnable SDE code:** [`services/orchestrator/runtime/sde/`](services/orchestrator/runtime/sde/) — Python package behind the `sde` / `agent` CLI (`pyproject.toml`).
+- **Tests:** [`services/orchestrator/tests/unit/`](services/orchestrator/tests/unit/).
+
+## Documentation
+
+Junior-friendly path through docs and code: **[../docs/developer-walkthrough.md](../docs/developer-walkthrough.md)**.
