@@ -55,7 +55,7 @@ CLI commands:
 
 Modes:
 - `baseline`: `task -> model -> output`
-- `guarded_pipeline`: `plan -> execute -> verify -> repair(optional) -> finalize`
+- `guarded_pipeline`: `planner_doc -> planner_prompt -> executor -> verifier -> executor_fix(optional, max 1) -> verifier_fix(optional) -> finalize`
 
 ## Required Guardrails
 
@@ -107,6 +107,12 @@ outputs/
     traces.jsonl
     summary.json
     report.md
+    orchestration.jsonl
+    answer.txt
+    generated_script.py
+    planner_doc.md
+    executor_prompt.txt
+    verifier_report.json
 ```
 
 ## Experiment And Verdict Rules

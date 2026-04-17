@@ -39,7 +39,15 @@ def _extract_json(text: str) -> Any:
         match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", stripped, flags=re.IGNORECASE)
         if match:
             return json.loads(match.group(1))
-    return json.loads(stripped)
+    try:
+        return json.loads(stripped)
+    except Exception:
+        pass
+    start = stripped.find("{")
+    end = stripped.rfind("}")
+    if start >= 0 and end > start:
+        return json.loads(stripped[start : end + 1])
+    raise ValueError("no_json_object_found")
 
 
 def validate_structured_output(text: str) -> dict[str, Any]:
@@ -64,9 +72,22 @@ def validate_structured_output(text: str) -> dict[str, Any]:
         if refusal is not None and (not isinstance(refusal, dict) or "code" not in refusal or "reason" not in refusal):
             raise ValueError("malformed")
         return {"answer": answer, "checks": checks, "refusal": refusal}
-    except Exception:
+    except Exception as exc:
+        fallback_answer = text.strip()
+        if fallback_answer:
+            return {
+                "answer": fallback_answer,
+                "checks": [
+                    {"name": "json_schema", "passed": False},
+                    {"name": "response_non_empty", "passed": True},
+                ],
+                "refusal": None,
+            }
         return {
             "answer": "",
             "checks": [{"name": "schema", "passed": False}],
-            "refusal": {"code": "malformed_output", "reason": "output_schema_validation_failed"},
+            "refusal": {
+                "code": "malformed_output",
+                "reason": f"output_schema_validation_failed:{type(exc).__name__}",
+            },
         }

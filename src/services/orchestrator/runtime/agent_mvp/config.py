@@ -5,14 +5,16 @@ from dataclasses import asdict, dataclass
 class GuardrailBudgets:
     max_tokens: int = 4096
     max_retries: int = 1
-    timeout_ms: int = 90000
+    planner_timeout_ms: int = 60000
+    verifier_timeout_ms: int = 60000
+    executor_timeout_ms: int = 90000
 
 
 @dataclass(frozen=True)
 class RunConfig:
     provider: str = "ollama"
     implementation_model: str = "qwen2.5:7b-instruct"
-    support_model: str = "gemma 4"
+    support_model: str = "gemma4:latest"
     provider_base_url: str = "http://127.0.0.1:11434"
     fallback_triggers: tuple[str, ...] = (
         "validity_rate_below_0_85_after_stabilization",

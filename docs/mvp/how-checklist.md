@@ -57,18 +57,18 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 
 ## Phase 3 - Guarded Pipeline Mode
 
-- [x] Implement planner stage that outputs ordered steps.
-- [x] Implement planner stage acceptance checks output.
-- [x] Implement executor stage that uses planner steps.
-- [x] Implement verifier stage that checks execution against acceptance checks.
-- [x] Implement optional repair stage with max one retry.
-- [x] Enforce output schema validation before finalize.
+- [x] Enforce strict sequential stages (no skipping).
+- [x] Planner is called twice for every guarded run:
+  - [x] `planner_doc`: produces a planning document (written to `planner_doc.md`).
+  - [x] `planner_prompt`: produces an executor-ready prompt with prompt-engineering guidelines (written to `executor_prompt.txt`).
+- [x] `executor`: generates output using the planner prompt (and planner doc context).
+- [x] `verifier`: verifies executor output against planner outputs and task requirements.
+- [x] `executor_fix` (optional, max one retry): re-asks executor with a fixed prompt to address security, performance, and edge cases.
+- [x] `verifier_fix` (optional): verifies the fixed output.
+- [x] `finalize`: emits final structured metadata.
 - [x] Enforce retry budget cap for guarded mode.
 - [x] Enforce timeout budget cap for guarded mode.
-- [x] Emit stage-level trace entries for planner.
-- [x] Emit stage-level trace entries for executor.
-- [x] Emit stage-level trace entries for verifier.
-- [x] Emit stage-level trace entries for repair attempt (when used).
+- [x] Emit stage-level trace entries for all stages.
 - [x] Emit final structured metadata for guarded mode output.
 - [x] Run the same 3 sample tasks in guarded mode.
   - Verification: all runs complete and produce `traces.jsonl` plus `summary.json`.

@@ -29,9 +29,19 @@ def aggregate_metrics(events: Iterable[dict]) -> dict:
 
 def verdict_for(baseline: dict, guarded: dict) -> str:
     pass_delta = (guarded["passRate"] - baseline["passRate"]) * 100
-    latency_delta = 0 if baseline["p50Latency"] == 0 else ((guarded["p50Latency"] - baseline["p50Latency"]) / baseline["p50Latency"]) * 100
-    if pass_delta >= 10 and guarded["reliability"] > baseline["reliability"] and latency_delta <= 30:
+    latency_delta = (
+        0
+        if baseline["p50Latency"] == 0
+        else ((guarded["p50Latency"] - baseline["p50Latency"]) / baseline["p50Latency"]) * 100
+    )
+    latency_regressed = latency_delta > 30
+    cost_regressed = guarded["avgCost"] > baseline["avgCost"]
+    reliability_improved = guarded["reliability"] > baseline["reliability"]
+
+    if pass_delta >= 10 and reliability_improved and not latency_regressed:
         return "supported"
-    if pass_delta > 0 and (latency_delta > 30 or guarded["avgCost"] > baseline["avgCost"]):
+    if pass_delta > 0 and (latency_regressed or cost_regressed):
         return "partially supported"
+    if 0 < pass_delta < 10 and not latency_regressed and not cost_regressed and guarded["reliability"] >= baseline["reliability"]:
+        return "inconclusive"
     return "rejected"

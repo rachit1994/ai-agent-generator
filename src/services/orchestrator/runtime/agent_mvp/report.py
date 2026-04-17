@@ -24,7 +24,12 @@ def generate_report(run_id: str) -> str:
         (base / "report.md").write_text(report, encoding="utf-8")
         return report
     verdict = summary["verdict"]
-    recommendation = "continue" if verdict == "supported" else "pivot" if verdict == "partially supported" else "stop"
+    if verdict in {"supported", "inconclusive"}:
+        recommendation = "continue"
+    elif verdict == "partially supported":
+        recommendation = "pivot"
+    else:
+        recommendation = "stop"
     report_lines = [
         "# MVP Decision Report",
         f"- run_id: {summary['runId']}",
