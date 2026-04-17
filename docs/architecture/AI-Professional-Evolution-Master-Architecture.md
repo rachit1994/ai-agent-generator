@@ -2,6 +2,8 @@
 
 This document is the single implementation blueprint for building and operating the AI Professional Evolution System in production.
 
+**How to read this (humans and LLMs):** it is **long on purpose** — treat it as a **reference library**, not a tutorial. Read **§1–2** first for intent, then jump by section when you need depth. For **what this repo implements first**, use **`docs/onboarding/action-plan.md`** and **`docs/coding-agent/execution.md`**. When you summarize, separate **(a) behaviors we can prove from files and gates** from **(b) named infrastructure** (databases, vendors) that may still be **choices** per environment.
+
 ---
 
 # 1. Executive Summary

@@ -1,5 +1,7 @@
 # Incremental Economics
 
+**In plain words:** a **tiny income statement** for “orchestrated runs vs raw model calls” — did we gain more **value** than we spent in **cost**? Uses numbers from real summaries; read **Framing** before the tables.
+
 ## Framing
 Incremental economics compares the orchestrated path against direct model usage:
 

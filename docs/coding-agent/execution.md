@@ -1,5 +1,12 @@
 # Coding-Agent — Execution extension
 
+## In plain words
+
+- **Read this when** you need to know what a **trusted run** must produce (folders, JSON files, scores) and which **automatic checks** cannot be skipped.
+- **Hard-stops HS01–HS06** mean: if any one fails, the run must **not** be treated as successful — full stop.
+- **Balanced gates** mean: we score **reliability, delivery, and governance** together instead of pretending one number tells the whole story.
+- **This is V1** — every later version (V2–V7) must stay inside these safety and evidence rules.
+
 ## Goal
 
 **Global precedence:** V1 (this spec, HS01–HS06) is the **non-bypassable trust base** for all later coding-agent extensions. Nothing in V2–V7 may trade away execution safety, token/context integrity, or balanced gate evidence for speed or learning volume. See [action-plan.md](../onboarding/action-plan.md) §2.

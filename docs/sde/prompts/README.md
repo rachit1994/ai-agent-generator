@@ -1,5 +1,7 @@
 # MVP Prompt Playbook
 
+**In plain words:** **copy-paste prompts** for building the MVP inside an AI-assisted editor. Follow **`00-master-sequence.md`** in order; **do not skip** phase gates — each step assumes the last one really finished.
+
 This playbook provides a numbered sequence of prompts you can paste into Cursor
 to build the MVP end-to-end with balanced granularity.
 

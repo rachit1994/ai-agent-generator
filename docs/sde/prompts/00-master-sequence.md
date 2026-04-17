@@ -1,5 +1,7 @@
 # Master Prompt Sequence
 
+**In plain words:** the **ordered script** for building the MVP with an AI pair-programmer. **Stop on red** — if a prompt’s checks fail, fix that step before copying the next block.
+
 Use each prompt exactly in order. Do not move to the next prompt until the
 current prompt's acceptance criteria are met.
 

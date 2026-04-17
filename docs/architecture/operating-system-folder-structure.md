@@ -1,7 +1,9 @@
 # AI Professional Evolution OS - Master-Aligned Folder Structure
 
+**In plain words:** this file draws the **“dream house”** folder tree for the full platform — many services, contracts, and tools — the way the **master architecture** describes it. **This repository is a smaller snapshot** (see the section that maps “dream tree → what we have today”). Use this doc when you wonder **where a future service would live**, not as proof that every folder already exists on disk.
+
 This is the operating-system style repository layout aligned to
-`AI-Professional-Evolution-Master-Architecture.md` (Sections 20-23).
+`docs/architecture/AI-Professional-Evolution-Master-Architecture.md` (Sections 20-23).
 It preserves atomic components with minimal interdependence while matching the
 master architecture service boundaries and contracts exactly.
 
@@ -19,9 +21,16 @@ master architecture service boundaries and contracts exactly.
 ```text
 repo/
 |- docs/
-|  |- AI-Professional-Evolution-Master-Architecture.md
-|  |- operating-system-folder-structure.md
-|  |- swarm-token-and-system-requirements-math.md
+|  |- README.md
+|  |- onboarding/
+|  |- architecture/
+|  |  |- AI-Professional-Evolution-Master-Architecture.md
+|  |  |- architecture-goal-completion.md
+|  |  |- operating-system-folder-structure.md
+|  |  \- swarm-token-and-system-requirements-math.md
+|  |- coding-agent/
+|  |- sde/
+|  |- research/
 |  |- runbooks/
 |  |- adrs/
 |  \- threat-models/

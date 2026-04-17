@@ -1,5 +1,10 @@
 # Coding-Agent V6 Specification — Learning, Evaluation, and Lifecycle
 
+## In plain words
+
+- **V6 is “get better on purpose, with guardrails.”** Reflection after rough patches, **practice**, **canary** tries, and **promotion** only with evidence — not silent self-rewrite of core policy.
+- Uses **memory (V5)** and **events (V4)** so learning stays **linked to real runs**.
+
 ## Goal
 
 Deliver **policy-gated learning**, **evaluation**, and **agent lifecycle** mechanics from [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md): **§6 Agent Lifecycle**, **§9 Learning & Evolution Engine**, **§13 Evaluation Framework**, **§11 Guardrails** (review gating, risk budgets), and **§17 Phase 1–3** themes (single-agent evolution through autonomous learning with bounded risk).

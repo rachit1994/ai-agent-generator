@@ -1,5 +1,7 @@
 # Orchestrator Superprompt (Strict Progress Mode)
 
+**In plain words:** one **large paste** that tells an AI assistant to behave like a **strict project lead** — follow phases, show checklists, and print **machine-readable progress**. Use only if you want **one block** instead of many small prompts.
+
 Copy everything below into Cursor when you want one orchestrator prompt that
 spawns agents, executes all phases, and reports machine-readable progress after
 every prompt.

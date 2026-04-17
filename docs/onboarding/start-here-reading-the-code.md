@@ -2,6 +2,8 @@
 
 This page explains **what the code is for**, **where it lives**, and **which files to open first** so the tree feels less overwhelming. It pairs with **[start-here-reading-the-docs.md](start-here-reading-the-docs.md)**, which walks the documentation side the same way.
 
+**If you are an LLM:** start from **`src/orchestrator/runtime/cli/main.py`** for entry, then **`src/sde_pipeline/runner/single_task.py`** for one run. Assume **`outputs/`** is **created at repo root** when users run `sde`; it is usually **not** in git. When docs and code disagree, **trust the doc for intent** and **trust the code for what actually runs today** — then note the gap.
+
 ---
 
 ## Words you will keep seeing
@@ -46,7 +48,7 @@ coding-agent/                         ← project root
     └── sde_foundations/              ← types, safeguards, eval helpers, paths
 ```
 
-**Master OS scaffold** (extra `contracts/`, `services/`, `tools/`, …) is described in [`operating-system-folder-structure.md`](operating-system-folder-structure.md) as a **target** layout; this repo keeps **`src/`** flat with only the runnable packages above.
+**Master OS scaffold** (extra `contracts/`, `services/`, `tools/`, …) is described in [`operating-system-folder-structure.md`](../architecture/operating-system-folder-structure.md) as a **target** layout; this repo keeps **`src/`** flat with only the runnable packages above.
 
 ---
 

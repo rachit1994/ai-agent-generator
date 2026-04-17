@@ -1,5 +1,11 @@
 # Coding-Agent V2 Specification
 
+## In plain words
+
+- **V2 is “think and write before you build.”** Discovery, questions, in-repo docs, a **doc review**, then a **locked plan** before heavy coding.
+- **Learning events** are a **required diary** of what the system figured out — not a replacement for V1 safety checks.
+- **Order matters:** V1 rules (HS01–HS06) still win if anything conflicts with “move faster” or “learn more.”
+
 ## Goal
 
 Extend V1 so SDE can drive a **production-leaning full-stack application** in the **target repository** with **evidence-backed planning upstream of code**: discovery, external research and differentiation, references to features in other projects, a **pre-implementation question policy**, **in-repo documentation**, a **documentation review gate**, and a **locked phased plan**—while inheriting V1 runtime contracts, strict balanced CTO gates, and hard-stops HS01–HS06.

@@ -1,5 +1,7 @@
 # A/B Protocol And Controls
 
+**In plain words:** rules for comparing **two ways of running tasks** (for example **baseline vs guarded**) so the winner is not just “vibes.” All listed deltas must pass together for a **continue** decision.
+
 ## Goal
 Measure whether the current orchestrated pipeline is materially better than direct model usage.
 

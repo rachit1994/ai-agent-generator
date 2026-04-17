@@ -1,5 +1,7 @@
 # MVP Atomic Checklist
 
+**In plain words:** a **step-by-step setup list** for getting the local tool running on a machine (models pulled, folders created, budgets set). Check boxes **in order** — later steps assume earlier ones worked.
+
 Follow this checklist in order. Do not start a later phase until all checkboxes in the current phase are complete.
 
 ## Phase 0 - Preconditions

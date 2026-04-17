@@ -13,9 +13,9 @@ Flat Python source tree: **`orchestrator`** (CLI + public API) and four **`sde_*
 
 ## Master OS layout
 
-The full multi-service tree (contracts, services, infra, tools, …) is described in **[`docs/operating-system-folder-structure.md`](../docs/operating-system-folder-structure.md)** as the **target** layout. This repo keeps **`src/`** minimal until those slices ship.
+The full multi-service tree (contracts, services, infra, tools, …) is described in **[`docs/architecture/operating-system-folder-structure.md`](../docs/architecture/operating-system-folder-structure.md)** as the **target** layout. This repo keeps **`src/`** minimal until those slices ship.
 
 ## Documentation
 
-- **Easy on-ramp:** **[`docs/start-here-reading-the-docs.md`](../docs/start-here-reading-the-docs.md)** · **[`docs/start-here-reading-the-code.md`](../docs/start-here-reading-the-code.md)**
-- **Engineers:** **[`docs/developer-walkthrough.md`](../docs/developer-walkthrough.md)** · **[`docs/action-plan.md`](../docs/action-plan.md)**
+- **Easy on-ramp:** **[`docs/onboarding/start-here-reading-the-docs.md`](../docs/onboarding/start-here-reading-the-docs.md)** · **[`docs/onboarding/start-here-reading-the-code.md`](../docs/onboarding/start-here-reading-the-code.md)**
+- **Engineers:** **[`docs/onboarding/developer-walkthrough.md`](../docs/onboarding/developer-walkthrough.md)** · **[`docs/onboarding/action-plan.md`](../docs/onboarding/action-plan.md)**

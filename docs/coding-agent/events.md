@@ -1,5 +1,11 @@
 # Coding-Agent V4 Specification — Event Store, Replay, and Lineage
 
+## In plain words
+
+- **V4 is “keep a tamper-evident diary of important decisions.”** Append-only records so you can **replay** what happened and catch drift.
+- **Fail-closed replay** means: if the history does not replay cleanly, **treat that as broken** — do not hand-wave.
+- Builds on **V1–V3**: task output folders still matter; events add a **platform-wide** audit story.
+
 ## Goal
 
 Satisfy the **event-sourced execution and audit spine** of [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) **§12 Event-Sourced Architecture**, **§15 Production Architecture** (storage/orchestration foundations), and **§17 Phase 0 — Core Runtime** exit themes: append-only events, **replay fail-closed**, **replay manifests**, and **kill switch** visibility—while inheriting V1–V3 contracts wherever coding-agent runs still apply.

@@ -1,5 +1,10 @@
 # Coding-Agent V7 Specification — Multi-Agent, Identity, and Organization Intelligence
 
+## In plain words
+
+- **V7 is “many helpers at once, without stepping on each other.”** Clear **ownership** of work areas (**leases**), **who is allowed to do what** (permissions), and **heartbeat** style health so parallel lanes stay safe.
+- Still inherits **V1** onward: more agents is **not** an excuse to drop evidence or gates.
+
 ## Goal
 
 Complete the **multi-agent**, **identity/authorization**, **federated orchestration**, and **organization-level** objectives of [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md): **§5 Agent Organization Model**, **§15** (identity, federated orchestration), **§16 Scalability Strategy**, and **§17 Phase 2–4** (multi-agent evolution through organization intelligence).

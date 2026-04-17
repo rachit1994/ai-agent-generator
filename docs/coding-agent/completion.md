@@ -1,5 +1,11 @@
 # Coding-Agent V3 Specification
 
+## In plain words
+
+- **V3 is “build in small slices until truly done.”** One step at a time, **review each step**, then **tests and checks** that prove the slice works.
+- **Run-to-completion** means forward progress with **clear resume points** — not infinite loops or silent stalls.
+- **Quality beats raw speed:** parallel work exists to finish a big repo, **not** to skip reviews or verification.
+
 ## Goal
 
 Extend V2 so SDE can **execute through completion** of a large full-stack codebase: **atomic steps** with **per-step review**, **run-to-completion** semantics (monotonic progress, resume, bounded budgets), **multi-thousand-file scale** via batching and manifests, and **production verification** evidence—all while inheriting V1 runtime contracts, V1+V2 strict balanced CTO gates, hard-stops HS01–HS12, and adding **HS13–HS16**.

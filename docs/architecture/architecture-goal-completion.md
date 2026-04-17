@@ -1,5 +1,7 @@
 # Achieving the master architecture goal (completion definition)
 
+**In plain words:** the **master architecture** document paints a **very large** company-scale system. This page answers a simpler question in two parts: **(1)** If we finish every **`docs/coding-agent/*`** spec with tests and proof, did we hit the **behavior and safety** goals for this repo? **Usually yes for the “agent spine.”** **(2)** Did we deploy **every named service** in the master doc? **Often no — that is extra work** (infra, ops, readiness scoring) spelled out below.
+
 This document ties **[AI Professional Evolution — Master Architecture](AI-Professional-Evolution-Master-Architecture.md)** to the **versioned extension specs** under `docs/coding-agent/` ([execution](../coding-agent/execution.md), [planning](../coding-agent/planning.md), [completion](../coding-agent/completion.md), [events](../coding-agent/events.md), [memory](../coding-agent/memory.md), [evolution](../coding-agent/evolution.md), [organization](../coding-agent/organization.md)). It answers: *when all “versions” are built in this repo, have we completely achieved the architecture’s goal?*
 
 **Operational plan:** [action-plan.md](../onboarding/action-plan.md) — product north star (full-stack, company-like process, parallel junior agents, quality + speed), **global precedence** (V1 safety before self-learning and speed), phased delivery, and **capability yardsticks** beyond hard-stop checklists.

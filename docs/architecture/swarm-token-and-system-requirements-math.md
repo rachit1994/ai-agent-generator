@@ -1,6 +1,8 @@
 # Swarm Token and Minimum System Requirements Math (Master-Aligned)
 
-This model is aligned to `AI-Professional-Evolution-Master-Architecture.md`:
+**In plain words:** this page is **spreadsheet thinking in sentences** — how to budget **tokens and money**, protect room for **safety and evaluation**, and size a **local machine** when many model calls run in parallel. Skim the **headings** first; dive into formulas only when you are sizing a workload.
+
+This model is aligned to `docs/architecture/AI-Professional-Evolution-Master-Architecture.md`:
 
 - equal quality/cost objective arbitration,
 - protected learning/practice quotas,

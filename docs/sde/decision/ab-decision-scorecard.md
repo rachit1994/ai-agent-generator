@@ -1,5 +1,7 @@
 # A/B Decision Scorecard
 
+**In plain words:** a **filled-in report card** showing whether measured runs cleared the **strict thresholds**. Red / fail rows are **expected** in drafts — the point is to show **how evidence is attached** to a decision.
+
 ## Thresholds (Strict CTO Gate)
 - `pass_rate_delta_points >= 15.0`
 - `reliability_delta_points >= 15.0`

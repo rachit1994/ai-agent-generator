@@ -1,5 +1,10 @@
 # Coding-Agent V5 Specification — Memory System
 
+## In plain words
+
+- **V5 is “remember across tasks, safely.”** Not a free-form scratchpad — **rules** for what may be stored, **where it came from**, and how to **quarantine** bad or conflicting facts.
+- Memory writes tie back to **events (V4)** when both are enabled so changes stay **traceable**.
+
 ## Goal
 
 Implement the **policy-governed memory subsystem** described in [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) **§8 Memory Architecture** and **§3 / §9** feedback loops: **episodic**, **semantic**, and **skill** memory with explicit **write/retrieve policy**, **provenance**, **confidence**, and **quality metrics**—without unconstrained self-modification (master **§2 Non-Goals**).

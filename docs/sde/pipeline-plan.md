@@ -1,5 +1,7 @@
 # SDE — Planning pipeline (sequential + parallel)
 
+**In plain words:** a **project plan for engineers** — what must happen **first** (lock the execution spec, prove artifacts on disk), what can happen **in parallel** after that, and what **“done”** means for the execution slice. It is **not** the full product story; see the action plan for V1–V7 together.
+
 This document is the **single planning-agent output**: it defines the order of work and what may run in parallel to ship the **execution extension** (see [`docs/coding-agent/execution.md`](../coding-agent/execution.md)). For the **full program** (V1–V7, parallel agents, capability metrics), see [`docs/onboarding/action-plan.md`](../onboarding/action-plan.md).
 
 ## Sequential spine (blocking order)

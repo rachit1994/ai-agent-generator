@@ -1,5 +1,7 @@
 # SDE — Multi-agent build map
 
+**In plain words:** one product feature is often built by **several “hats”** (planner, implementer, reviewer). This page is a **simple org chart for code** — which **Python areas** own which hat — so people (and LLMs) do not edit the wrong package.
+
 The execution extension is delivered by **multiple implementation roles** coordinated by the orchestrator. This map ties **roles** to **modules** so ownership stays clear under `src/sde_*` packages and `src/orchestrator/` (aligned to `docs/architecture/operating-system-folder-structure.md`).
 
 ## Roles

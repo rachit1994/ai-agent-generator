@@ -1,5 +1,7 @@
 # SDE run config defaults
 
+**In plain words:** quick **defaults** for models, URLs, timeouts, and token caps — the numbers people copy when reproducing runs. The list under **Per-run artifacts** tells you **which files** should appear under **`outputs/runs/<run-id>/`** for a normal run.
+
 - provider: `ollama`
 - implementation model: `qwen2.5:7b-instruct`
 - support model: `gemma 4`

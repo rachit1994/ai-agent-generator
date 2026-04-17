@@ -1,5 +1,7 @@
 # Phase Gates
 
+**In plain words:** the **green / red checklist** for each chunk of prompts — what must be true before you continue. Pair with **`00-master-sequence.md`**.
+
 Use this with `00-master-sequence.md` to control progression.
 
 ## Phase 0 (Prompts 01-02)

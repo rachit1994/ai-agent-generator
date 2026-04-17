@@ -1,5 +1,7 @@
 # Self-improvement, self-training, and alignment research — alignment with coding-agent specs
 
+**In plain words:** this is a **reading list with commentary**. It says “paper X is about Y; here is how that idea could **help** our specs.” It does **not** change the law: **V1 execution checks still win.** Use it when you want **citations** or **benchmark ideas**, not when you want to skip gates.
+
 This document summarizes **peer-reviewed and widely cited preprints** relevant to **self-learning**, **iterative refinement**, **self-training / self-fine-tuning**, and **governance of model improvement**. It maps each line of work to this repository’s staged specs under [docs/coding-agent/](../coding-agent/) so implementers can justify techniques and **benchmarks** with external evidence.
 
 **Rule:** Nothing here relaxes hard-stops or safety floors in [execution.md](../coding-agent/execution.md); research informs **how** to collect signal, **when** to train, and **what** to measure—not **whether** to skip gates. **Global precedence** for planning vs execution is fixed in [action-plan.md](../onboarding/action-plan.md) §2: **V1 (HS01–HS06) always dominates** motivated self-learning and speed.

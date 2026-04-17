@@ -4,9 +4,13 @@ This guide is for engineers who are new to the repository. It tells you **what t
 
 **Want a gentler on-ramp?** Start with **[start-here-reading-the-docs.md](start-here-reading-the-docs.md)** (ideas and doc order) and **[start-here-reading-the-code.md](start-here-reading-the-code.md)** (where the Python lives and what to open first).
 
+**If you are an LLM:** follow **§2 reading order** before editing. Prefer **small, test-backed** changes under `src/orchestrator/tests/`. Do not invent new artifact filenames without updating **`docs/sde/implementation-contract.md`** and gate code.
+
 ---
 
 ## 1. What this repository is
+
+**In plain words:** this repo holds **(a)** a large written vision of how a trustworthy AI engineering system should work, and **(b)** a **local Python CLI** that already runs tasks and records results. The CLI is the **first concrete slice**; many platform pieces exist today as **specs** so the team agrees on contracts before wiring every service.
 
 This project is an **architecture and local-runtime workspace** for an *AI Professional Evolution* style system: long-horizon, auditable agent execution with gates, benchmarks, and a path toward full platform capabilities described in the master document.
 
@@ -28,14 +32,14 @@ Do these in order the first time through. Skipping ahead makes it easy to get lo
 |------|----------|-----|
 | 0 | [start-here-reading-the-docs.md](start-here-reading-the-docs.md) / [start-here-reading-the-code.md](start-here-reading-the-code.md) | **Easy on-ramp** (docs side or code side). |
 | 1 | [README.md](../README.md) (repo root) | Executive picture, links to all major docs. |
-| 1b | [docs/action-plan.md](action-plan.md) | **Product + delivery plan**: full-stack goal, V1–V7 rollup, safety-first precedence, parallel agents, phases. |
-| 2 | [docs/sde/what.md](sde/what.md) | **SDE baseline**: goals, timebox, models, CLI commands — what “done” means for the local tool. |
-| 3 | [docs/sde/implementation-contract.md](sde/implementation-contract.md) | Required artifacts, pipeline stages, guardrails — what the runtime promises to emit. |
-| 4 | [docs/operating-system-folder-structure.md](operating-system-folder-structure.md) | **Target** folder layout; includes **“This repository (SDE orchestrator snapshot)”** mapping fantasy tree → real paths. |
-| 5 | [docs/coding-agent/execution.md](coding-agent/execution.md) | First **coding-agent extension**: strict run layout, CTO-style gates, hard-stops HS01–HS06 — how runs are *supposed* to look when the extension is fully satisfied. |
-| 6 | [docs/README.md](README.md) | Index of all extension specs and research links. |
+| 1b | [docs/onboarding/action-plan.md](action-plan.md) | **Product + delivery plan**: full-stack goal, V1–V7 rollup, safety-first precedence, parallel agents, phases. |
+| 2 | [docs/sde/what.md](../sde/what.md) | **SDE baseline**: goals, timebox, models, CLI commands — what “done” means for the local tool. |
+| 3 | [docs/sde/implementation-contract.md](../sde/implementation-contract.md) | Required artifacts, pipeline stages, guardrails — what the runtime promises to emit. |
+| 4 | [docs/architecture/operating-system-folder-structure.md](../architecture/operating-system-folder-structure.md) | **Target** folder layout; includes **“This repository (SDE orchestrator snapshot)”** mapping fantasy tree → real paths. |
+| 5 | [docs/coding-agent/execution.md](../coding-agent/execution.md) | First **coding-agent extension**: strict run layout, CTO-style gates, hard-stops HS01–HS06 — how runs are *supposed* to look when the extension is fully satisfied. |
+| 6 | [docs/README.md](../README.md) | Index of all extension specs and research links. |
 
-After that, read other **`docs/coding-agent/*.md`** files as needed for the feature you touch. The master architecture is large; use [docs/architecture-goal-completion.md](architecture-goal-completion.md) to see how extension specs relate to “full” completion.
+After that, read other **`docs/coding-agent/*.md`** files as needed for the feature you touch. The master architecture is large; use [docs/architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md) to see how extension specs relate to “full” completion.
 
 ---
 
@@ -48,7 +52,8 @@ coding-agent/
 ├── data/
 │   └── benchmark-tasks.jsonl # Default benchmark suite (tracked)
 ├── docs/                     # All specifications and this walkthrough
-│   ├── developer-walkthrough.md   # ← you are here
+│   ├── onboarding/           # Easy entry + this walkthrough + action plan
+│   ├── architecture/         # Master blueprint, OS folder map, completion definition
 │   ├── README.md             # Doc index + extension map
 │   ├── coding-agent/         # Extension specs (execution, planning, …)
 │   ├── sde/                    # SDE baseline (CLI, contract, prompts)
@@ -102,7 +107,7 @@ From the repository root:
 3. **Optional smoke (needs local Ollama/models per docs):**  
    `uv run sde run --mode baseline --task "return the string hello"`  
    If models are missing, expect failures; that is an environment issue, not necessarily your code.
-4. **Inspect a run:** After a successful run, open **`outputs/runs/<run-id>/summary.json`** and **`traces.jsonl`** and map fields to [implementation-contract.md](sde/implementation-contract.md).
+4. **Inspect a run:** After a successful run, open **`outputs/runs/<run-id>/summary.json`** and **`traces.jsonl`** and map fields to [implementation-contract.md](../sde/implementation-contract.md).
 
 ---
 
@@ -118,12 +123,12 @@ From the repository root:
 
 | Topic | Document |
 |-------|----------|
-| CLI commands, models, timebox | [docs/sde/what.md](sde/what.md) |
-| Artifact list, pipeline order | [docs/sde/implementation-contract.md](sde/implementation-contract.md) |
-| Run directory layout, gates, HS01+ | [docs/coding-agent/execution.md](coding-agent/execution.md) |
-| Repo vs master OS tree | [docs/operating-system-folder-structure.md](operating-system-folder-structure.md) |
-| Extension ladder, hard-stop index | [Documentation index](README.md) |
-| Full platform vision | [docs/AI-Professional-Evolution-Master-Architecture.md](AI-Professional-Evolution-Master-Architecture.md) |
+| CLI commands, models, timebox | [docs/sde/what.md](../sde/what.md) |
+| Artifact list, pipeline order | [docs/sde/implementation-contract.md](../sde/implementation-contract.md) |
+| Run directory layout, gates, HS01+ | [docs/coding-agent/execution.md](../coding-agent/execution.md) |
+| Repo vs master OS tree | [docs/architecture/operating-system-folder-structure.md](../architecture/operating-system-folder-structure.md) |
+| Extension ladder, hard-stop index | [Documentation index](../README.md) |
+| Full platform vision | [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) |
 
 ---
 
@@ -137,4 +142,4 @@ From the repository root:
 | **Extension spec** | A document under **`docs/coding-agent/`** describing a capability slice beyond the SDE baseline. |
 | **`outputs_base()`** | Resolves the directory containing **`runs/`** — normally repo root **`outputs/`**. |
 
-You now have a path from **README → SDE docs → folder map → CLI entry → run artifacts**. Use the doc index [docs/README.md](README.md) whenever you need the full list of specs.
+You now have a path from **README → SDE docs → folder map → CLI entry → run artifacts**. Use the doc index [docs/README.md](../README.md) whenever you need the full list of specs.

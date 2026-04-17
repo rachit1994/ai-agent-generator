@@ -2,6 +2,8 @@
 
 This page is an easy on-ramp: **where to start**, **why the project exists**, and **what each “version” means** in everyday language. You can follow the ideas here even if you are not diving into Python yet.
 
+**If you are an LLM or any automated reader:** treat this page as **routing instructions**. Prefer **short** docs first (`action-plan.md`, then `../sde/what.md`, then `../coding-agent/execution.md`). Do **not** treat research papers or the long master architecture as permission to skip **V1** checks (HS01–HS06). When you summarize for a human, say **what must be true on disk** (artifacts + gates), not only model intent.
+
 ---
 
 ## Words you will keep seeing
@@ -32,7 +34,7 @@ This page is an easy on-ramp: **where to start**, **why the project exists**, an
 
 **In one line:** One SDE-shaped program should be able to push a **real product** (say, a web app with UI, API, database, and tests) toward something you could **honestly ship** — with **evidence** and **gates**, not just a chat log.
 
-The long-range blueprint is [AI-Professional-Evolution-Master-Architecture.md](AI-Professional-Evolution-Master-Architecture.md). The **day-to-day story** of how work should flow is [action-plan.md](action-plan.md).
+The long-range blueprint is [AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md). The **day-to-day story** of how work should flow is [action-plan.md](action-plan.md).
 
 ---
 
@@ -59,17 +61,17 @@ Think of a ladder: each step adds trust and process. **Together** they tell one 
 **About half an hour:** read these three, in order.
 
 1. **[action-plan.md](action-plan.md)** — the story from “what we want” to “how work flows” (sections 1–2 are the lightest).
-2. **[sde/what.md](sde/what.md)** — what the **tool** does today (`run`, `benchmark`, `report`).
-3. **[coding-agent/execution.md](coding-agent/execution.md)** — the **Goal** and **“How the runtime drives a full-stack task.”** That is where CTO-style gates really show up.
+2. **[sde/what.md](../sde/what.md)** — what the **tool** does today (`run`, `benchmark`, `report`).
+3. **[coding-agent/execution.md](../coding-agent/execution.md)** — the **Goal** and **“How the runtime drives a full-stack task.”** That is where CTO-style gates really show up.
 
 **If you have a full day:** keep going in this order.
 
-4. **[coding-agent/planning.md](coding-agent/planning.md)** — **“How planning and learning work in practice.”**
-5. **[coding-agent/completion.md](coding-agent/completion.md)** — **“How the build loop works in practice.”**
-6. **[architecture-goal-completion.md](architecture-goal-completion.md)** — what “all versions done” **does** and **does not** mean next to the huge master doc.
-7. Skim **[coding-agent/events.md](coding-agent/events.md)**, **[coding-agent/memory.md](coding-agent/memory.md)**, **[coding-agent/evolution.md](coding-agent/evolution.md)**, **[coding-agent/organization.md](coding-agent/organization.md)** — each opens with a **“How … works in practice”** section.
+4. **[coding-agent/planning.md](../coding-agent/planning.md)** — **“How planning and learning work in practice.”**
+5. **[coding-agent/completion.md](../coding-agent/completion.md)** — **“How the build loop works in practice.”**
+6. **[architecture-goal-completion.md](../architecture/architecture-goal-completion.md)** — what “all versions done” **does** and **does not** mean next to the huge master doc.
+7. Skim **[coding-agent/events.md](../coding-agent/events.md)**, **[coding-agent/memory.md](../coding-agent/memory.md)**, **[coding-agent/evolution.md](../coding-agent/evolution.md)**, **[coding-agent/organization.md](../coding-agent/organization.md)** — each opens with a **“How … works in practice”** section.
 
-**If you lose the thread:** open **[README.md](README.md)** in this folder — it is the full map and links out to research.
+**If you lose the thread:** open **[README.md](../README.md)** one level up — it is the full map and links out to research.
 
 ---
 
@@ -89,10 +91,10 @@ Right now, **later steps (roughly V4–V7) exist more on paper than in code**. T
 | You want to… | Open |
 |----------------|------|
 | Describe the product in a short conversation | [action-plan.md](action-plan.md) §1–2 |
-| Talk about quality gates | [coding-agent/execution.md](coding-agent/execution.md) (balanced gates + hard-stops) |
-| Walk someone through the docs set | This page, then [README.md](README.md) |
+| Talk about quality gates | [coding-agent/execution.md](../coding-agent/execution.md) (balanced gates + hard-stops) |
+| Walk someone through the docs set | This page, then [README.md](../README.md) |
 | Walk someone through the code layout | [start-here-reading-the-code.md](start-here-reading-the-code.md) |
-| See the full long-term picture | [AI-Professional-Evolution-Master-Architecture.md](AI-Professional-Evolution-Master-Architecture.md) (long — better as reference than first read) |
+| See the full long-term picture | [AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) (long — better as reference than first read) |
 
 ---
 

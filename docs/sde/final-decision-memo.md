@@ -1,5 +1,7 @@
 # MVP Final Decision Memo
 
+**In plain words:** a **filled-in example** of how a decision memo looks after a benchmark run — verdict, confidence, and why the team chose to continue. Treat the **`run_id`** as **sample data**, not a live pointer.
+
 - run_id: `2026-04-15T19-58-47-174Z-7595de76`
 - verdict: `supported`
 - confidence: `medium` (local-only benchmark with deterministic checks)

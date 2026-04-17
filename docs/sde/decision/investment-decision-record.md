@@ -1,5 +1,7 @@
 # Investment Decision Record
 
+**In plain words:** a **worked example** of how leadership records a go / hold / no-go using **linked evidence files** (protocol, scorecard, economics, run summaries). Use it as a **template for tone and structure**, not as live financial advice.
+
 ## Decision
 - outcome: `continue_constrained`
 - date: `2026-04-17`

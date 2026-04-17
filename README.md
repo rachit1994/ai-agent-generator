@@ -1,30 +1,38 @@
 # AI Professional Evolution System - CTO Architecture Blueprint
 
-This repository defines the full production architecture for an AI Professional Evolution System: a local-first, event-sourced, policy-governed platform where agents evolve from junior execution to organization-level technical leadership.
+**In plain words:** This repo is both a **big design** for a professional-grade “AI engineering organization” and a **small, runnable tool** (`sde`) that already runs tasks and writes proof to disk. The **Markdown in `docs/`** says what “good” means; the **Python in `src/`** implements the **early** slices. Later stages (roughly **V4–V7**) are often **specified first** so code can catch up without guessing.
 
-Primary source of truth:
-- `docs/AI-Professional-Evolution-Master-Architecture.md`
-- `docs/action-plan.md` — **product goal**, version rollup (V1–V7 as one delivery), global precedence (safety before learning/speed), parallel agents, phased plan, capability metrics
-- `docs/architecture-goal-completion.md` — how finishing all `docs/coding-agent/*` extensions relates to **full** master-doc completion (§14, §17, §28)
+This repository still holds the **full production architecture** story: local-first, event-sourced, policy-governed operation — with agents treated as **junior contributors** who need **process, review, and evidence**, not a single chat transcript.
 
-Supporting implementation docs:
-- `docs/start-here-reading-the-docs.md` — **easy doc on-ramp** (glossary, why the project, what V1–V7 mean, simple reading order)
-- `docs/start-here-reading-the-code.md` — **easy code on-ramp** (where Python lives, which files to open first, what is built vs planned)
-- `docs/developer-walkthrough.md` — **engineer onboarding** (reading order, folder map, CLI flow, first-day checklist)
-- `docs/operating-system-folder-structure.md`
-- `docs/swarm-token-and-system-requirements-math.md`
-- `docs/coding-agent/execution.md` — per-run artifacts, balanced CTO gates, HS01–HS06
-- `docs/coding-agent/planning.md` — self-learning-first planning and documentation gates, HS07–HS12
-- `docs/coding-agent/completion.md` — atomic execution, completion, verification, HS13–HS16
-- `docs/coding-agent/events.md` — event store, replay, lineage, HS17–HS20 (master §12, §17 Phase 0)
-- `docs/coding-agent/memory.md` — memory subsystem, HS21–HS24 (master §8, §17 Phase 1)
-- `docs/coding-agent/evolution.md` — learning, evaluation, lifecycle, HS25–HS28 (master §6, §9, §13, §17 Phases 1–3)
-- `docs/coding-agent/organization.md` — multi-agent, IAM, federation, HS29–HS32 (master §5, §15–§17 Phases 2–4)
-- `docs/README.md` — reading order, extension map, cumulative hard-stop index
-- `docs/research/self-improvement-research-alignment.md` — papers and techniques (self-learning, self-training, alignment) mapped to coding-agent specs
-- `docs/sde/pipeline-plan.md`
-- `docs/sde/multi-agent-build.md`
-- `docs/templates/sde-demo/` — tracked seed for local demos under gitignored `demo_apps/`
+**Where to start (pick one):**
+
+- **Words first, no code yet:** `docs/onboarding/start-here-reading-the-docs.md`
+- **Code tree first:** `docs/onboarding/start-here-reading-the-code.md`
+- **Engineer path:** `docs/onboarding/developer-walkthrough.md` then `docs/README.md`
+
+Primary sources of truth:
+- `docs/architecture/AI-Professional-Evolution-Master-Architecture.md` — **full platform** blueprint (long; use as reference).
+- `docs/onboarding/action-plan.md` — **what we are building toward** and **in what order** (V1–V7 as **one** roadmap; **safety before** shortcuts).
+- `docs/architecture/architecture-goal-completion.md` — **what “all specs done” does and does not mean** next to the master doc.
+
+Supporting docs (implementation and specs):
+- `docs/onboarding/start-here-reading-the-docs.md` — **gentle** glossary and reading order.
+- `docs/onboarding/start-here-reading-the-code.md` — **where files live** and what is runnable vs planned.
+- `docs/onboarding/developer-walkthrough.md` — **hands-on** map: CLI, `outputs/`, tests, safe changes.
+- `docs/architecture/operating-system-folder-structure.md` — **target** folder tree for the full OS; compares to this repo.
+- `docs/architecture/swarm-token-and-system-requirements-math.md` — **budgets and sizing** math for swarms and hardware.
+- `docs/coding-agent/execution.md` — **V1:** what each run must **write** and which **checks (HS01–HS06)** must pass.
+- `docs/coding-agent/planning.md` — **V2:** plan and docs **before** big coding; learning log; **HS07–HS12**.
+- `docs/coding-agent/completion.md` — **V3:** small steps, reviews, tests, “done” definition; **HS13–HS16**.
+- `docs/coding-agent/events.md` — **V4:** append-only **event log** and replay; **HS17–HS20**.
+- `docs/coding-agent/memory.md` — **V5:** governed **memory** across runs; **HS21–HS24**.
+- `docs/coding-agent/evolution.md` — **V6:** reflection, practice, promotion, canary; **HS25–HS28**.
+- `docs/coding-agent/organization.md` — **V7:** **many agents**, permissions, leases; **HS29–HS32**.
+- `docs/README.md` — **map of all docs** and cumulative hard-stop index.
+- `docs/research/self-improvement-research-alignment.md` — **papers → our specs** (never overrides V1).
+- `docs/sde/pipeline-plan.md` — **order of work** to ship the execution slice.
+- `docs/sde/multi-agent-build.md` — **who owns which module** for multi-role delivery.
+- `docs/templates/sde-demo/` — **copy-paste seed** for local demos under gitignored `demo_apps/`
 
 ---
 
@@ -282,7 +290,7 @@ Major services include:
 # 16. Repository Structure
 
 Canonical OS-style structure is defined in:
-- `docs/operating-system-folder-structure.md`
+- `docs/architecture/operating-system-folder-structure.md`
 
 In **this** repository, `src/` is intentionally **flat** (`orchestrator` + `sde_*` packages only); empty scaffold folders from the master diagram are omitted until implemented — see the “This repository” section in the doc above.
 
@@ -366,7 +374,7 @@ Performance release thresholds are binary and fail-closed.
 # 21. Swarm Budget and System Requirement Math
 
 Quantitative planning model is defined in:
-- `docs/swarm-token-and-system-requirements-math.md`
+- `docs/architecture/swarm-token-and-system-requirements-math.md`
 
 It provides:
 - balanced utility function (equal quality/cost effectiveness),
@@ -427,13 +435,13 @@ If any hard gate fails, production claim is automatically blocked.
 # 25. Document Index
 
 Primary architecture:
-- `docs/AI-Professional-Evolution-Master-Architecture.md`
+- `docs/architecture/AI-Professional-Evolution-Master-Architecture.md`
 
 Implementation structure:
-- `docs/operating-system-folder-structure.md`
+- `docs/architecture/operating-system-folder-structure.md`
 
 Capacity and budget planning math:
-- `docs/swarm-token-and-system-requirements-math.md`
+- `docs/architecture/swarm-token-and-system-requirements-math.md`
 
 ---
 

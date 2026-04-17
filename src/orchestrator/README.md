@@ -1,6 +1,6 @@
 # Orchestrator (`src/orchestrator`)
 
-Aligned to [docs/operating-system-folder-structure.md](../../docs/operating-system-folder-structure.md): the **SDE orchestrator** Python package lives here as `src/orchestrator/` (import name **`orchestrator`**). Runnable pipeline and modes live in sibling packages **`sde_pipeline`**, **`sde_modes`**, **`sde_gates`**, **`sde_foundations`** under `src/`.
+Aligned to [docs/architecture/operating-system-folder-structure.md](../../docs/architecture/operating-system-folder-structure.md): the **SDE orchestrator** Python package lives here as `src/orchestrator/` (import name **`orchestrator`**). Runnable pipeline and modes live in sibling packages **`sde_pipeline`**, **`sde_modes`**, **`sde_gates`**, **`sde_foundations`** under `src/`.
 
 ## Layout
 

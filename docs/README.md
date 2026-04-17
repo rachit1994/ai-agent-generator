@@ -1,14 +1,25 @@
 # Documentation index
 
-## Documentation layout
+**In plain words:** This folder is the **rulebook** for the project. The code under `src/` tries to follow these rules. When a sentence sounds formal, it usually means “here is what must be true so we can trust runs, reviews, and logs.” **HS01, HS02, …** are numbered **hard-stops**: checks that must pass (or the run is not allowed to pretend it succeeded).
 
-| Folder | What lives here |
-|--------|-----------------|
-| **[`onboarding/`](onboarding/)** | Easy entry guides, engineer walkthrough, and the **[action plan](onboarding/action-plan.md)** (product goal, precedence, phases). |
-| **[`architecture/`](architecture/)** | Master blueprint, completion definition vs full OS deploy, target folder layout, swarm/token math. |
-| **[`coding-agent/`](coding-agent/)** | Versioned extension specs (V1–V7): execution through organization — the conformance spine for the SDE slice. |
-| **[`sde/`](sde/)** | SDE baseline: CLI scope, contracts, prompts, pipeline planning. |
-| **[`research/`](research/)** | External research mapped to specs (e.g. self-improvement techniques). |
+**How to read this (humans or LLMs):**
+
+1. If you are **new**, start in **[`onboarding/`](onboarding/)** — short guides and the **[action plan](onboarding/action-plan.md)** (what we want and how work is supposed to flow).
+2. If you are **implementing or reviewing code**, read **[`sde/what.md`](sde/what.md)** and **[`coding-agent/execution.md`](coding-agent/execution.md)** next — they describe what a “good run” looks like on disk.
+3. If you are **mapping big-picture vision to this repo**, use **[`architecture/`](architecture/)** — especially **[architecture-goal-completion](architecture/architecture-goal-completion.md)** (what “done” means here vs in the huge master doc).
+4. Use this **index** as a map; follow links in order when a doc tells you to.
+
+---
+
+## Where everything lives
+
+| Folder | In everyday terms |
+|--------|-------------------|
+| **[`onboarding/`](onboarding/)** | **Front door for readers:** gentle doc/code guides, engineer walkthrough, and the **story + phases** of delivery ([action plan](onboarding/action-plan.md)). |
+| **[`architecture/`](architecture/)** | **Big blueprint and “are we finished yet?”** — long master architecture, shorter “completion” explainer, dream folder layout, token/budget math. |
+| **[`coding-agent/`](coding-agent/)** | **Staged product specs (V1–V7):** each file adds rules for safer, more complete automation (runs → planning → shipping → events → memory → learning → many agents). |
+| **[`sde/`](sde/)** | **What the local tool (`sde`) does today:** commands, checklists, contracts, prompts, pipeline order. |
+| **[`research/`](research/)** | **Outside papers** tied back to our specs — ideas for learning and quality, **not** permission to skip safety rules. |
 
 ---
 
@@ -22,15 +33,15 @@
 
 ## New to the codebase?
 
-Start with **[Developer walkthrough](onboarding/developer-walkthrough.md)** — reading order, repository map, where the CLI enters the code, how `outputs/` works, and a first-day checklist.
+Start with **[Developer walkthrough](onboarding/developer-walkthrough.md)** — what to open first, where Python and tests live, how runs land under **`outputs/`**, and a simple first-day checklist.
 
-**Product + delivery plan:** **[Action plan](onboarding/action-plan.md)** — full-stack / company-process goal, **global precedence** (V1 safety before self-learning and speed), **V1–V7 as one combined product**, parallel junior agents, capability yardsticks, phased implementation.
+**Product + delivery plan:** **[Action plan](onboarding/action-plan.md)** — what “good” looks like for a **real app** (not a one-off demo), why **safety and run quality (V1) come before** speed and learning tricks, and how **V1–V7** are **one roadmap** built in slices.
 
 ---
 
 ## Extension map (single canonical tree)
 
-All coding-agent capability specs live under **`docs/coding-agent/`** — no `docs/v1/`-style directories or numbered mirrors. **V1–V7 are staged slices of one product** (see [action-plan.md](onboarding/action-plan.md) §3).
+All **coding-agent** specs live as **flat files** under **`docs/coding-agent/`** (we do not mirror versions in extra folders). **V1–V7** are **labels for slices of the same product**, not seven separate products — see [action-plan.md](onboarding/action-plan.md) §3.
 
 | Extension | Role | Spec |
 |-----------|------|------|
@@ -44,7 +55,7 @@ All coding-agent capability specs live under **`docs/coding-agent/`** — no `do
 
 ## Coding-agent extension specs (read in order)
 
-These specs ladder from **task delivery** (execution through completion) toward the full **[AI Professional Evolution — master architecture](architecture/AI-Professional-Evolution-Master-Architecture.md)** platform spine (events through organization). Each spec now includes a **"How it works in practice"** section with concrete orchestration flows. See [action-plan.md](onboarding/action-plan.md) §2 for the end-to-end story.
+Read from **V1 upward** unless a doc sends you elsewhere. Early specs describe **one task, one run folder, provable checks**; later specs add **history, memory, learning, and many agents** — still on paper in places, but the **contracts** are written first on purpose. Each spec includes a **“How it works in practice”** section (concrete steps and files). The full **[master architecture](architecture/AI-Professional-Evolution-Master-Architecture.md)** is the long-form vision; [action-plan.md](onboarding/action-plan.md) §2 is the **short end-to-end story**.
 
 1. **[SDE baseline](sde/what.md)** — CLI scope, `sde` commands, implementation contract entry points.
 2. **[Execution — runtime and CTO gate contracts](coding-agent/execution.md)** — Per-run artifacts, strict balanced gates, hard-stops **HS01–HS06**. **HOW:** §"How the runtime drives a full-stack task" — pipeline stages, continuous gates, agent-as-junior model.
@@ -67,19 +78,19 @@ These specs ladder from **task delivery** (execution through completion) toward 
 | + Learning / lifecycle | HS01–HS28 |
 | + Multi-agent / organization | HS01–HS32 |
 
-Each extension spec under `docs/coding-agent/` includes **Success is not assumed** — a mandatory **checklist** and **benchmark table**. An extension is **not** treated as successful unless every box is checked and every benchmark passes with retained evidence.
+Each extension under `docs/coding-agent/` ends with **Success is not assumed** — a **checklist** and **benchmark table**. “Done” means **every item checked**, benchmarks met, and **proof kept** (run ids, CI logs, artifacts) — not “we feel it works.”
 
 ## Research alignment (self-learning and improvement)
 
-- **[Self-improvement and self-training research](research/self-improvement-research-alignment.md)** — Bibliography (Self-Refine, EVOLVE, STaR, ReST^EM, B-STaR, Mind the Gap, Sol-Ver, S3FT, Constitutional AI, DSVD), technique summaries, and mapping to `docs/coding-agent/*.md`.
+- **[Self-improvement and self-training research](research/self-improvement-research-alignment.md)** — Outside papers (Self-Refine, EVOLVE, STaR, and others), short explanations, and **how each idea maps to our specs**. **Does not** override V1 safety; it only suggests **how to measure and train** inside the rules.
 
 ## Architecture (system-wide)
 
-- **[AI Professional Evolution — master architecture](architecture/AI-Professional-Evolution-Master-Architecture.md)**
-- **[Action plan](onboarding/action-plan.md)** — Product goal, precedence, version rollup, parallel agents, phased execution, capability metrics
-- **[Architecture goal completion](architecture/architecture-goal-completion.md)** — When “all versions” are done: how extension specs map to the master goal, §14 gates, §17 phases, and what remains for §28-style operational completeness
-- **[Operating system folder structure](architecture/operating-system-folder-structure.md)**
-- **[Swarm token and system requirements](architecture/swarm-token-and-system-requirements-math.md)**
+- **[AI Professional Evolution — master architecture](architecture/AI-Professional-Evolution-Master-Architecture.md)** — Long **north-star** design for the whole platform (read in chunks).
+- **[Action plan](onboarding/action-plan.md)** — **Shorter** story: goals, order of work, parallel agents, phases, “how good is good enough” metrics.
+- **[Architecture goal completion](architecture/architecture-goal-completion.md)** — **Plain answer** to “if we finish every V1–V7 spec in this repo, did we finish the whole master doc?” (Usually: **strong on behavior and evidence**, **not** the same as deploying every service name in the master doc.)
+- **[Operating system folder structure](architecture/operating-system-folder-structure.md)** — **Dream** repo layout aligned to the master doc; shows how this repo **differs** today.
+- **[Swarm token and system requirements](architecture/swarm-token-and-system-requirements-math.md)** — **Math and budgets** for tokens, cost, and machine sizing — planning aid, not a tutorial.
 
 ## SDE baseline deep links
 

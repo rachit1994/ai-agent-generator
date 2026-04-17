@@ -1,5 +1,7 @@
 # Coding-agent extensions
 
+**In plain words:** each file here is a **chapter of the rulebook** for the coding agent. **V1** is the **safety and evidence** chapter (what a run must write and prove). Later chapters add planning, finishing work, event history, memory, learning, and many agents — **stacked on top of V1**, never replacing it.
+
 Canonical specs for each capability extension live in this directory as **flat Markdown files** (no version-numbered subfolders).
 
 **Combined product:** **V1–V7 together** implement one story: a **single SDE-driven program** can pursue a **full-stack, production-gated** product with **company-like process**—parallel **junior** agents, reviews, verification, governed memory and learning, and coordination safety. **V1 (execution) is the trust base**; later versions **never** weaken HS01–HS06. See [../onboarding/action-plan.md](../onboarding/action-plan.md) and [../architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md).

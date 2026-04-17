@@ -1,5 +1,7 @@
 # SDE action plan — how the system delivers a full-stack app
 
+**In plain words:** this document is the **storyboard** for turning a big product prompt into a **shippable** app the same way a careful company would: plan first, review work, prove tests and gates, keep logs, and only then talk about speed or fancy learning. **Models are “juniors”**; **the process** (orchestrator + files + checks) is what keeps quality honest.
+
 This is the **operational blueprint** for how one SDE instance replaces a solo developer (you) in building a **production-quality full-stack application**. Agents are **junior engineers**; company processes (reviews, gates, leases, learning) ensure mistakes are caught early and lessons compound across the run.
 
 Every mechanism described here operates **under CTO gates** ([execution.md](../coding-agent/execution.md) HS01–HS06). No section below may weaken those gates for speed or learning volume.

@@ -1,4 +1,10 @@
-# Contract
+# SDE implementation contract
+
+**In plain words:** this is the **checklist of files and stages** a baseline run is expected to produce. Think “**if these files are missing or empty, the run is incomplete**,” not product marketing. For stricter **V1+** rules (extra artifacts, hard-stops), see **`docs/coding-agent/execution.md`**.
+
+---
+
+## Contract
 
 - In scope: local CLI MVP with `run`, `benchmark`, and `report`.
 - Out of scope: UI, cloud deployment, and production architecture refactors.
@@ -11,13 +17,13 @@
   - per-run pipeline artifacts (guarded_pipeline): `planner_doc.md`, `executor_prompt.txt`, `verifier_report.json`
 - Required metrics: pass rate, reliability, p50/p95 latency, estimated cost, validity rate, retry frequency.
 
-# Assumptions
+## Assumptions
 
 - Local runtime uses Ollama by default.
 - Implementation model is `qwen2.5:7b-instruct`; support model is `gemma 4`.
 - API provider exists only as fallback and must be explicitly justified in report.
 
-# Risks
+## Risks
 
 - Missing local model pulls can block benchmark execution.
 - Non-JSON model outputs can fail closed and reduce pass rate.

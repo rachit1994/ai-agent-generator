@@ -1,5 +1,7 @@
 # SDE baseline overview (single source of truth)
 
+**In plain words:** this file is the **ground truth for the current local tool** (`sde`): what machines and models we assumed, which **commands** exist, and what “baseline vs guarded pipeline” means. It is **shorter and more concrete** than the big V1–V7 specs — read it first if you just need to **run** the CLI.
+
 ## Goal
 
 Build a local CLI SDE baseline that tests whether guardrails + a staged execution
