@@ -7,6 +7,11 @@ from pathlib import Path
 from typing import Any
 
 from .constants import REQUIRED_REVIEW_KEYS, TOKEN_CONTEXT_SCHEMA
+from .hard_stops_events import evaluate_event_lineage_hard_stops
+from .hard_stops_guarded import evaluate_guarded_hard_stops
+from .hard_stops_evolution import evaluate_evolution_hard_stops
+from .hard_stops_memory import evaluate_memory_hard_stops
+from .hard_stops_organization import evaluate_organization_hard_stops
 
 
 def _hs01_review(output_dir: Path) -> bool:
@@ -80,6 +85,7 @@ def evaluate_hard_stops(
     token_context: dict[str, Any],
     *,
     run_status: str,
+    mode: str = "baseline",
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
     results.append({"id": "HS01", "passed": _hs01_review(output_dir), "evidence_ref": "review.json"})
@@ -107,4 +113,10 @@ def evaluate_hard_stops(
     )
 
     results.append({"id": "HS06", "passed": _hs06_token_budgets(token_context), "evidence_ref": "token_context.json#stages"})
+    if mode in ("guarded_pipeline", "phased_pipeline"):
+        results.extend(evaluate_guarded_hard_stops(output_dir, events))
+    results.extend(evaluate_event_lineage_hard_stops(output_dir, events))
+    results.extend(evaluate_memory_hard_stops(output_dir))
+    results.extend(evaluate_evolution_hard_stops(output_dir))
+    results.extend(evaluate_organization_hard_stops(output_dir))
     return results

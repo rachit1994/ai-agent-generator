@@ -1,4 +1,10 @@
+import os
 from dataclasses import asdict, dataclass
+
+
+def _env_str(key: str, default: str) -> str:
+    value = os.environ.get(key, "").strip()
+    return default if not value else value
 
 
 @dataclass(frozen=True)
@@ -25,7 +31,11 @@ class RunConfig:
     budgets: GuardrailBudgets = GuardrailBudgets()
 
 
-DEFAULT_CONFIG = RunConfig()
+DEFAULT_CONFIG = RunConfig(
+    implementation_model=_env_str("SDE_IMPLEMENTATION_MODEL", "qwen3:14b"),
+    support_model=_env_str("SDE_SUPPORT_MODEL", "gemma4:latest"),
+    provider_base_url=_env_str("SDE_OLLAMA_URL", "http://127.0.0.1:11434"),
+)
 
 
 def config_snapshot() -> dict:

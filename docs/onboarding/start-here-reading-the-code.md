@@ -100,10 +100,13 @@ Tests are **living examples** of what “correct” means. If you change code an
 |---------|----------------------------------------|------------------------------|
 | **V1** Execution | `sde_modes/`, `sde_gates/`, `sde_pipeline/` (under `src/`) | Run folders, traces, reviews, gate checks — **closest to built**. |
 | **V2** Planning | Target repo `.agent/sde/` + future orchestrator wiring | **Largely spec** for now. |
-| **V3** Completion | Step loop + verification (overlaps guarded pipeline) | **Spec ahead** of a full dedicated loop in places. |
-| **V4–V7** | Planned modules | **Mostly docs** today. |
+| **Completion** (roadmap “planning + done” slice) | `sde_pipeline/runner/completion_layer.py` + guarded manifest | **Harness:** `program/`, `step_reviews/`, `verification_bundle.json` on guarded success (not safety refusal). |
+| **Events / replay** | `event_lineage_layer.py`, `hard_stops_events.py` | **Harness:** `replay_manifest.json`, `event_store/run_events.jsonl`, `kill_switch_state.json`; HS17–HS20. |
+| **Memory** | `memory_artifact_layer.py`, `hard_stops_memory.py` | **Harness:** `memory/*`, `capability/skill_nodes.json`; HS21–HS24. |
+| **Evolution** | `evolution_layer.py`, `hard_stops_evolution.py` | **Harness:** `learning/*`, `lifecycle/*`, `practice/*`; HS25–HS28. |
+| **Organization** | `organization_layer.py`, `hard_stops_organization.py` | **Harness:** `coordination/`, `iam/`, `orchestration/shard_map.json`, `strategy/`; HS29–HS32. |
 
-So: **start reading where V1 lives.** Use the specs to see **what comes next**.
+So: **start reading where V1 lives.** Use the specs for intent and for gaps; the `v*_*.py` writers and `hard_stops_*.py` modules show **what the CLI run path emits today** (still not full target-repo V2 planning or real multi-agent leases). To **re-check** an old run folder: `sde validate --run-id <id>` — **strict CTO path** when `run-manifest.json` exists; **benchmark-only** dirs (manifest + checkpoint + summary + traces) use a lighter path (`run_kind: benchmark_aggregate` in the printed JSON).
 
 ---
 
@@ -114,6 +117,7 @@ From the project root (adjust if your team uses a different setup):
 1. `uv sync --group dev`
 2. `uv run pytest src/orchestrator/tests/unit -q`
 3. `uv run sde run --mode baseline --task "return the string hello"`
+4. After a run, `uv run sde validate --run-id <paste-run-id-from-json>` (exit **0**: for `sde run` output dirs, strict contract + `validation_ready`; for completed `sde benchmark` dirs without a run manifest, benchmark integrity only — see printed `run_kind`).
 
 If step 3 fails because no model is installed, that is usually **setup on the machine**, not a sign you read the wrong file.
 

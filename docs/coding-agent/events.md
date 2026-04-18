@@ -62,12 +62,14 @@ Self-training methods (**STaR**, **ReST^EM**, **ReST-MCTS\***) assume every acce
 | HS19 | **Safety veto / kill switch** without **event + actor** | Trace shows action blocked but no matching platform event |
 | HS20 | **Duplicate side effect** without idempotency resolution | Same `command_id` produces two committed external mutations |
 
+**HS20 implementation (this repo):** `event_store/run_events.jsonl` is scanned for optional `command_id` (envelope root or `payload.command_id`). If `payload.external_mutation_committed` is true for more than one line sharing the same `command_id`, HS20 fails. Harness envelopes may set `command_id` without `external_mutation_committed` (trace references are not counted as mutations).
+
 ## Required Artifacts (Platform)
 
 | Artifact | Purpose |
 |----------|---------|
 | `replay_manifest.json` | Window bounds, event hash chain root, projection version, `passed` boolean |
-| `event_envelope.schema.json` | Canonical fields: `event_id`, `aggregate_id`, `causation_id`, `contract_version`, `payload`, `occurred_at` |
+| `event_envelope.schema.json` | Canonical fields: `event_id`, `aggregate_id`, `causation_id`, `contract_version`, `payload`, `occurred_at`; optional `command_id` for idempotency (HS20) |
 | `kill_switch_state.json` | Current latch, `updated_at`, `last_event_id` |
 
 ## CTO / Release Alignment (Master §14)

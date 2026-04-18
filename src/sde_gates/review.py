@@ -36,7 +36,9 @@ def build_review(
     else:
         status = "completed_review_fail"
         reasons = ["verifier_or_checks_failed"]
-    paths = manifest_paths_for_review(mode)
+    is_safety_refusal = isinstance(refusal, dict) and refusal.get("code") == "unsafe_action_refused"
+    include_completion = mode in ("guarded_pipeline", "phased_pipeline") and not is_safety_refusal
+    paths = manifest_paths_for_review(mode, include_guarded_completion=include_completion)
     manifest = manifest_entries(output_dir, paths)
     manifest_complete = all(m["present"] for m in manifest)
     met = metrics_from_events(events)

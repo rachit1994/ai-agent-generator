@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
+from typing import Any
 
 from sde_pipeline.config import DEFAULT_CONFIG
 from sde_pipeline.run_logging import (
@@ -20,8 +22,14 @@ from sde_pipeline.run_logging import (
 )
 from sde_foundations.storage import append_jsonl, ensure_dir, write_json
 from sde_foundations.utils import create_run_id, outputs_base
+from sde_gates import validate_execution_run_directory
 
 from .cto_publish import write_cto_gate_layer
+from .completion_layer import write_completion_artifacts
+from .event_lineage_layer import write_event_lineage_artifacts
+from .evolution_layer import write_evolution_artifacts
+from .memory_artifact_layer import write_memory_artifacts
+from .organization_layer import write_organization_artifacts
 from .failure_summary import write_failure_summary
 from .persist_traces import (
     append_orchestration_run_start,
@@ -31,21 +39,29 @@ from .persist_traces import (
 from .success_artifacts import write_success_artifact_layer as write_success_disk_layer
 
 
-def execute_single_task(task: str, mode: str) -> dict:
+def _run_single_attempt(
+    task: str,
+    mode: str,
+    *,
+    project_step_id: str | None = None,
+    project_session_dir: str | None = None,
+) -> dict:
     import sde_pipeline.runner as runner_pkg
 
     run_id = create_run_id()
     output_dir = outputs_base() / "runs" / run_id
     ensure_dir(output_dir)
-    write_json(
-        output_dir / "run-manifest.json",
-        {
-            "schema": "sde.run_manifest.v1",
-            "run_id": run_id,
-            "mode": mode,
-            "task": task,
-        },
-    )
+    manifest: dict[str, Any] = {
+        "schema": "sde.run_manifest.v1",
+        "run_id": run_id,
+        "mode": mode,
+        "task": task,
+    }
+    if project_step_id is not None and str(project_step_id).strip():
+        manifest["project_step_id"] = str(project_step_id)
+    if project_session_dir is not None and str(project_session_dir).strip():
+        manifest["project_session_dir"] = str(project_session_dir)
+    write_json(output_dir / "run-manifest.json", manifest)
     orchestration = output_dir / "orchestration.jsonl"
     run_logger = setup_run_logger(run_id, output_dir)
     log_run_banner(
@@ -61,6 +77,8 @@ def execute_single_task(task: str, mode: str) -> dict:
     try:
         if mode == "baseline":
             output, events = runner_pkg.run_baseline(run_id, "manual-task", task, DEFAULT_CONFIG)
+        elif mode == "phased_pipeline":
+            output, events = runner_pkg.run_phased(run_id, "manual-task", task, DEFAULT_CONFIG)
         else:
             output, events = runner_pkg.run_guarded(run_id, "manual-task", task, DEFAULT_CONFIG)
     except Exception as exc:
@@ -140,6 +158,23 @@ def execute_single_task(task: str, mode: str) -> dict:
         mode=mode,
         orchestration=orchestration,
     )
+    refusal = parsed.get("refusal")
+    is_safety_refusal = isinstance(refusal, dict) and refusal.get("code") == "unsafe_action_refused"
+    phased_plan = parsed.get("phased_plan") if mode == "phased_pipeline" else None
+    if isinstance(phased_plan, dict) and not is_safety_refusal:
+        ensure_dir(output_dir / "program")
+        write_json(output_dir / "program" / "phased_plan.json", phased_plan)
+    if mode in ("guarded_pipeline", "phased_pipeline") and not is_safety_refusal:
+        write_completion_artifacts(
+            output_dir=output_dir,
+            run_id=run_id,
+            parsed=parsed,
+            events=events,
+        )
+    write_event_lineage_artifacts(output_dir=output_dir, run_id=run_id)
+    write_memory_artifacts(output_dir=output_dir, run_id=run_id)
+    write_evolution_artifacts(output_dir=output_dir, run_id=run_id)
+    write_organization_artifacts(output_dir=output_dir, run_id=run_id)
     log_success_artifact_layer(run_logger, artifacts=artifacts)
 
     cto = write_cto_gate_layer(
@@ -154,3 +189,53 @@ def execute_single_task(task: str, mode: str) -> dict:
     log_run_end(run_logger, artifacts=artifacts, output_dir=str(output_dir))
     shutdown_run_logger(run_logger)
     return {"run_id": run_id, "output": output, "output_dir": str(output_dir)}
+
+
+def execute_single_task(
+    task: str,
+    mode: str,
+    *,
+    repeat: int = 1,
+    project_step_id: str | None = None,
+    project_session_dir: str | None = None,
+) -> dict:
+    """Run one or more isolated attempts (V1 RepeatProfile when ``repeat`` >= 2).
+
+    When invoked from the project driver, pass ``project_step_id`` and ``project_session_dir``
+    so each run's ``run-manifest.json`` links back to the session plan (Phase 1 contract).
+    """
+    if repeat < 1:
+        raise ValueError("repeat must be >= 1")
+    if repeat == 1:
+        return _run_single_attempt(
+            task,
+            mode,
+            project_step_id=project_step_id,
+            project_session_dir=project_session_dir,
+        )
+    attempts: list[dict] = []
+    for _ in range(repeat):
+        attempts.append(
+            _run_single_attempt(
+                task,
+                mode,
+                project_step_id=project_step_id,
+                project_session_dir=project_session_dir,
+            )
+        )
+    gates_ok: list[bool] = []
+    for attempt in attempts:
+        out_dir = attempt.get("output_dir")
+        if not out_dir or attempt.get("error"):
+            gates_ok.append(False)
+            continue
+        verdict = validate_execution_run_directory(Path(out_dir), mode=mode)
+        gates_ok.append(bool(verdict.get("ok") and verdict.get("validation_ready")))
+    return {
+        "repeat": repeat,
+        "task": task,
+        "mode": mode,
+        "runs": attempts,
+        "all_runs_no_pipeline_error": all("error" not in r for r in attempts),
+        "validation_ready_all": all(gates_ok) if gates_ok else False,
+    }

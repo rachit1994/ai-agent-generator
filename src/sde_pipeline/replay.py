@@ -127,11 +127,18 @@ def replay_rerun(run_id: str, *, output_format: str) -> str:
     mode = manifest.get("mode")
     if not isinstance(task, str) or not task.strip():
         raise ValueError("run-manifest.json: invalid task")
-    if mode not in ("baseline", "guarded_pipeline"):
-        raise ValueError("run-manifest.json: mode must be baseline or guarded_pipeline")
+    if mode not in ("baseline", "guarded_pipeline", "phased_pipeline"):
+        raise ValueError("run-manifest.json: mode must be baseline, guarded_pipeline, or phased_pipeline")
     from sde_pipeline.runner import execute_single_task
 
-    result = execute_single_task(task, mode)
+    psid = manifest.get("project_step_id")
+    psdir = manifest.get("project_session_dir")
+    result = execute_single_task(
+        task,
+        mode,
+        project_step_id=psid if isinstance(psid, str) else None,
+        project_session_dir=psdir if isinstance(psdir, str) else None,
+    )
     if output_format == "json":
         return json.dumps({"prior_run_id": run_id, "rerun": result}, indent=2)
     return (

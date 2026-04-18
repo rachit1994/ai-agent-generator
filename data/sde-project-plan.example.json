@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "repo_root": ".",
+  "workspace": {
+    "branch": "main",
+    "allowed_path_prefixes": ["src/", "docs/"]
+  },
+  "steps": [
+    {
+      "step_id": "step_a",
+      "phase": "bootstrap",
+      "title": "Smoke A",
+      "description": "Reply with valid JSON only: one sentence in `answer` describing what SDE project sessions are for.",
+      "depends_on": [],
+      "path_scope": ["src/**"],
+      "verification": {
+        "commands": [
+          {
+            "cmd": "true",
+            "args": [],
+            "cwd": null,
+            "timeout_sec": 30
+          }
+        ]
+      }
+    },
+    {
+      "step_id": "step_b",
+      "phase": "bootstrap",
+      "title": "Smoke B",
+      "description": "Reply with valid JSON only: one sentence in `answer` listing one CLI subcommand related to projects.",
+      "depends_on": ["step_a"],
+      "path_scope": ["docs/**"],
+      "verification": {
+        "commands": [
+          {
+            "cmd": "true",
+            "args": [],
+            "cwd": null,
+            "timeout_sec": 30
+          }
+        ]
+      }
+    }
+  ]
+}

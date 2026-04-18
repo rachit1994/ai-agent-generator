@@ -13,7 +13,7 @@ def test_hs04_fails_when_static_report_not_passed_all(tmp_path: Path) -> None:
         json.dumps({"schema_version": "1.0", "passed_all": False, "blockers": [{"id": "eval_call"}]}),
         encoding="utf-8",
     )
-    hs = evaluate_hard_stops(tmp_path, [], {}, run_status="ok")
+    hs = evaluate_hard_stops(tmp_path, [], {}, run_status="ok", mode="baseline")
     hs04 = next(h for h in hs if h["id"] == "HS04")
     assert hs04["passed"] is False
 
@@ -21,7 +21,7 @@ def test_hs04_fails_when_static_report_not_passed_all(tmp_path: Path) -> None:
 def test_hs04_passes_when_static_report_clean(tmp_path: Path) -> None:
     sg = tmp_path / "static_gates_report.json"
     sg.write_text(json.dumps({"schema_version": "1.0", "passed_all": True, "blockers": []}), encoding="utf-8")
-    hs = evaluate_hard_stops(tmp_path, [], {}, run_status="ok")
+    hs = evaluate_hard_stops(tmp_path, [], {}, run_status="ok", mode="baseline")
     hs04 = next(h for h in hs if h["id"] == "HS04")
     assert hs04["passed"] is True
 

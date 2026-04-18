@@ -90,12 +90,42 @@ def test_replay_rerun_invokes_execute(monkeypatch, tmp_path: Path) -> None:
     )
     (run_dir / "traces.jsonl").write_text("{}\n", encoding="utf-8")
 
-    def _fake_execute(task: str, mode: str) -> dict:  # type: ignore[no-untyped-def]
+    def _fake_execute(task: str, mode: str, **kwargs: object) -> dict:  # type: ignore[no-untyped-def]
         return {"run_id": "new-run", "output_dir": str(tmp_path / "outputs" / "runs" / "new-run"), "stub": True}
 
     monkeypatch.setattr("sde_pipeline.runner.execute_single_task", _fake_execute)
     text = replay_run("prior", output_format="text", rerun=True)
     assert "new-run" in text
+
+
+def test_replay_rerun_passes_project_manifest_fields(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
+    run_dir = tmp_path / "outputs" / "runs" / "prior2"
+    run_dir.mkdir(parents=True)
+    (run_dir / "run-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.run_manifest.v1",
+                "run_id": "prior2",
+                "mode": "baseline",
+                "task": "x",
+                "project_step_id": "step_z",
+                "project_session_dir": "/tmp/sde_sess",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "traces.jsonl").write_text("{}\n", encoding="utf-8")
+    captured: dict[str, object] = {}
+
+    def _fake_execute(task: str, mode: str, **kwargs: object) -> dict:
+        captured.update(kwargs)
+        return {"run_id": "n2", "output_dir": str(tmp_path / "outputs" / "runs" / "n2"), "stub": True}
+
+    monkeypatch.setattr("sde_pipeline.runner.execute_single_task", _fake_execute)
+    replay_run("prior2", output_format="text", rerun=True)
+    assert captured.get("project_step_id") == "step_z"
+    assert captured.get("project_session_dir") == "/tmp/sde_sess"
 
 
 def test_synthetic_failure_event_metrics() -> None:

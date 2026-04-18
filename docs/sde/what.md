@@ -24,7 +24,7 @@ Implementation language/runtime:
 ## Model Strategy
 
 - Primary runtime: local `ollama` (no API token required).
-- **Qwen line:** defaults use **Qwen3** on Ollama ([library `qwen3`](https://ollama.com/library/qwen3)). SDE pins **`qwen3:14b`** in `RunConfig`; use smaller tags (`qwen3:8b`, `qwen3:4b`, …) or **`qwen2.5:*-instruct`** only if you explicitly choose them in config.
+- **Qwen line:** defaults use **Qwen3** on Ollama ([library `qwen3`](https://ollama.com/library/qwen3)). SDE pins **`qwen3:14b`** in `RunConfig`; use smaller tags (`qwen3:8b`, `qwen3:4b`, …) or **`qwen2.5:*-instruct`** only if you explicitly choose them in config. **Without editing code**, you can override tags and base URL via environment variables read at process start: **`SDE_IMPLEMENTATION_MODEL`**, **`SDE_SUPPORT_MODEL`**, **`SDE_OLLAMA_URL`** (see `src/sde_pipeline/config.py`).
 - Implementation model: `qwen3:14b` (all coding/execution agents).
 - Non-implementation model: `gemma 4` (planning/review/research/support agents).
 - Optional local alternate for implementation: `llama3.1:8b-instruct`.
@@ -54,14 +54,21 @@ If fallback is used, rerun full A/B and document provider/model/reason in
 ## Product Surface
 
 CLI commands:
-- `sde run --task "..."`
+- `sde run --task "..." --mode baseline|guarded_pipeline|phased_pipeline` (optional **`--repeat N`**: same task and mode **N** times, each under a fresh `outputs/runs/<run-id>/` — V1 **RepeatProfile**); successful parses also emit **V4** lineage, **V5** memory, **V6** evolution, and **V7** org stubs under the run directory (replay manifest, event envelope, memory retrieval, reflection + canary, leases + IAM audit, shard map, strategy proposal) unless you mark the run **`coding_only`** in `summary.json`, which skips extended hard-stops HS17+ (see `docs/coding-agent/events.md` through `organization.md`).
 - `sde benchmark --suite ./data/benchmark-tasks.jsonl` (optional `--max-tasks N`, `--continue-on-error`, **`--resume-run-id <run_id>`** to continue under `outputs/runs/<run_id>`; `--suite` optional on resume but must match the manifest if provided)
 - `sde report --run-id <id>`
 - `sde replay --run-id <id>` (optional `--format json|html`, `--write-html` to save `trajectory.html` in the run dir, `--rerun` for single-task re-execution from `run-manifest.json`)
+- `sde validate --run-id <id>` (optional `--mode` to override manifest): prints JSON and exits **0** when validation passes (CI-friendly). **Single-task** runs (`run-manifest.json`): exit **0** iff `ok` and `validation_ready`. **Benchmark aggregate** runs (`benchmark-manifest.json` only, no run manifest): light integrity check (`manifest` + finished `benchmark-checkpoint.json` + `summary.json` verdict + `traces.jsonl`); response includes `run_kind: benchmark_aggregate` and `execution_gates_applied: false`, and the CLI exits **0** iff `ok` (CTO ladder not applicable). If only `benchmark-manifest.json` exists and its mode is `both`, pass `--mode baseline` or `--mode guarded_pipeline`.
+- `sde roadmap-review` (optional `--repo-root`, repeatable `--context-file`, `--append-learning [path]`): sends excerpted SDE docs to **support_model** (default **Gemma** in `RunConfig`) and prints JSON with `per_version_pct` (V1–V7), `overall_pct`, `code_quality_0_100`, `done`, `remaining`, `learning_note`. Exit **0** on parse success, **2** on model/parse failure. Does **not** auto-complete the product; it externalizes the “Gemma reviews % complete” step you asked for.
+- `sde evolve` (optional `--max-rounds`, `--target-pct`, `--task`, `--mode`, `--learning-path`, `--verbose`, `--print-task-result`): bounded loop — each round runs `roadmap_review`, appends a line to a JSONL learning file (default `.agent/sde/learning_events.jsonl`), optionally runs `execute_single_task` for a fixed task string, then stops when `overall_pct >= target-pct` or rounds exhaust (exit **1** if target never met). **Cannot** honestly guarantee “all seven versions fullest”; use it as a cadence tool with Ollama running.
+- `sde continuous --task "..."` (optional `--mode`, **`--max-iterations`**, **`--stop-when`** `validation_ready` \| `definition_of_done` \| `never`, **`--continue-on-pipeline-error`**): repeats `execute_single_task` with the **same** task string until the stop condition hits or the iteration cap is reached (each attempt is still a fresh `outputs/runs/<id>/`). Default stop is **`validation_ready`** (strict re-validate after every run). Use **`never`** with a large `--max-iterations` when you want a fixed number of back-to-back runs without an automatic “repo complete” detector (there is no machine oracle for “entire repo built”; encode completion in tests/gates or in the task prompt).
+- `sde continuous (--project-session-dir <dir> | --project-plan <path/to/project_plan.json>) [--progress-file <path>] ...` (same flags except **`--task`** optional when a project flag is set): drives the **project session** — `--max-iterations` caps **plan steps**. See **[`project-driver.md`](project-driver.md)**.
+- `sde project run (--session-dir <dir> | --plan <path/to/project_plan.json>)` (optional `--repo-root`, **`--max-steps`**, `--mode`, **`--max-concurrent-agents`**, **`--progress-file`**): meta-orchestrator — bounded context per step, per-step shell verification, honest `driver_state.json` / `stop_report.json` terminal status.
 
 Modes:
 - `baseline`: `task -> model -> output`
-- `guarded_pipeline`: `planner_doc -> planner_prompt -> executor -> verifier -> executor_fix(optional, max 1) -> verifier_fix(optional) -> finalize`
+- `guarded_pipeline`: `planner_doc -> planner_prompt -> executor -> verifier -> executor_fix(optional, max 1) -> verifier_fix(optional) -> finalize` — on a **non–safety-refusal** success path the run directory also gets a **V3 harness** slice: `program/` (plan, progress, V2-style stubs), `step_reviews/*.json`, `verification_bundle.json`, and `review.json` → `definition_of_done`; balanced gates include **HS07–HS16** for this mode.
+- `phased_pipeline`: **decompose → repeat guarded_pipeline per atomic todo**. The support model emits a JSON phased plan (`phased_decompose` stage); each todo then runs the full **guarded** planner → executor → verifier cycle with a scoped prompt (overall goal + todo title + acceptance). Traces merge into one run (sub-finalize events are dropped; one aggregate `finalize`). Writes `program/phased_plan.json` and the same V3 completion harness / CTO gates as `guarded_pipeline`.
 
 ## Required Guardrails
 

@@ -12,6 +12,9 @@ Thumbs.db
 .vscode/*.code-workspace
 .history/
 
+# Local SDE learning log (sde evolve / roadmap-review --append-learning)
+.agent/
+
 # --- Python bytecode & packages ---
 __pycache__/
 *.py[cod]

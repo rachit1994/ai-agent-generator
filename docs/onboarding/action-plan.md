@@ -71,6 +71,8 @@ project_plan.json
 
 **Lease conflict resolution:** If step N in lane A depends on step M in lane B, lane A blocks on M's completion. The orchestrator tracks this via `depends_on` and does not issue the step until the dependency's `step_review` passes.
 
+**Shipped slice (local CLI):** session-level **`sde project run`** + **`project_plan.json` / `progress.json`** driver, bounded **ContextPack**, orchestrator **per-step verification**, and optional **`sde continuous --project-session-dir`** — see [`../sde/project-driver.md`](../sde/project-driver.md). This is a **sequential** meta-orchestrator on one worktree; full parallel lane + heartbeat semantics above remain roadmap until the same session primitives gain subprocess isolation.
+
 ### Stage 3 — Atomic build + review loop (V3 completion)
 
 ```

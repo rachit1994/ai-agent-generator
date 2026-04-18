@@ -36,7 +36,12 @@ def test_execute_single_task_writes_artifacts(tmp_path: Path, monkeypatch) -> No
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(runner, "run_baseline", _fake_run_baseline)
 
-    result = runner.execute_single_task("ignored", "baseline")
+    result = runner.execute_single_task(
+        "ignored",
+        "baseline",
+        project_step_id="alpha",
+        project_session_dir=str(tmp_path / "sess"),
+    )
     output_dir = Path(result["output_dir"])
 
     assert (output_dir / "answer.txt").exists()
@@ -47,4 +52,6 @@ def test_execute_single_task_writes_artifacts(tmp_path: Path, monkeypatch) -> No
     assert manifest["schema"] == "sde.run_manifest.v1"
     assert manifest["mode"] == "baseline"
     assert manifest["task"] == "ignored"
+    assert manifest["project_step_id"] == "alpha"
+    assert manifest["project_session_dir"] == str(tmp_path / "sess")
 
