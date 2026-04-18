@@ -23,7 +23,18 @@ def validate_task_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 def refusal_for_unsafe(text: str) -> dict[str, Any] | None:
     normalized = text.lower()
-    for marker in ["credential", "password dump", "exfiltrate", "rm -rf /"]:
+    for marker in [
+        "credential",
+        "password dump",
+        "exfiltrate",
+        "rm -rf /",
+        "curl ",
+        "| sh",
+        "| bash",
+        "disable ssl",
+        "verify=false",
+        "bypass authentication",
+    ]:
         if marker in normalized:
             return {
                 "answer": "",

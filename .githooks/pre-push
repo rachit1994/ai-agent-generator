@@ -1,0 +1,50 @@
+#!/bin/sh
+# Bump [project].version in pyproject.toml before each branch push (default: minor).
+# One-time setup: git config core.hooksPath .githooks
+#
+# Skip:     SKIP_VERSION_BUMP=1 git push
+# Override: VERSION_BUMP=patch|major|none git push
+
+if [ "${SKIP_VERSION_BUMP:-}" = "1" ]; then
+  exit 0
+fi
+
+ROOT=$(git rev-parse --show-toplevel) || exit 1
+cd "$ROOT" || exit 1
+
+HAS_LINE=0
+NEED_BUMP=0
+while read -r local_ref _ _ _; do
+  HAS_LINE=1
+  case "$local_ref" in
+    refs/tags/*) ;;
+    *) NEED_BUMP=1 ;;
+  esac
+done
+
+if [ "$HAS_LINE" = 0 ]; then
+  NEED_BUMP=1
+fi
+
+if [ "$NEED_BUMP" = 0 ]; then
+  exit 0
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "pre-push: python3 not found; cannot bump version" >&2
+  exit 1
+fi
+
+export VERSION_BUMP="${VERSION_BUMP:-minor}"
+if ! NEW=$(python3 scripts/bump_version.py); then
+  exit 1
+fi
+
+if git diff --quiet pyproject.toml 2>/dev/null; then
+  exit 0
+fi
+
+git add pyproject.toml
+git commit -m "chore: bump version to ${NEW}"
+
+exit 0

@@ -6,7 +6,8 @@ reaching into ``sde_pipeline`` / ``sde_modes`` / ``sde_foundations`` unless exte
 """
 
 from sde_pipeline.benchmark import run_benchmark
+from sde_pipeline.replay import replay_run
 from sde_pipeline.report import generate_report
 from sde_pipeline.runner import execute_single_task
 
-__all__ = ["execute_single_task", "run_benchmark", "generate_report"]
+__all__ = ["execute_single_task", "run_benchmark", "generate_report", "replay_run"]

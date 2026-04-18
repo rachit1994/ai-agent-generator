@@ -2,7 +2,7 @@
 
 This page is an easy on-ramp: **where to start**, **why the project exists**, and **what each “version” means** in everyday language. You can follow the ideas here even if you are not diving into Python yet.
 
-**If you are an LLM or any automated reader:** treat this page as **routing instructions**. Prefer **short** docs first (`action-plan.md`, then `../sde/what.md`, then `../coding-agent/execution.md`). Do **not** treat research papers or the long master architecture as permission to skip **V1** checks (HS01–HS06). When you summarize for a human, say **what must be true on disk** (artifacts + gates), not only model intent.
+**If you are an LLM or any automated reader:** treat this page as **routing instructions**. Prefer **short** docs first (`action-plan.md`, then `../sde/what.md`, then `../coding-agent/execution.md`). For **what the CLI implements today** vs common open-source harness patterns, read [`../sde/core-features-and-upstream-parity.md`](../sde/core-features-and-upstream-parity.md). Do **not** treat research papers or the long master architecture as permission to skip **V1** checks (HS01–HS06; **HS04** also reflects **static code gates** when `static_gates_report.json` is present). When you summarize for a human, say **what must be true on disk** (artifacts + gates), not only model intent.
 
 ---
 

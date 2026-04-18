@@ -7,7 +7,7 @@ current prompt's acceptance criteria are met.
 
 Model assignment rule:
 - Prompts 01-02 and 17-24 use `gemma 4` (non-implementation/support work).
-- Prompts 03-16 use `qwen2.5:7b-instruct` (implementation and delivery work).
+- Prompts 03-16 use `qwen3:14b` (implementation and delivery work).
 
 ## Prompt 01
 
@@ -38,7 +38,7 @@ Output format:
 Set up local-model foundation for MVP.
 Tasks:
 1) verify Ollama is available
-2) verify model qwen2.5:7b-instruct availability
+2) verify model qwen3:14b availability
 3) add or update project config/docs for provider=ollama defaults
 4) define API fallback trigger thresholds exactly as documented in scope
 ```

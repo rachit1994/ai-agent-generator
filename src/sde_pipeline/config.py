@@ -13,7 +13,7 @@ class GuardrailBudgets:
 @dataclass(frozen=True)
 class RunConfig:
     provider: str = "ollama"
-    implementation_model: str = "qwen2.5:7b-instruct"
+    implementation_model: str = "qwen3:14b"
     support_model: str = "gemma4:latest"
     provider_base_url: str = "http://127.0.0.1:11434"
     fallback_triggers: tuple[str, ...] = (

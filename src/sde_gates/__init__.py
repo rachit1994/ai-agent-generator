@@ -9,6 +9,7 @@ from .manifest import all_required_v1_paths, manifest_paths_for_review
 from .metrics_helpers import metrics_from_events, reliability_gate
 from .review import build_review
 from .run_directory import validate_execution_run_directory
+from .static_analysis import run_static_code_gates
 from .token_context import build_token_context
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "manifest_paths_for_review",
     "metrics_from_events",
     "reliability_gate",
+    "run_static_code_gates",
     "validate_execution_run_directory",
     "validation_ready",
 ]

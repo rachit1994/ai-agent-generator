@@ -24,3 +24,15 @@ def append_jsonl(path: str | Path, value: Any) -> None:
 
 def read_json(path: str | Path) -> Any:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def read_jsonl(path: str | Path) -> list[Any]:
+    path_obj = Path(path)
+    if not path_obj.is_file():
+        return []
+    rows: list[Any] = []
+    for line in path_obj.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line:
+            rows.append(json.loads(line))
+    return rows

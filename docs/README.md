@@ -96,4 +96,6 @@ Each extension under `docs/coding-agent/` ends with **Success is not assumed** �
 
 - [How checklist](sde/how-checklist.md)
 - [Implementation contract](sde/implementation-contract.md)
+- [Core features and upstream parity](sde/core-features-and-upstream-parity.md) — what is built vs SWE-agent / OpenHands patterns; suggested next steps
+- [Upstream harvest licenses](sde/upstream-harvest-licenses.md) — before vendoring code from `ideas/` checkouts
 - [Decision / A–B protocol](sde/decision/ab-protocol-and-controls.md)

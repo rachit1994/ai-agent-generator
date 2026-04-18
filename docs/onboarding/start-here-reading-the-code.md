@@ -13,7 +13,7 @@ This page explains **what the code is for**, **where it lives**, and **which fil
 | **Repository** | The **project folder**: code, docs, and config kept together. |
 | **Python** | The language most of the runnable pieces here are written in. |
 | **CLI** | You type a **command in a terminal** instead of clicking through a separate app window. |
-| **`sde` / `agent`** | The **command names** after you install this project. Both run the same entrypoint (see `pyproject.toml` at the repo root). |
+| **`sde` / `agent`** | The **command names** after you install this project. Both run the same entrypoint (see `pyproject.toml` at the repo root). CLI also exposes **`sde replay`** for trajectories / single-task rerun. |
 | **`src/orchestrator/`** | The **front door**: CLI wiring and the small public API that pulls the rest in. |
 | **`outputs/`** | A folder the tool **creates when it runs** (often not checked into git). Each run gets its own subfolder with logs and results. |
 | **Test** | A **small automatic check** that locks in expected behavior. |
@@ -38,13 +38,14 @@ coding-agent/                         ← project root
     ├── README.md                     ← short pointers into the tree
     ├── orchestrator/                 ← CLI + public API
     │   ├── api/__init__.py           ← wires in single-task, benchmark, report from sde_pipeline
-    │   ├── runtime/cli/main.py       ← **good first file** — where `sde run` / `sde benchmark` start
+    │   ├── runtime/cli/main.py       ← **good first file** — where `sde run` / `benchmark` / `report` / `replay` start
     │   └── tests/unit/               ← pytest checks
-    ├── sde_pipeline/                 ← one task, benchmarks, reports, writing run artifacts
-    │   └── runner/single_task.py     ← creates a run id and the output folder
+    ├── sde_pipeline/                 ← one task, benchmarks, reports, replay, writing run artifacts
+    │   ├── runner/single_task.py     ← creates a run id and the output folder (+ run-manifest)
+    │   └── replay.py                 ← narrative / json trajectory + optional --rerun
     ├── sde_modes/                    ← baseline vs guarded_pipeline (how a task is executed)
     │   └── modes/baseline|guarded_pipeline/pipeline.py
-    ├── sde_gates/                    ← checks a run folder against the rules (e.g. run_directory.py)
+    ├── sde_gates/                    ← CTO gates, hard-stops, static code analysis (static_analysis.py)
     └── sde_foundations/              ← types, safeguards, eval helpers, paths
 ```
 
@@ -81,7 +82,9 @@ Open:
 
 Open **`src/sde_gates/run_directory.py`** and find **`validate_execution_run_directory`**.
 
-That function **reads what the run wrote** and checks it against the **rules in the docs** (for example: review file present, token file present).
+That function **reads what the run wrote** and checks it against the **rules in the docs** (for example: review file present, token file present, manifest paths including `static_gates_report.json`).
+
+Then skim **`src/sde_gates/static_analysis.py`** — local **syntax + security-pattern + optional ruff** gates that land in `static_gates_report.json` and **HS04**.
 
 ### Step 5 — How behavior stays pinned down
 
@@ -129,5 +132,6 @@ If step 3 fails because no model is installed, that is usually **setup on the ma
 
 ## Changelog
 
+- **2026-04-18:** Documented `sde replay`, run/benchmark manifests, `static_gates_report.json` / `static_analysis.py`, and SDE parity page [`core-features-and-upstream-parity.md`](../sde/core-features-and-upstream-parity.md).
 - **2026-04-18:** Flattened `src/` paths (`sde_*` at top level; removed unused OS placeholder trees).
 - **2026-04-18:** First version of this guide.

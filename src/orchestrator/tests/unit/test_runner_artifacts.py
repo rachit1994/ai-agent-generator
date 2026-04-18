@@ -43,4 +43,8 @@ def test_execute_single_task_writes_artifacts(tmp_path: Path, monkeypatch) -> No
     assert (output_dir / "generated_script.py").exists()
     assert (output_dir / "orchestration.jsonl").exists()
     assert (output_dir / "run.log").exists()
+    manifest = json.loads((output_dir / "run-manifest.json").read_text(encoding="utf-8"))
+    assert manifest["schema"] == "sde.run_manifest.v1"
+    assert manifest["mode"] == "baseline"
+    assert manifest["task"] == "ignored"
 

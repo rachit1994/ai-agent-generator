@@ -15,7 +15,7 @@ All four conditions must pass for a `continue_and_scale` outcome.
 
 ## Fixed Controls
 - Same task suite for A and B runs
-- Same model (`qwen2.5:7b-instruct`) and provider (`ollama`)
+- Same model (`qwen3:14b`) and provider (`ollama`)
 - Same guardrail budgets and retry limits
 - Same machine and runtime profile
 - Same scoring logic (`summary.json` metrics)

@@ -18,7 +18,7 @@ from sde_pipeline.run_logging import (
     setup_run_logger,
     shutdown_run_logger,
 )
-from sde_foundations.storage import append_jsonl, ensure_dir
+from sde_foundations.storage import append_jsonl, ensure_dir, write_json
 from sde_foundations.utils import create_run_id, outputs_base
 
 from .cto_publish import write_cto_gate_layer
@@ -37,6 +37,15 @@ def execute_single_task(task: str, mode: str) -> dict:
     run_id = create_run_id()
     output_dir = outputs_base() / "runs" / run_id
     ensure_dir(output_dir)
+    write_json(
+        output_dir / "run-manifest.json",
+        {
+            "schema": "sde.run_manifest.v1",
+            "run_id": run_id,
+            "mode": mode,
+            "task": task,
+        },
+    )
     orchestration = output_dir / "orchestration.jsonl"
     run_logger = setup_run_logger(run_id, output_dir)
     log_run_banner(

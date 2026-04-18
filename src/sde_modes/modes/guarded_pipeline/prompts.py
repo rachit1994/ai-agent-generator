@@ -8,6 +8,7 @@ def planner_doc_prompt(task: str) -> str:
         "You are the SDE planner.\n"
         "Write a concise planning document in Markdown.\n"
         "Include: API contract, data model, edge cases, security notes, performance notes, and test plan.\n"
+        "Assume task inputs may be untrusted unless explicitly stated otherwise.\n"
         "Do NOT write code.\n\n"
         f"Task:\n{task}\n"
     )

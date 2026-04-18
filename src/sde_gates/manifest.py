@@ -14,6 +14,7 @@ def manifest_paths_for_review(mode: str) -> list[str]:
         "report.md",
         "run.log",
         "answer.txt",
+        "static_gates_report.json",
         "outputs/README.txt",
         "outputs/manifest.json",
     ]

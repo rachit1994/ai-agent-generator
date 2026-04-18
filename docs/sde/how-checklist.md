@@ -9,11 +9,11 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 - [x] Confirm machine constraints are documented for this run (OS, CPU, RAM, disk).
 - [x] Install Ollama locally.
 - [x] Start Ollama server.
-- [x] Pull local implementation model `qwen2.5:7b-instruct`.
+- [x] Pull local implementation model `qwen3:14b`.
 - [x] Pull local support-agent model `gemma 4`.
 - [x] Run a local health check with one Ollama generation.
 - [x] Set model provider to `ollama` for default benchmark runs.
-- [x] Set model policy: use `qwen2.5:7b-instruct` for implementation agents and `gemma 4` for non-implementation agents.
+- [x] Set model policy: use `qwen3:14b` for implementation agents and `gemma 4` for non-implementation agents.
 - [x] Set a maximum token budget for one task execution.
 - [x] Set a maximum retry budget for one task execution.
 - [x] Set a timeout budget for one task execution.
@@ -29,6 +29,7 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 - [x] Add `sde run` command parsing.
 - [x] Add `sde benchmark` command parsing.
 - [x] Add `sde report` command parsing.
+- [x] Add `sde replay` command parsing (`--run-id`, `--format`, `--rerun`).
 - [x] Create run-id generation utility.
 - [x] Create per-run output directory at `outputs/runs/<run-id>/`.
 - [x] Add model adapter invocation path.
@@ -64,7 +65,7 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
   - [x] `planner_doc`: produces a planning document (written to `planner_doc.md`).
   - [x] `planner_prompt`: produces an executor-ready prompt with prompt-engineering guidelines (written to `executor_prompt.txt`).
 - [x] `executor`: generates output using the planner prompt (and planner doc context).
-- [x] `verifier`: verifies executor output against planner outputs and task requirements.
+- [x] `verifier`: verifies executor output against planner outputs and task requirements (includes **static code gate** report attachment).
 - [x] `executor_fix` (optional, max one retry): re-asks executor with a fixed prompt to address security, performance, and edge cases.
 - [x] `verifier_fix` (optional): verifies the fixed output.
 - [x] `finalize`: emits final structured metadata.
@@ -130,3 +131,17 @@ Follow this checklist in order. Do not start a later phase until all checkboxes 
 - [x] Confirm one markdown report states supported/rejected/inconclusive.
 - [x] Confirm the full flow runs locally within practical machine limits.
 - [x] Confirm all four non-negotiable MVP outcomes are satisfied.
+
+## Phase 7 - Trajectory, benchmarks, and static gates (harvest-aligned)
+
+- [x] Write `run-manifest.json` at the start of each `sde run` (task + mode + schema).
+- [x] Write `benchmark-manifest.json` for each `sde benchmark` run directory.
+- [x] Add `sde replay` (`--format json|html`, `--write-html`, `--rerun` for single-task from manifest).
+- [x] Add `sde benchmark --max-tasks N` and `--continue-on-error` with synthetic finalize on per-task failure.
+- [x] Add `benchmark-checkpoint.json`, per-task `traces.jsonl` appends, and `sde benchmark --resume-run-id <run_id>`.
+- [x] Add `static_gates_report.json` (AST, security patterns, optional `ruff`) and wire **HS04** + verifier.
+- [x] Extend `review.json` `gate_snapshot` with `static_analysis` when the static report exists.
+- [x] Optional: `bandit` / `basedpyright` or `pyright` behind the same “binary on PATH” pattern as `ruff`.
+- [x] Optional: static HTML trajectory (`trajectory.html` via `sde replay --write-html` or `--format html`).
+
+**Reference:** [`core-features-and-upstream-parity.md`](core-features-and-upstream-parity.md).

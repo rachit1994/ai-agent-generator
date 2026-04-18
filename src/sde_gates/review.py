@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -39,12 +40,21 @@ def build_review(
     manifest = manifest_entries(output_dir, paths)
     manifest_complete = all(m["present"] for m in manifest)
     met = metrics_from_events(events)
+    static_analysis = "validating"
+    sg_path = output_dir / "static_gates_report.json"
+    if sg_path.is_file():
+        try:
+            sg_body = json.loads(sg_path.read_text(encoding="utf-8"))
+            static_analysis = "pass" if sg_body.get("passed_all") else "fail"
+        except json.JSONDecodeError:
+            static_analysis = "fail"
     gate_snapshot = {
         "reliability": "pass" if reliability_gate(met) else "validating",
         "safety": "pass" if status in ("completed_review_pass",) or reasons == ["safety_refusal_terminal"] else "validating",
         "replay": "pass" if len(events) > 0 else "fail",
         "resource_budget": "validating",
         "token_context": "validating",
+        "static_analysis": static_analysis,
     }
     fixes: list[str] = []
     if not manifest_complete:

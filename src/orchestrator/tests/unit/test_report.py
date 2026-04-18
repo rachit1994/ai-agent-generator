@@ -15,7 +15,7 @@ def test_single_run_report_support(tmp_path, monkeypatch) -> None:
             "runId": run_id,
             "mode": "baseline",
             "provider": "ollama",
-            "model": "qwen2.5:7b-instruct",
+            "model": "qwen3:14b",
             "metrics": {"passRate": 0, "reliability": 0},
         },
     )

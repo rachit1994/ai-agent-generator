@@ -16,5 +16,5 @@
 ## Notes
 
 - Provider remained `ollama` for benchmark execution.
-- Implementation model: `qwen2.5:7b-instruct`
+- Implementation model: `qwen3:14b`
 - Support model: `gemma 4`

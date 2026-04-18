@@ -16,7 +16,7 @@ Mission:
   - docs/sde/how-checklist.md
   - docs/sde/prompts/
 - Follow model policy:
-  - qwen2.5:7b-instruct for implementation agents
+  - qwen3:14b for implementation agents
   - gemma 4 for non-implementation/support agents
 
 Execution rules:

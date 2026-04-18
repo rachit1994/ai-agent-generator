@@ -20,7 +20,7 @@ agent = "orchestrator.runtime.cli.main:main"
 dev = ["pytest>=8.0.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/orchestrator/tests/unit"]
+testpaths = ["src/orchestrator/tests/unit", "tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = [

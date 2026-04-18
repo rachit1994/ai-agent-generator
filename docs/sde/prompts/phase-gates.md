@@ -15,23 +15,23 @@ Use this with `00-master-sequence.md` to control progression.
 - Run-id and output directory logic are stable.
 - Adapter supports provider abstraction with metadata.
 - Implementation uses Python package paths (`src/orchestrator/runtime/...`) rather than TS paths.
-- `qwen2.5:7b-instruct` is used for implementation prompts.
+- `qwen3:14b` is used for implementation prompts.
 
 ## Phase 2 (Prompts 06-07)
 - Baseline writes `traces.jsonl` and `summary.json`.
 - Input validation fails closed.
-- `qwen2.5:7b-instruct` is used for implementation prompts.
+- `qwen3:14b` is used for implementation prompts.
 
 ## Phase 3 (Prompts 08-12)
 - Guarded stage order is enforced.
 - Retry cap, timeout cap, token cap, and schema guardrails are enforced.
 - Evaluator metrics are deterministic.
-- `qwen2.5:7b-instruct` is used for implementation prompts.
+- `qwen3:14b` is used for implementation prompts.
 
 ## Phase 4 (Prompts 13-16)
 - A/B benchmark runs on same suite/provider settings.
 - `report.md` verdict is threshold-driven and reproducible.
-- `qwen2.5:7b-instruct` is used for implementation prompts.
+- `qwen3:14b` is used for implementation prompts.
 
 ## Phase 5 (Prompts 17-24)
 - Security and performance passes complete.

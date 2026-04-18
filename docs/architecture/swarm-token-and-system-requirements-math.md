@@ -239,17 +239,18 @@ Map by capability class, not vendor lock-in:
 
 ### 10.3 Suggested Local LLMs
 
-For local-first and cost control:
+For local-first and cost control (use **published** Ollama tags only; verify with `ollama pull <tag>` before relying on them in CI):
 
 - reasoning local:
-  - `Qwen3 32B` (or nearest reasoning-capable 30B-40B model)
+  - `qwen3:32b` or `qwen3:30b` (when GPU budget allows; see [Ollama `qwen3`](https://ollama.com/library/qwen3))
   - `Llama 3.3 70B Instruct` (when GPU budget allows)
 - balanced local:
-  - `Qwen3 14B`
+  - `qwen3:14b` (matches SDE default in `src/sde_pipeline/config.py`)
   - `Mistral Small` class
 - throughput local:
-  - `Qwen3 8B`
+  - `qwen3:8b` or `qwen3:4b`
   - `Llama 3.1 8B Instruct`
+- legacy fallback (still on registry): `qwen2.5:*-instruct` if you must pin the prior generation.
 
 Embedding/rerank local pair:
 

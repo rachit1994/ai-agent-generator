@@ -12,9 +12,10 @@ The execution extension is delivered by **multiple implementation roles** coordi
 | **PlannerDoc** | Markdown plan, API/data/security/test notes. | `sde_modes/modes/guarded_pipeline/planner.py` (`planner_doc` stage) |
 | **PlannerPrompt** | Executor-bound prompt from plan. | `sde_modes/modes/guarded_pipeline/planner.py` (`planner_prompt` stage) |
 | **Executor** | Code / structured answer. | `sde_modes/modes/guarded_pipeline/executor.py`, `sde_modes/modes/baseline/pipeline.py`, `sde_foundations/model_adapter.py` |
-| **Verifier** | Quality and policy checks on executor output. | `sde_modes/modes/guarded_pipeline/verify_pass.py` (`verifier`, `verifier_fix`) |
-| **GateEvaluator** | CTO strict gates, `balanced_gates`, hard-stops HS01–HS06. | `sde_gates/` (`hard_stops.py`, `balanced_gates.py`, `review.py`, …) |
-| **RunArchivist** | Traces, orchestration JSONL, `run.log`, `report.md`. | `sde_pipeline/runner/single_task.py`, `sde_foundations/storage.py`, `sde_pipeline/run_logging.py`, `sde_pipeline/report.py` |
+| **Verifier** | Quality and policy checks on executor output (includes **static code gate** snapshot). | `sde_modes/modes/guarded_pipeline/verify_pass.py`, `verify_core.py` |
+| **StaticGateAnalyzer** | Local AST + security-pattern scan + optional `ruff`; persists `static_gates_report.json`; feeds **HS04**. | `sde_gates/static_analysis.py`, `sde_pipeline/runner/success_artifacts.py` |
+| **GateEvaluator** | CTO strict gates, `balanced_gates`, hard-stops HS01–HS06 (**HS04** includes static report when present). | `sde_gates/` (`hard_stops.py`, `balanced_gates.py`, `review.py`, …) |
+| **RunArchivist** | Traces, orchestration JSONL, `run.log`, `report.md`, manifests, replay entrypoints. | `sde_pipeline/runner/single_task.py`, `sde_pipeline/replay.py`, `sde_foundations/storage.py`, `sde_pipeline/run_logging.py`, `sde_pipeline/report.py` |
 
 ## Handoff contracts
 
@@ -27,5 +28,5 @@ The execution extension is delivered by **multiple implementation roles** coordi
 ## Quality standard
 
 - **Strict balanced:** reliability, delivery, governance each ≥ 85; composite ≥ 90 (see main V1 spec).
-- **Hard-stops:** all HS01–HS06 must pass for `validation_ready`.
+- **Hard-stops:** all HS01–HS06 must pass for `validation_ready` (HS04 includes **static code gate** failures when `static_gates_report.json` is present).
 - **Observability:** every model stage appears in `traces.jsonl` and is summarized in `run.log`.

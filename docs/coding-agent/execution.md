@@ -191,7 +191,7 @@ Any single violation blocks V1 readiness. Detection must be artifact-backed.
 | HS01 | Missing or invalid `review.json` | File absent or JSON schema validation fails |
 | HS02 | Missing or invalid `token_context.json` | File absent or required keys missing |
 | HS03 | Untracked context truncation | `token_context.json` shows truncation without a logged summarization step and provenance reference |
-| HS04 | Safety or refusal-policy failure | `review.json` or `traces.jsonl` records `unsafe` or policy refusal with no clean terminal state |
+| HS04 | Safety, static-code, or refusal-policy failure | `review.json` or `traces.jsonl` records `unsafe` or policy refusal with no clean terminal state; or `static_gates_report.json` exists with `schema_version` `1.0` and `passed_all: false` (syntax / security heuristics / optional `ruff`) |
 | HS05 | Missing replay-critical lineage | `traces.jsonl` missing monotonic stage sequence or `orchestration.jsonl` missing entries for each model stage invocation |
 | HS06 | Silent token budget breach | actual tokens exceed budget without `fail_closed` terminal reason in traces |
 
@@ -203,6 +203,7 @@ Required artifacts in `outputs/runs/<run-id>/`:
 - `orchestration.jsonl` (pipeline-level events)
 - `review.json` (completion review and gate snapshot)
 - `token_context.json` (token budgets, usage, context reductions, overflow handling)
+- `static_gates_report.json` (local static analysis: AST, security patterns, optional `ruff`)
 - `report.md` (human-readable report; baseline-compatible)
 - `run.log` (human-readable pipeline narrative via stdlib logging)
 - `outputs/` directory for generated task files (multiple files allowed when task requires)

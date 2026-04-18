@@ -4,14 +4,36 @@ from __future__ import annotations
 
 import json
 
+from sde_gates.static_analysis import blocking_ids, run_static_code_gates
+
 
 def heuristic_verify(_task: str, _planning_doc: str, code: str) -> tuple[bool, list[str], dict]:
     issues: list[str] = []
+    hints: list[str] = []
     normalized = code.strip()
     if not normalized:
         issues.append("empty_output")
+    static_report = run_static_code_gates(extracted_python=normalized or None)
+    for bid in blocking_ids(static_report):
+        issues.append(f"static_gate:{bid}")
+    if "eval(" in code and "static_gate:eval_call" not in issues:
+        hints.append("hint_contains_eval")
+    if "exec(" in code and "static_gate:exec_call" not in issues:
+        hints.append("hint_contains_exec")
+    for w in static_report.get("warnings") or []:
+        if isinstance(w, dict) and w.get("id"):
+            hints.append(f"hint_pattern:{w['id']}")
+    line_len = max((len(line) for line in code.splitlines()), default=0)
+    if line_len > 4000:
+        hints.append("hint_very_long_line")
     passed = len(issues) == 0
-    report = {"passed": passed, "issues": issues, "notes": "heuristic_general_verifier"}
+    report = {
+        "passed": passed,
+        "issues": issues,
+        "hints": hints,
+        "notes": "heuristic_general_verifier",
+        "static_gates": static_report,
+    }
     return passed, issues, report
 
 

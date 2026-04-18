@@ -24,14 +24,15 @@ Implementation language/runtime:
 ## Model Strategy
 
 - Primary runtime: local `ollama` (no API token required).
-- Implementation model: `qwen2.5:7b-instruct` (all coding/execution agents).
+- **Qwen line:** defaults use **Qwen3** on Ollama ([library `qwen3`](https://ollama.com/library/qwen3)). SDE pins **`qwen3:14b`** in `RunConfig`; use smaller tags (`qwen3:8b`, `qwen3:4b`, …) or **`qwen2.5:*-instruct`** only if you explicitly choose them in config.
+- Implementation model: `qwen3:14b` (all coding/execution agents).
 - Non-implementation model: `gemma 4` (planning/review/research/support agents).
 - Optional local alternate for implementation: `llama3.1:8b-instruct`.
 - API fallback: allowed only when documented triggers fire.
 
 ## Agent Role Model Assignment
 
-- Use `qwen2.5:7b-instruct` for implementation-critical tasks:
+- Use `qwen3:14b` for implementation-critical tasks:
   - writing/refactoring code
   - test authoring and fixes
   - benchmark execution and artifact generation
@@ -54,8 +55,9 @@ If fallback is used, rerun full A/B and document provider/model/reason in
 
 CLI commands:
 - `sde run --task "..."`
-- `sde benchmark --suite ./data/benchmark-tasks.jsonl`
+- `sde benchmark --suite ./data/benchmark-tasks.jsonl` (optional `--max-tasks N`, `--continue-on-error`, **`--resume-run-id <run_id>`** to continue under `outputs/runs/<run_id>`; `--suite` optional on resume but must match the manifest if provided)
 - `sde report --run-id <id>`
+- `sde replay --run-id <id>` (optional `--format json|html`, `--write-html` to save `trajectory.html` in the run dir, `--rerun` for single-task re-execution from `run-manifest.json`)
 
 Modes:
 - `baseline`: `task -> model -> output`
@@ -69,6 +71,7 @@ Modes:
 4. Timeout cap (per-task execution limit).
 5. Token cap (per-task token budget).
 6. Refusal policy for unsafe/invalid actions with machine-readable reason.
+7. **Static code gates** (local, no sandbox): `static_gates_report.json` on successful runs — Python `ast` parse, high-signal dangerous patterns (e.g. `eval`, `subprocess`…`shell=True`), optional `ruff check` when `ruff` is on `PATH`. Failures surface in the verifier and in **HS04** (see [execution.md](../coding-agent/execution.md)).
 
 ## Minimal Architecture
 
@@ -95,12 +98,14 @@ src/
   sde_pipeline/
     runner/
     benchmark/
+    replay.py
     config.py
     report.py
     run_logging.py
   sde_modes/
     modes/
   sde_gates/
+    static_analysis.py
   sde_foundations/
 data/
   benchmark-tasks.jsonl
@@ -109,13 +114,25 @@ outputs/
     traces.jsonl
     summary.json
     report.md
+    run.log
     orchestration.jsonl
+    run-manifest.json              # sde run
+    benchmark-manifest.json        # sde benchmark (that run id)
+    benchmark-checkpoint.json      # sde benchmark progress / resume
+    trajectory.html                # optional: sde replay --write-html
+    review.json
+    token_context.json
+    static_gates_report.json
     answer.txt
     generated_script.py
     planner_doc.md
     executor_prompt.txt
     verifier_report.json
 ```
+
+## Core features status (after pull)
+
+For a **maintainer-facing** table of what is implemented vs SWE-agent / OpenHands–class patterns (and what is intentionally out of scope for local CLI), see **[`core-features-and-upstream-parity.md`](core-features-and-upstream-parity.md)**.
 
 ## Experiment And Verdict Rules
 

@@ -7,6 +7,7 @@ from pathlib import Path
 from sde_pipeline.config import DEFAULT_CONFIG, config_snapshot
 from sde_foundations.artifacts import extract_python_code
 from sde_foundations.eval import aggregate_metrics
+from sde_gates.static_analysis import run_static_code_gates
 from sde_pipeline.report import generate_report
 from sde_foundations.storage import append_jsonl, ensure_dir, write_json
 
@@ -26,7 +27,12 @@ def write_success_artifact_layer(
     answer_text = str(parsed.get("answer", ""))
     (output_dir / "answer.txt").write_text(answer_text, encoding="utf-8")
     code = extract_python_code(answer_text)
-    artifacts: dict[str, str] = {"answer_txt": str(output_dir / "answer.txt")}
+    static_report = run_static_code_gates(extracted_python=code, _answer_text=answer_text)
+    write_json(output_dir / "static_gates_report.json", static_report)
+    artifacts: dict[str, str] = {
+        "answer_txt": str(output_dir / "answer.txt"),
+        "static_gates_report_json": str(output_dir / "static_gates_report.json"),
+    }
     if code:
         script_path = output_dir / "generated_script.py"
         script_path.write_text(code + "\n", encoding="utf-8")

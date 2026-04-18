@@ -16,9 +16,10 @@ This project is an **architecture and local-runtime workspace** for an *AI Profe
 
 **What actually runs in code today** is the **SDE** (local CLI) package: a Python tool that can:
 
-- **`sde run`** — execute a single task in `baseline` or `guarded_pipeline` mode and write a run directory under **`outputs/runs/<run-id>/`** at the **repository root**.
-- **`sde benchmark`** — run a suite of tasks (JSONL) in baseline and/or guarded mode and aggregate metrics into a benchmark run directory.
+- **`sde run`** — execute a single task in `baseline` or `guarded_pipeline` mode and write a run directory under **`outputs/runs/<run-id>/`** at the **repository root** (includes `run-manifest.json`, `static_gates_report.json` on success).
+- **`sde benchmark`** — run a suite of tasks (JSONL) in baseline and/or guarded mode and aggregate metrics into a benchmark run directory (`benchmark-manifest.json`, optional `--max-tasks`, `--continue-on-error`).
 - **`sde report`** — turn `summary.json` from a run into `report.md` / `report-meta.json`.
+- **`sde replay`** — print a trajectory narrative or JSON for a run id; **`--rerun`** re-executes a single-task run from `run-manifest.json`.
 
 The **vision** (multi-service OS, event store, memory, org-wide IAM) lives in Markdown specs under **`docs/`**. The **implementation** that tracks those specs most closely today lives under **`src/orchestrator/`** (CLI + API) and the sibling packages **`sde_pipeline`**, **`sde_modes`**, **`sde_gates`**, **`sde_foundations`**.
 
@@ -34,6 +35,7 @@ Do these in order the first time through. Skipping ahead makes it easy to get lo
 | 1 | [README.md](../README.md) (repo root) | Executive picture, links to all major docs. |
 | 1b | [docs/onboarding/action-plan.md](action-plan.md) | **Product + delivery plan**: full-stack goal, V1–V7 rollup, safety-first precedence, parallel agents, phases. |
 | 2 | [docs/sde/what.md](../sde/what.md) | **SDE baseline**: goals, timebox, models, CLI commands — what “done” means for the local tool. |
+| 2b | [docs/sde/core-features-and-upstream-parity.md](../sde/core-features-and-upstream-parity.md) | **What is implemented** vs SWE-agent / OpenHands–class patterns; suggested next core work. |
 | 3 | [docs/sde/implementation-contract.md](../sde/implementation-contract.md) | Required artifacts, pipeline stages, guardrails — what the runtime promises to emit. |
 | 4 | [docs/architecture/operating-system-folder-structure.md](../architecture/operating-system-folder-structure.md) | **Target** folder layout; includes **“This repository (SDE orchestrator snapshot)”** mapping fantasy tree → real paths. |
 | 5 | [docs/coding-agent/execution.md](../coding-agent/execution.md) | First **coding-agent extension**: strict run layout, CTO-style gates, hard-stops HS01–HS06 — how runs are *supposed* to look when the extension is fully satisfied. |
@@ -98,6 +100,30 @@ When you run `uv run sde run …` or `uv run sde benchmark …`:
 
 ---
 
+## 5a. Package version and git hooks (optional)
+
+The repo keeps the installable version in **`pyproject.toml`** under **`[project].version`** (semver `MAJOR.MINOR.PATCH`).
+
+**Automatic bump on push (default: minor):**
+
+1. One-time from the repo root: `sh scripts/init-git-hooks.sh`  
+   (Equivalent: `git config core.hooksPath .githooks` — uses tracked hooks under **`.githooks/`**, not `.git/hooks/`.)
+2. On **`git push`**, the **`.githooks/pre-push`** hook runs **`scripts/bump_version.py`**, which bumps **`minor`** by default (`0.3.0` → `0.4.0`), then creates a **`chore: bump version to …`** commit if `pyproject.toml` changed.
+3. **Tag-only pushes** skip the bump (no new version commit).
+
+**Overrides:**
+
+| Goal | Command |
+|------|---------|
+| Skip bump for this push | `SKIP_VERSION_BUMP=1 git push` |
+| Patch instead of minor | `VERSION_BUMP=patch git push` |
+| Major | `VERSION_BUMP=major git push` |
+| No file change (print current) | `VERSION_BUMP=none git push` |
+
+Manual bump without pushing: `VERSION_BUMP=minor python3 scripts/bump_version.py` (writes `pyproject.toml` and prints the new version on stdout).
+
+---
+
 ## 6. First day checklist (hands-on)
 
 From the repository root:
@@ -136,7 +162,7 @@ From the repository root:
 
 | Term | Meaning |
 |------|---------|
-| **SDE** | Local CLI/runtime package (`sde`) for run / benchmark / report. |
+| **SDE** | Local CLI/runtime package (`sde`) for run / benchmark / report / replay + static gates on disk. |
 | **Baseline** | Simpler execution mode used for A/B comparison. |
 | **Guarded pipeline** | Multi-stage pipeline (planner → executor → verifier, …). |
 | **Extension spec** | A document under **`docs/coding-agent/`** describing a capability slice beyond the SDE baseline. |
