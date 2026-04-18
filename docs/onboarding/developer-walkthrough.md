@@ -1,10 +1,12 @@
 # Developer walkthrough
 
-This guide is for engineers who are new to the repository. It tells you **what to read first**, **how the code is organized**, **what the system does at a high level**, and **how to run and change things safely**.
+**Required path (short):** read **[`../ESSENTIAL.md`](../ESSENTIAL.md)** first, then the **`src/`** READMEs it names. **Ignore the rest of this file** until you want extra depth.
 
-**Want a gentler on-ramp?** Start with **[start-here-reading-the-docs.md](start-here-reading-the-docs.md)** (ideas and doc order) and **[start-here-reading-the-code.md](start-here-reading-the-code.md)** (where the Python lives and what to open first).
+---
 
-**If you are an LLM:** follow **§2 reading order** before editing. Prefer **small, test-backed** changes under `src/orchestrator/tests/`. Do not invent new artifact filenames without updating **`docs/sde/implementation-contract.md`** and gate code.
+This guide is **optional** detail for engineers who want a longer tour: reading order, repo map, contribution rules.
+
+**If you are an LLM:** follow **`../ESSENTIAL.md`**, then **§2** below if you need context. Prefer **small, test-backed** changes under `src/orchestrator/tests/`. Do not invent new artifact filenames without updating **`docs/sde/implementation-contract.md`** and gate code.
 
 ---
 
@@ -16,12 +18,16 @@ This project is an **architecture and local-runtime workspace** for an *AI Profe
 
 **What actually runs in code today** is the **SDE** (local CLI) package: a Python tool that can:
 
-- **`sde run`** — execute a single task in `baseline` or `guarded_pipeline` mode and write a run directory under **`outputs/runs/<run-id>/`** at the **repository root** (includes `run-manifest.json`, `static_gates_report.json` on success).
-- **`sde benchmark`** — run a suite of tasks (JSONL) in baseline and/or guarded mode and aggregate metrics into a benchmark run directory (`benchmark-manifest.json`, optional `--max-tasks`, `--continue-on-error`).
+- **`sde run`** — execute a single task in `baseline` or `guarded_pipeline` mode and write a run directory under **`outputs/runs/<run-id>/`** at the **repository root** (includes `run-manifest.json`, `static_gates_report.json` on success; guarded success also runs the **V3–V7 harness layers** that write extra folders—see `sde_pipeline/runner/*_layer.py`).
+- **`sde benchmark`** — run a suite of tasks (JSONL) in baseline and/or guarded mode and aggregate metrics into a benchmark run directory (`benchmark-manifest.json`, optional `--max-tasks`, `--continue-on-error`, `--resume-run-id`).
 - **`sde report`** — turn `summary.json` from a run into `report.md` / `report-meta.json`.
-- **`sde replay`** — print a trajectory narrative or JSON for a run id; **`--rerun`** re-executes a single-task run from `run-manifest.json`.
+- **`sde replay`** — print a trajectory narrative or JSON/HTML for a run id; **`--rerun`** re-executes a single-task run from `run-manifest.json`.
+- **`sde validate --run-id …`** — re-check an existing folder (`orchestrator.api.validate_run`): strict **single-task** contract when a run manifest exists; lighter check for **benchmark-only** trees.
+- **`sde roadmap-review`**, **`sde evolve`** — support-model digest + bounded “review loop” (see `docs/sde/what.md`).
+- **`sde continuous`** — repeat **`--task`** until a stop condition **or** drive a **`project_plan.json`** session (`--project-plan` / `--project-session-dir`).
+- **`sde project run|validate|status`** — meta-orchestrator over a session directory (plan, progress, verification, `stop_report.json`, …); full story in **`docs/sde/project-driver.md`**.
 
-The **vision** (multi-service OS, event store, memory, org-wide IAM) lives in Markdown specs under **`docs/`**. The **implementation** that tracks those specs most closely today lives under **`src/orchestrator/`** (CLI + API) and the sibling packages **`sde_pipeline`**, **`sde_modes`**, **`sde_gates`**, **`sde_foundations`**.
+The **vision** (full multi-service OS, rich planning agents, production IAM) still mostly lives in Markdown under **`docs/`**. The **Python** that tracks the runnable slice lives under **`src/orchestrator/`** (CLI + **`api/`** package) and **`sde_pipeline`**, **`sde_modes`**, **`sde_gates`**, **`sde_foundations`**. **Stable imports for other code:** `from orchestrator.api import …` (listed in **`src/orchestrator/api/README.md`**).
 
 ---
 
@@ -31,17 +37,20 @@ Do these in order the first time through. Skipping ahead makes it easy to get lo
 
 | Step | Document | Why |
 |------|----------|-----|
-| 0 | [start-here-reading-the-docs.md](start-here-reading-the-docs.md) / [start-here-reading-the-code.md](start-here-reading-the-code.md) | **Easy on-ramp** (docs side or code side). |
-| 1 | [README.md](../README.md) (repo root) | Executive picture, links to all major docs. |
+| 0 | [../ESSENTIAL.md](../ESSENTIAL.md) | **Required short path** — stop here first. |
+| 0b | [start-here-reading-the-docs.md](start-here-reading-the-docs.md) / [start-here-reading-the-code.md](start-here-reading-the-code.md) | **Optional** tiny glossaries (mostly point back to ESSENTIAL). |
+| 1 | [README.md](../README.md) (repo root) | Executive picture; use **`docs/ESSENTIAL.md`** for implementation. |
 | 1b | [docs/onboarding/action-plan.md](action-plan.md) | **Product + delivery plan**: full-stack goal, V1–V7 rollup, safety-first precedence, parallel agents, phases. |
 | 2 | [docs/sde/what.md](../sde/what.md) | **SDE baseline**: goals, timebox, models, CLI commands — what “done” means for the local tool. |
 | 2b | [docs/sde/core-features-and-upstream-parity.md](../sde/core-features-and-upstream-parity.md) | **What is implemented** vs SWE-agent / OpenHands–class patterns; suggested next core work. |
+| 2c | [docs/sde/project-driver.md](../sde/project-driver.md) | **Only if you touch `sde project` / session plans:** session files, CLI flags, phased “status” story. |
+| 2d | [src/orchestrator/api/README.md](../../src/orchestrator/api/README.md) | **Every public Python entrypoint** (`run_project_session`, `describe_project_session`, …). |
 | 3 | [docs/sde/implementation-contract.md](../sde/implementation-contract.md) | Required artifacts, pipeline stages, guardrails — what the runtime promises to emit. |
 | 4 | [docs/architecture/operating-system-folder-structure.md](../architecture/operating-system-folder-structure.md) | **Target** folder layout; includes **“This repository (SDE orchestrator snapshot)”** mapping fantasy tree → real paths. |
-| 5 | [docs/coding-agent/execution.md](../coding-agent/execution.md) | First **coding-agent extension**: strict run layout, CTO-style gates, hard-stops HS01–HS06 — how runs are *supposed* to look when the extension is fully satisfied. |
+| 5 | `src/sde_gates/run_directory.py` + `docs/sde/implementation-contract.md` | Run layout, CTO gates, hard-stops — **code + contract**, not a separate spec stack. |
 | 6 | [docs/README.md](../README.md) | Index of all extension specs and research links. |
 
-After that, read other **`docs/coding-agent/*.md`** files as needed for the feature you touch. The master architecture is large; use [docs/architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md) to see how extension specs relate to “full” completion.
+The master architecture is large; use [docs/architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md) for **master doc vs this repo** scope.
 
 ---
 
@@ -57,7 +66,7 @@ coding-agent/
 │   ├── onboarding/           # Easy entry + this walkthrough + action plan
 │   ├── architecture/         # Master blueprint, OS folder map, completion definition
 │   ├── README.md             # Doc index + extension map
-│   ├── coding-agent/         # Extension specs (execution, planning, …)
+│   ├── coding-agent/         # Stub README (old V1–V7 Markdown specs removed)
 │   ├── sde/                    # SDE baseline (CLI, contract, prompts)
 │   ├── templates/sde-demo/   # Tracked demo seed (copy to demo_apps/)
 │   └── …
@@ -65,7 +74,7 @@ coding-agent/
 │   └── runs/<run-id>/        # traces, summary, report, logs, …
 └── src/
     ├── orchestrator/         # Import package `orchestrator` (api/, runtime/cli/, tests/unit/)
-    ├── sde_pipeline/         # Runner, benchmark, report
+    ├── sde_pipeline/         # Runner (+ completion/event/memory/evolution/org layers), benchmark, report, replay
     ├── sde_modes/            # Baseline + guarded execution modes
     ├── sde_gates/            # CTO-style gates on disk artifacts
     └── sde_foundations/      # Types, storage, utils, model adapter
@@ -80,13 +89,15 @@ coding-agent/
 When you run `uv run sde run …` or `uv run sde benchmark …`:
 
 1. **Entrypoint:** [`src/orchestrator/runtime/cli/main.py`](../src/orchestrator/runtime/cli/main.py) — parses arguments and dispatches.
-2. **Single task:** [`sde_pipeline/runner/single_task.py`](../src/sde_pipeline/runner/single_task.py) (`execute_single_task`) — creates `run_id`, builds output dir, runs `baseline` or `guarded_pipeline`, writes JSONL traces and `summary.json`.
+2. **Single task:** [`sde_pipeline/runner/single_task.py`](../src/sde_pipeline/runner/single_task.py) (`execute_single_task`) — creates `run_id`, builds output dir, runs `baseline` or `guarded_pipeline`, writes JSONL traces and `summary.json`, then calls **post-run layers** on guarded success (completion, lineage, memory, evolution, organization).
 3. **Suite:** [`sde_pipeline/benchmark/run_benchmark.py`](../src/sde_pipeline/benchmark/run_benchmark.py) (`run_benchmark`) — loads JSONL tasks, runs baseline/guarded per task mode, aggregates metrics.
 4. **Report:** [`sde_pipeline/report.py`](../src/sde_pipeline/report.py) — reads `summary.json`, writes `report.md` and `report-meta.json`.
 5. **Modes:** [`sde_modes/modes/baseline/pipeline.py`](../src/sde_modes/modes/baseline/pipeline.py), [`sde_modes/modes/guarded.py`](../src/sde_modes/modes/guarded.py), [`sde_modes/modes/guarded_pipeline/pipeline.py`](../src/sde_modes/modes/guarded_pipeline/pipeline.py) — concrete execution strategies.
-6. **Gates / validation:** [`sde_gates/run_directory.py`](../src/sde_gates/run_directory.py) (`validate_execution_run_directory`) — validates a run directory against strict contracts (tests and CI-style checks).
+6. **Gates / validation:** [`sde_gates/run_directory.py`](../src/sde_gates/run_directory.py) (`validate_execution_run_directory`) — validates a run directory against strict contracts (tests and CI-style checks). **`orchestrator.api.validate_run`** wraps this for the `sde validate` command.
 
-**Suggested first code read:** `orchestrator/api/__init__.py` (public surface) → `orchestrator/runtime/cli/main.py` → `sde_pipeline/runner/single_task.py` → `sde_modes/modes/guarded_pipeline/pipeline.py` (longest path) → `sde_foundations/storage.py` / `sde_pipeline/report.py`.
+**Project sessions** (`sde project …`, `sde continuous --project-plan`): start at [`orchestrator/api/project_driver.py`](../src/orchestrator/api/project_driver.py) and [`project_status.py`](../src/orchestrator/api/project_status.py); CLI wiring still lives in `main.py`.
+
+**Suggested first code read:** [`orchestrator/api/README.md`](../src/orchestrator/api/README.md) → `orchestrator/api/__init__.py` → `orchestrator/runtime/cli/main.py` → `sde_pipeline/runner/single_task.py` → `sde_modes/modes/guarded_pipeline/pipeline.py` (longest path) → `sde_gates/run_directory.py`.
 
 ---
 
@@ -140,7 +151,7 @@ From the repository root:
 ## 7. How to contribute safely
 
 - **Small changes:** Match existing style; keep imports at top of files; extend tests beside **`src/orchestrator/tests/unit/`**.
-- **Contracts:** If you change artifact names or schemas, update **`docs/sde/implementation-contract.md`** and any **`docs/coding-agent/*.md`** that references those paths, then adjust **`sde_gates/`** and tests.
+- **Contracts:** If you change artifact names or schemas, update **`docs/sde/implementation-contract.md`** and **`sde_gates/`**, then adjust tests.
 - **CI:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `compileall` on `src/` and pytest — keep both green.
 
 ---
@@ -150,8 +161,10 @@ From the repository root:
 | Topic | Document |
 |-------|----------|
 | CLI commands, models, timebox | [docs/sde/what.md](../sde/what.md) |
+| Multi-step project sessions | [docs/sde/project-driver.md](../sde/project-driver.md) |
+| Public Python API | [src/orchestrator/api/README.md](../../src/orchestrator/api/README.md) |
 | Artifact list, pipeline order | [docs/sde/implementation-contract.md](../sde/implementation-contract.md) |
-| Run directory layout, gates, HS01+ | [docs/coding-agent/execution.md](../coding-agent/execution.md) |
+| Run directory layout, gates, HS01+ | `src/sde_gates/`, `docs/sde/implementation-contract.md` |
 | Repo vs master OS tree | [docs/architecture/operating-system-folder-structure.md](../architecture/operating-system-folder-structure.md) |
 | Extension ladder, hard-stop index | [Documentation index](../README.md) |
 | Full platform vision | [docs/architecture/AI-Professional-Evolution-Master-Architecture.md](../architecture/AI-Professional-Evolution-Master-Architecture.md) |
@@ -162,10 +175,10 @@ From the repository root:
 
 | Term | Meaning |
 |------|---------|
-| **SDE** | Local CLI/runtime package (`sde`) for run / benchmark / report / replay + static gates on disk. |
+| **SDE** | Local CLI (`sde`): run, benchmark, report, replay, validate, roadmap-review, evolve, continuous, **project** — plus static gates on disk. |
 | **Baseline** | Simpler execution mode used for A/B comparison. |
 | **Guarded pipeline** | Multi-stage pipeline (planner → executor → verifier, …). |
-| **Extension spec** | A document under **`docs/coding-agent/`** describing a capability slice beyond the SDE baseline. |
+| **Hard-stop (HSxx)** | A numbered gate in **`src/sde_gates/`**; must stay aligned with tests. |
 | **`outputs_base()`** | Resolves the directory containing **`runs/`** — normally repo root **`outputs/`**. |
 
 You now have a path from **README → SDE docs → folder map → CLI entry → run artifacts**. Use the doc index [docs/README.md](../README.md) whenever you need the full list of specs.

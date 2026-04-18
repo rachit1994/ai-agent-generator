@@ -2,7 +2,7 @@
 
 This document is the single implementation blueprint for building and operating the AI Professional Evolution System in production.
 
-**How to read this (humans and LLMs):** it is **long on purpose** — treat it as a **reference library**, not a tutorial. Read **§1–2** first for intent, then jump by section when you need depth. For **what this repo implements first**, use **`docs/onboarding/action-plan.md`** and **`docs/coding-agent/execution.md`**. When you summarize, separate **(a) behaviors we can prove from files and gates** from **(b) named infrastructure** (databases, vendors) that may still be **choices** per environment.
+**How to read this (humans and LLMs):** it is **long on purpose** — treat it as a **reference library**, not a tutorial. Read **§1–2** first for intent, then jump by section when you need depth. For **what this repo implements first**, use **`docs/onboarding/action-plan.md`**, **`docs/ESSENTIAL.md`**, and **`docs/sde/implementation-contract.md`** (gates and behavior live in **`src/sde_gates/`**). When you summarize, separate **(a) behaviors we can prove from files and gates** from **(b) named infrastructure** (databases, vendors) that may still be **choices** per environment.
 
 ---
 
@@ -533,29 +533,23 @@ Roadmap governance:
 - Phase 0.5 contract freeze is mandatory before implementation scale.
 - Phase exits require conformance evidence against operational contracts and release gates.
 
-## Repository version specifications (implementation ladder)
+## Repository implementation spine (this repo)
 
-Extension specs under `docs/coding-agent/` (execution through organization) translate this blueprint into staged, CTO-style acceptance criteria, artifacts, and hard-stops. Use them as the conformance spine for roadmap phase exits:
+The old **V1–V7 Markdown extension specs** under `docs/coding-agent/` were **removed**. **Conformance** for the local tool is now:
 
-| Spec | Primary architecture mapping |
-|------|------------------------------|
-| [coding-agent/execution.md](../coding-agent/execution.md) | Execution contracts, balanced gates, token/context evidence (underpins auditable execution across sections) |
-| [coding-agent/planning.md](../coding-agent/planning.md) | Planning and documentation gates before substantive implementation (governance, deliberate quality) |
-| [coding-agent/completion.md](../coding-agent/completion.md) | Completion, verification bundles, Definition of Done (production pipeline rigor) |
-| [coding-agent/events.md](../coding-agent/events.md) | §12 Event-sourced architecture; §15 local runtime/storage foundations; §17 Phase 0; §14 replay stability; §19.D P0 event store items |
-| [coding-agent/memory.md](../coding-agent/memory.md) | §8 Memory architecture; §18 memory risks; §17 Phase 1 memory subsystem |
-| [coding-agent/evolution.md](../coding-agent/evolution.md) | §6 Lifecycle; §9 Learning and evolution; §11 Guardrails; §13 Evaluation; §17 Phases 1–3 |
-| [coding-agent/organization.md](../coding-agent/organization.md) | §5 Agent organization; §15 identity and authorization; §16 scalability; §17 Phases 2–4 |
+- **`docs/sde/implementation-contract.md`** and **`docs/sde/what.md`** — what runs and what files must exist.
+- **`src/sde_gates/`** — CTO gates and hard-stops (**HS01+**).
+- **`src/sde_pipeline/runner/`** — run lifecycle and harness layers (`*_layer.py`).
 
-Phase exits in §17 should cite concrete evidence paths (artifacts, gate IDs, replay manifests) defined in `docs/coding-agent/execution.md` and `docs/coding-agent/planning.md` through `docs/coding-agent/organization.md`. See also [docs/README.md](../README.md) for reading order.
+Phase exits in §17 should cite **concrete evidence paths** (artifacts, gate IDs, replay manifests) produced by the **Python** paths above. See [docs/README.md](../README.md) for doc index.
 
-**Implementation spine (this repo):** Treat **execution (V1) through organization (V7)** as **one combined product ladder** toward full-stack, production-gated delivery with parallel junior-class agents—not seven isolated releases. **Execution safety and HS01–HS06 dominate** all later extensions; motivated self-learning runs **inside** that envelope. **Phased delivery, precedence rules, capability yardsticks, and parallel-agent discipline:** [docs/onboarding/action-plan.md](../onboarding/action-plan.md).
+**Implementation spine (this repo):** Treat **V1 through V7** themes from the action plan as **one combined ladder** toward full-stack, production-gated delivery—not seven isolated doc drops. **Execution safety and HS01–HS06 dominate** later behavior. **Phased delivery and discipline:** [docs/onboarding/action-plan.md](../onboarding/action-plan.md).
 
-### Full architecture goal vs extension ladder (completion)
+### Full architecture goal vs this repository (completion)
 
-Finishing every extension under `docs/coding-agent/` is **necessary** for the **behavioral and evidence goals** of this blueprint (auditable evolution, lineage, gates, local-first contracts) as implemented in this repository. It is **not automatically sufficient** for every **named production service** and **readiness-program** item in later sections (e.g. §15 infrastructure choices, §28 scoring) unless those are separately bound, built, and evidenced.
+Shipping the **local SDE spine** (CLI + gates + contracts + tests) is **necessary** for honest **local-first** claims in this codebase. It is **not automatically sufficient** for every **named production service** and **readiness-program** item in later sections (e.g. §15 infrastructure choices, §28 scoring) unless those are separately bound, built, and evidenced.
 
-**Canonical completion definition and coverage matrix:** [docs/architecture/architecture-goal-completion.md](architecture-goal-completion.md).
+**Canonical completion definition:** [docs/architecture/architecture-goal-completion.md](architecture-goal-completion.md).
 
 ---
 

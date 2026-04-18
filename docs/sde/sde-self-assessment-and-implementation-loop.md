@@ -1,5 +1,7 @@
 # SDE self-assessment and implementation loop
 
+**Not on the minimum path.** For day-to-day code, read **[`../ESSENTIAL.md`](../ESSENTIAL.md)** only. Come back here when you want a **workflow** for roadmap %, gap checks, and agent-style loops.
+
 **In plain words:** this page is for **humans or agents** who need to (1) understand whether SDE can **own a whole project**, (2) **measure how much is left**, and (3) **implement in slices** while **re-checking** remaining work after each slice. It ties together docs that already exist in this repo; it does not invent new product promises.
 
 ---
@@ -93,3 +95,9 @@ Do not claim “whole project complete” unless project_plan-driven session + v
 - `sde roadmap-review` — structured “% / remaining” (support model).
 - `sde evolve` — bounded rounds: roadmap-review + optional fixed task ([what.md](what.md)).
 - `sde project validate` / `sde project status` / `sde project run` / `sde continuous --project-plan` — session meta-orchestrator ([project-driver.md](project-driver.md)).
+
+---
+
+## Document history
+
+- **2026-04-18:** Kept in sync with **project status Phase 21** (`status_at_a_glance`), `orchestrator.api` exports, and the “follow latest code” path in `docs/README.md` / onboarding guides.

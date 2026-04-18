@@ -1,15 +1,20 @@
 # `src`
 
-Flat Python source tree: **`orchestrator`** (CLI + public API) and four **`sde_*`** packages (foundation, gates, modes, pipeline). Run artifacts stay under repo-root **`outputs/`** (gitignored), not here.
+**Docs:** the minimum reading list for this tree is **[`../docs/ESSENTIAL.md`](../docs/ESSENTIAL.md)** (do not start from the big `docs/README.md` stack).
+
+**In plain words:** all runnable Python lives here in a **flat** tree: one **`orchestrator`** package (CLI + small API) and four **`sde_*`** packages. When someone runs `sde`, the tool writes under repo-root **`outputs/`** (usually gitignored)—not under `src/`.
 
 ## Where to look first
 
-- **Orchestrator:** [`orchestrator/`](orchestrator/) — `api/` (public surface), `runtime/cli/` (CLI entrypoint), `tests/unit/` (pytest).
+- **Orchestrator:** [`orchestrator/`](orchestrator/) — [`api/`](orchestrator/api/) (**import here from other code**; see [`api/README.md`](orchestrator/api/README.md)), `runtime/cli/main.py` (**where terminal commands start**), `tests/unit/` (pytest).
 - **CLI:** `sde` / `agent` → `orchestrator.runtime.cli.main:main` (`pyproject.toml`).
 - **Foundations:** [`sde_foundations/`](sde_foundations/) — types, storage, utils, model adapter, safeguards.
-- **Gates:** [`sde_gates/`](sde_gates/) — CTO gates, review, hard-stops, run-directory validation.
-- **Modes:** [`sde_modes/modes/`](sde_modes/modes/) — baseline, guarded, guarded pipeline.
-- **Pipeline:** [`sde_pipeline/`](sde_pipeline/) — config, runner, benchmark, report, run logging.
+- **Gates:** [`sde_gates/`](sde_gates/) — CTO gates, review, hard-stops, `validate_execution_run_directory`, split **hard-stop** helpers (`hard_stops_events.py`, `hard_stops_memory.py`, …) aligned with specs.
+- **Modes:** [`sde_modes/modes/`](sde_modes/modes/) — baseline, guarded, guarded pipeline (`phased_pipeline` too).
+- **Pipeline:** [`sde_pipeline/`](sde_pipeline/) — config, **`runner/single_task.py`** (heart of one run), benchmark, report, replay, plus **post-run layers** that write extra harness folders on guarded success paths:
+  - `completion_layer.py` — V3 completion stubs (`program/`, `step_reviews/`, …).
+  - `event_lineage_layer.py` — replay manifest + event store envelope.
+  - `memory_artifact_layer.py`, `evolution_layer.py`, `organization_layer.py` — memory / evolution / org harness files + matching gate modules under `sde_gates/`.
 
 ## Master OS layout
 

@@ -156,7 +156,7 @@ The tree above is the **target** OS layout. *This* repo keeps **`src/`** intenti
 | Pipeline, runner, benchmark, report | **`src/sde_pipeline/`** — import **`sde_pipeline`**. |
 | `outputs/runs/<run-id>/` | **Repository root** `outputs/runs/<run-id>/` only (gitignored). Resolved via `sde_foundations.utils.outputs_base()`; do not add `outputs/` under `src/`. |
 | `src/data/` … benchmark suites | `data/` at repo root (e.g. `data/benchmark-tasks.jsonl`). |
-| Coding-agent extension specs | `docs/coding-agent/*.md` only — no `docs/vN/` directories. |
+| Coding-agent extension specs | **Removed** — see `docs/coding-agent/README.md` stub; contracts in `docs/sde/` + `src/sde_gates/`. |
 | SDE baseline (CLI contract) | `docs/sde/` |
 
 Track delivery in [action-plan.md](../onboarding/action-plan.md) §5. For the full scaffold list (contracts, services, infra, tools), use the **Master-Aligned Target Layout** diagram in this file.

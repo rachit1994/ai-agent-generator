@@ -4,35 +4,13 @@
 
 This repository still holds the **full production architecture** story: local-first, event-sourced, policy-governed operation — with agents treated as **junior contributors** who need **process, review, and evidence**, not a single chat transcript.
 
-**Where to start (pick one):**
+**Where to start:** **`docs/ESSENTIAL.md`** — shortest path to follow the code and the CLI (links to at most four Markdown docs, then `src/` READMEs).
 
-- **Words first, no code yet:** `docs/onboarding/start-here-reading-the-docs.md`
-- **Code tree first:** `docs/onboarding/start-here-reading-the-code.md`
-- **Engineer path:** `docs/onboarding/developer-walkthrough.md` then `docs/README.md`
-
-Primary sources of truth:
-- `docs/architecture/AI-Professional-Evolution-Master-Architecture.md` — **full platform** blueprint (long; use as reference).
-- `docs/onboarding/action-plan.md` — **what we are building toward** and **in what order** (V1–V7 as **one** roadmap; **safety before** shortcuts).
-- `docs/architecture/architecture-goal-completion.md` — **what “all specs done” does and does not mean** next to the master doc.
-
-Supporting docs (implementation and specs):
-- `docs/onboarding/start-here-reading-the-docs.md` — **gentle** glossary and reading order.
-- `docs/onboarding/start-here-reading-the-code.md` — **where files live** and what is runnable vs planned.
-- `docs/onboarding/developer-walkthrough.md` — **hands-on** map: CLI, `outputs/`, tests, safe changes.
-- `docs/architecture/operating-system-folder-structure.md` — **target** folder tree for the full OS; compares to this repo.
-- `docs/architecture/swarm-token-and-system-requirements-math.md` — **budgets and sizing** math for swarms and hardware.
-- `docs/coding-agent/execution.md` — **V1:** what each run must **write** and which **checks (HS01–HS06)** must pass.
-- `docs/coding-agent/planning.md` — **V2:** plan and docs **before** big coding; learning log; **HS07–HS12**.
-- `docs/coding-agent/completion.md` — **V3:** small steps, reviews, tests, “done” definition; **HS13–HS16**.
-- `docs/coding-agent/events.md` — **V4:** append-only **event log** and replay; **HS17–HS20**.
-- `docs/coding-agent/memory.md` — **V5:** governed **memory** across runs; **HS21–HS24**.
-- `docs/coding-agent/evolution.md` — **V6:** reflection, practice, promotion, canary; **HS25–HS28**.
-- `docs/coding-agent/organization.md` — **V7:** **many agents**, permissions, leases; **HS29–HS32**.
-- `docs/README.md` — **map of all docs** and cumulative hard-stop index.
-- `docs/research/self-improvement-research-alignment.md` — **papers → our specs** (never overrides V1).
-- `docs/sde/pipeline-plan.md` — **order of work** to ship the execution slice.
-- `docs/sde/multi-agent-build.md` — **who owns which module** for multi-role delivery.
-- `docs/templates/sde-demo/` — **copy-paste seed** for local demos under gitignored `demo_apps/`
+**Optional (vision and long specs):**
+- `docs/architecture/AI-Professional-Evolution-Master-Architecture.md` — full platform blueprint (reference, long).
+- `docs/onboarding/action-plan.md` — product story and phased roadmap.
+- `docs/architecture/architecture-goal-completion.md` — what this **repo’s SDE spine** does and does **not** mean vs the master doc (extension Markdown specs were removed).
+- Full doc tree (lookup only): **`docs/README.md`**. Deeper onboarding: **`docs/onboarding/`**. Stub for removed V1–V7 Markdown: **`docs/coding-agent/README.md`**. Demo seed: **`docs/templates/sde-demo/`**.
 
 ---
 

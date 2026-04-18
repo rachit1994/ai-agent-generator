@@ -8,7 +8,7 @@ The execution extension is delivered by **multiple implementation roles** coordi
 
 | Agent role | Responsibility | Primary modules |
 |------------|----------------|-----------------|
-| **PlanningAgent** (singleton) | Emits sequential + parallel plan; does not mutate runtime. | [`pipeline-plan.md`](pipeline-plan.md), [`docs/coding-agent/execution.md`](../coding-agent/execution.md) |
+| **PlanningAgent** (singleton) | Emits sequential + parallel plan; does not mutate runtime. | [`pipeline-plan.md`](pipeline-plan.md), `docs/sde/implementation-contract.md` |
 | **PlannerDoc** | Markdown plan, API/data/security/test notes. | `sde_modes/modes/guarded_pipeline/planner.py` (`planner_doc` stage) |
 | **PlannerPrompt** | Executor-bound prompt from plan. | `sde_modes/modes/guarded_pipeline/planner.py` (`planner_prompt` stage) |
 | **Executor** | Code / structured answer. | `sde_modes/modes/guarded_pipeline/executor.py`, `sde_modes/modes/baseline/pipeline.py`, `sde_foundations/model_adapter.py` |

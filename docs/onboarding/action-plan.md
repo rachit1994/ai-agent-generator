@@ -1,10 +1,12 @@
 # SDE action plan — how the system delivers a full-stack app
 
+**Not required to follow the code.** For implementation, read **[`../ESSENTIAL.md`](../ESSENTIAL.md)** first; open this file when you want the **long product story** (full-stack vision, phases, how work *should* flow).
+
 **In plain words:** this document is the **storyboard** for turning a big product prompt into a **shippable** app the same way a careful company would: plan first, review work, prove tests and gates, keep logs, and only then talk about speed or fancy learning. **Models are “juniors”**; **the process** (orchestrator + files + checks) is what keeps quality honest.
 
 This is the **operational blueprint** for how one SDE instance replaces a solo developer (you) in building a **production-quality full-stack application**. Agents are **junior engineers**; company processes (reviews, gates, leases, learning) ensure mistakes are caught early and lessons compound across the run.
 
-Every mechanism described here operates **under CTO gates** ([execution.md](../coding-agent/execution.md) HS01–HS06). No section below may weaken those gates for speed or learning volume.
+Every mechanism described here operates **under CTO gates** enforced in **`src/sde_gates/`** (hard-stops **HS01–HS06** and up). No section below may weaken those gates for speed or learning volume.
 
 ---
 
@@ -19,7 +21,7 @@ Every mechanism described here operates **under CTO gates** ([execution.md](../c
 - every change traceable to a plan step and a review record,
 - honest terminal state (`completed_review_pass` or `blocked_human` with reasons).
 
-**Definition of "done":** The SDE does not stop until the `definition_of_done` checklist ([completion.md](../coding-agent/completion.md)) is fully green **or** a hard block is surfaced (budget exhaustion, human decision required, safety veto). Silent stalls are a hard-stop violation (HS15).
+**Definition of "done":** The SDE does not stop until the **session or run `definition_of_done`** (on-disk checklist) is fully green **or** a hard block is surfaced (budget exhaustion, human decision required, safety veto). Silent stalls are a hard-stop violation (HS15). **Concrete rules:** `src/sde_gates/` + `docs/sde/implementation-contract.md`.
 
 ---
 
@@ -71,7 +73,7 @@ project_plan.json
 
 **Lease conflict resolution:** If step N in lane A depends on step M in lane B, lane A blocks on M's completion. The orchestrator tracks this via `depends_on` and does not issue the step until the dependency's `step_review` passes.
 
-**Shipped slice (local CLI):** session-level **`sde project run`** + **`project_plan.json` / `progress.json`** driver, bounded **ContextPack**, orchestrator **per-step verification**, and optional **`sde continuous --project-session-dir`** — see [`../sde/project-driver.md`](../sde/project-driver.md). This is a **sequential** meta-orchestrator on one worktree; full parallel lane + heartbeat semantics above remain roadmap until the same session primitives gain subprocess isolation.
+**Shipped slice (local CLI):** session-level **`sde project run`** + **`project_plan.json` / `progress.json`** driver, bounded **ContextPack**, orchestrator **per-step shell verification**, **`sde project validate`** (CI preflight), **`sde project status`** (read-only JSON, including **`status_at_a_glance`** for quick health), optional **`sde continuous --project-plan`**, optional **`--parallel-worktrees`** when git + disjoint scopes apply — see [`../sde/project-driver.md`](../sde/project-driver.md). This is still mostly a **sequential** meta-orchestrator on one checkout; the full parallel-lane + heartbeat story above remains roadmap beyond the shipped lease + worktree slices.
 
 ### Stage 3 — Atomic build + review loop (V3 completion)
 
@@ -213,15 +215,17 @@ This order is **binding** across all extension specs and docs:
 
 The V1–V7 labels are **staged capabilities**, not separate products. Together they answer: *how does one SDE instance deliver a full-stack app with company-grade process?*
 
-| Version | Spec | Hard-stops | What it adds to the delivery flow |
-|---------|------|------------|-----------------------------------|
-| **V1** | [execution.md](../coding-agent/execution.md) | HS01–HS06 | **Trust base.** Auditable runs, token integrity, balanced gates. Without this nothing else is trustworthy. |
-| **V2** | [planning.md](../coding-agent/planning.md) | HS07–HS12 | **Company planning.** Stages 1 + learning capture. The system plans before coding and records what it learns. |
-| **V3** | [completion.md](../coding-agent/completion.md) | HS13–HS16 | **Build + prove.** Stages 3–5. Atomic step loop, verification, DoD. Features reach "done" with evidence. |
-| **V4** | [events.md](../coding-agent/events.md) | HS17–HS20 | **Audit trail.** Stage 7. Every decision is replayable. |
-| **V5** | [memory.md](../coding-agent/memory.md) | HS21–HS24 | **Institutional memory.** Stage 8. Cross-run knowledge with provenance. |
-| **V6** | [evolution.md](../coding-agent/evolution.md) | HS25–HS28 | **Learning loop.** Stage 6 (cross-run). Reflection, practice, canary, promotion. |
-| **V7** | [organization.md](../coding-agent/organization.md) | HS29–HS32 | **Many agents.** Stage 2. Parallel lanes, leases, IAM, coordination safety. |
+| Version | Hard-stops | What it adds to the delivery flow |
+|---------|------------|-----------------------------------|
+| **V1** | HS01–HS06 | **Trust base.** Auditable runs, token integrity, balanced gates. Without this nothing else is trustworthy. |
+| **V2** | HS07–HS12 | **Company planning.** Stages 1 + learning capture. The system plans before coding and records what it learns. |
+| **V3** | HS13–HS16 | **Build + prove.** Stages 3–5. Atomic step loop, verification, DoD. Features reach "done" with evidence. |
+| **V4** | HS17–HS20 | **Audit trail.** Stage 7. Every decision is replayable. |
+| **V5** | HS21–HS24 | **Institutional memory.** Stage 8. Cross-run knowledge with provenance. |
+| **V6** | HS25–HS28 | **Learning loop.** Stage 6 (cross-run). Reflection, practice, canary, promotion. |
+| **V7** | HS29–HS32 | **Many agents.** Stage 2. Parallel lanes, leases, IAM, coordination safety. |
+
+**Specs:** the old Markdown extension files under **`docs/coding-agent/`** were **removed**; behavior is in **`src/sde_gates/`** and **`docs/sde/implementation-contract.md`**.
 
 **Implementation order:** V1 → V3 (need build loop before planning is useful at scale) → V2 → V4 → V7 (parallel agents) → V5 → V6. But **all** are required for the complete product story.
 

@@ -11,7 +11,7 @@
 | Area | What you get | Primary code / artifacts |
 |------|----------------|---------------------------|
 | **Staged pipeline** | `baseline` vs `guarded_pipeline` (planner → executor → verifier → optional fix → finalize) | `src/sde_modes/modes/`, `traces.jsonl` |
-| **CTO-style gates** | `review.json`, `token_context.json`, `balanced_gates`, `validation_ready`, hard-stops **HS01–HS06** | `src/sde_gates/`, [`execution.md`](../coding-agent/execution.md) |
+| **CTO-style gates** | `review.json`, `token_context.json`, `balanced_gates`, `validation_ready`, hard-stops **HS01–HS06** | `src/sde_gates/` |
 | **Static code + security gates** | `static_gates_report.json`: AST parse, high-signal dangerous patterns, optional **`ruff`**, **`bandit`**, **`basedpyright`/`pyright`** on `PATH`; failures in **verifier** and **HS04** | `src/sde_gates/static_analysis.py`, `verifier_report` |
 | **Run manifests** | `run-manifest.json` for every `sde run` (task + mode + run_id) | `src/sde_pipeline/runner/single_task.py` |
 | **Repeat execution (V1)** | `sde run … --repeat N` (isolated run dirs; envelope lists `runs[]`, `validation_ready_all`) | `single_task.execute_single_task`, CLI `run` |

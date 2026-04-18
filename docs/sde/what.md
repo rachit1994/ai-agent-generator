@@ -1,13 +1,15 @@
 # SDE baseline overview (single source of truth)
 
-**In plain words:** this file is the **ground truth for the current local tool** (`sde`): what machines and models we assumed, which **commands** exist, and what “baseline vs guarded pipeline” means. It is **shorter and more concrete** than the big V1–V7 specs — read it first if you just need to **run** the CLI.
+**Reading path:** this file is **required** — see **[`../ESSENTIAL.md`](../ESSENTIAL.md)** (it lists this doc first).
+
+**In plain words:** this file is the **ground truth for the current local tool** (`sde`): what machines and models we assumed, which **commands** exist, and what “baseline vs guarded pipeline” means. It is **shorter and more concrete** than the long architecture docs — read it first if you just need to **run** the CLI. For **where each command lives in Python**, see **[`../../src/orchestrator/api/README.md`](../../src/orchestrator/api/README.md)** and **`../../src/orchestrator/runtime/cli/main.py`** (from repo root: `src/orchestrator/...`).
 
 ## Goal
 
 Build a local CLI SDE baseline that tests whether guardrails + a staged execution
 pipeline improve outcomes versus a plain one-shot baseline.
 
-**Product trajectory (north star):** SDE grows into the **single orchestrator** that drives **full-stack product delivery** the way a small company would: **parallel junior-class agents**, mandatory **reviews and verification**, **governed self-learning**, and **gates that support reliable production pushes**. Staged specs **V1–V7** under `docs/coding-agent/` are **one combined roadmap** toward that outcome; **V1 execution safety always dominates**. See [../onboarding/action-plan.md](../onboarding/action-plan.md) and [../architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md).
+**Product trajectory (north star):** SDE grows into the **single orchestrator** that drives **full-stack product delivery** the way a small company would: **parallel junior-class agents**, mandatory **reviews and verification**, **governed self-learning**, and **gates that support reliable production pushes**. Older **V1–V7** Markdown specs were **removed**; the roadmap story lives in [../onboarding/action-plan.md](../onboarding/action-plan.md), and **what actually runs** is this repo’s **Python + SDE docs**. See [../architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md) for “how much of the master doc this repo claims.”
 
 Implementation language/runtime:
 - Python 3 CLI (installable import package **`orchestrator`** under `src/orchestrator/`; wheel / CLI names remain **`sde`** / **`agent`** per `pyproject.toml`).
@@ -54,7 +56,7 @@ If fallback is used, rerun full A/B and document provider/model/reason in
 ## Product Surface
 
 CLI commands:
-- `sde run --task "..." --mode baseline|guarded_pipeline|phased_pipeline` (optional **`--repeat N`**: same task and mode **N** times, each under a fresh `outputs/runs/<run-id>/` — V1 **RepeatProfile**); successful parses also emit **V4** lineage, **V5** memory, **V6** evolution, and **V7** org stubs under the run directory (replay manifest, event envelope, memory retrieval, reflection + canary, leases + IAM audit, shard map, strategy proposal) unless you mark the run **`coding_only`** in `summary.json`, which skips extended hard-stops HS17+ (see `docs/coding-agent/events.md` through `organization.md`).
+- `sde run --task "..." --mode baseline|guarded_pipeline|phased_pipeline` (optional **`--repeat N`**: same task and mode **N** times, each under a fresh `outputs/runs/<run-id>/` — V1 **RepeatProfile**); successful parses also emit **V4** lineage, **V5** memory, **V6** evolution, and **V7** org stubs under the run directory (replay manifest, event envelope, memory retrieval, reflection + canary, leases + IAM audit, shard map, strategy proposal) unless you mark the run **`coding_only`** in `summary.json`, which skips extended hard-stops **HS17+** (see **`src/sde_gates/hard_stops_*.py`** and pipeline **`src/sde_pipeline/runner/*_layer.py`**).
 - `sde benchmark --suite ./data/benchmark-tasks.jsonl` (optional `--max-tasks N`, `--continue-on-error`, **`--resume-run-id <run_id>`** to continue under `outputs/runs/<run_id>`; `--suite` optional on resume but must match the manifest if provided)
 - `sde report --run-id <id>`
 - `sde replay --run-id <id>` (optional `--format json|html`, `--write-html` to save `trajectory.html` in the run dir, `--rerun` for single-task re-execution from `run-manifest.json`)
@@ -78,7 +80,7 @@ Modes:
 4. Timeout cap (per-task execution limit).
 5. Token cap (per-task token budget).
 6. Refusal policy for unsafe/invalid actions with machine-readable reason.
-7. **Static code gates** (local, no sandbox): `static_gates_report.json` on successful runs — Python `ast` parse, high-signal dangerous patterns (e.g. `eval`, `subprocess`…`shell=True`), optional `ruff check` when `ruff` is on `PATH`. Failures surface in the verifier and in **HS04** (see [execution.md](../coding-agent/execution.md)).
+7. **Static code gates** (local, no sandbox): `static_gates_report.json` on successful runs — Python `ast` parse, high-signal dangerous patterns (e.g. `eval`, `subprocess`…`shell=True`), optional `ruff check` when `ruff` is on `PATH`. Failures surface in the verifier and in **HS04** (see **`src/sde_gates/static_analysis.py`** and **`src/sde_gates/hard_stops.py`**).
 
 ## Minimal Architecture
 
@@ -180,10 +182,10 @@ Verdict:
 
 ## Out Of Scope
 
-This section lists what the **baseline SDE release described in this document** does not yet implement. Those capabilities are **in scope for the program** under [../onboarding/action-plan.md](../onboarding/action-plan.md) and later `docs/coding-agent/*` extensions—not abandoned.
+This section lists what the **baseline SDE release described in this document** does not yet implement. Those capabilities are **in scope for the program** under [../onboarding/action-plan.md](../onboarding/action-plan.md)—not abandoned.
 
-- Multi-agent lifecycle systems (see V7 [../coding-agent/organization.md](../coding-agent/organization.md)).
-- Distributed/event-sourced production architecture (see V4 [../coding-agent/events.md](../coding-agent/events.md)).
+- Multi-agent lifecycle systems (organization harness stubs under `outputs/`; gates in **`src/sde_gates/hard_stops_organization.py`**).
+- Distributed/event-sourced production architecture (event lineage under **`src/sde_pipeline/runner/event_lineage_layer.py`**; gates **`src/sde_gates/hard_stops_events.py`**).
 - Cloud deployment and scaling (optional; `local-prod` remains the production profile per master doc).
 - UI/dashboard work.
 - Production-grade org authz/policy systems (see V7).
