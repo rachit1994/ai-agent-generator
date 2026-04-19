@@ -51,3 +51,5 @@ Read **[`sde/project-driver.md`](sde/project-driver.md)** (including the **Stage
 uv sync --group dev
 uv run pytest src/orchestrator/tests/unit -q
 ```
+
+If your laptop runs **Python 3.12+**, also run **`uv run --python 3.11 pytest src/orchestrator/tests/unit -q`** so you match **CI** (`.github/workflows/ci.yml` uses **3.11**). If **`git config --get core.hooksPath`** is **`.githooks`**, a normal **`git push`** may auto-commit a **minor** `sde` version bump — use **`SKIP_VERSION_BUMP=1 git push`** when you do not want that (see **[`onboarding/developer-walkthrough.md`](onboarding/developer-walkthrough.md)**).

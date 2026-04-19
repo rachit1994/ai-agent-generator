@@ -1367,7 +1367,7 @@ def write_plan_index() -> int:
             "",
             "## In-repo milestone pointers",
             "",
-            "- **OSV-STORY-01 (S1a / M2):** completion bar and backlog **B1–B5** — [`../architecture/company-os-path-to-100-percent.md`](../architecture/company-os-path-to-100-percent.md) §3–§4.",
+            "- **OSV-STORY-01 (S1a / M2):** completion bar and **B1–B5** (closed in-repo) — [`../architecture/company-os-path-to-100-percent.md`](../architecture/company-os-path-to-100-percent.md) §3–§4.",
             "- **OSV-STORY-01 plan + evidence:** [`plans/story-01-stage1-intake.md`](./plans/story-01-stage1-intake.md) (edit in place after generation; see plan footer).",
             "",
         ]

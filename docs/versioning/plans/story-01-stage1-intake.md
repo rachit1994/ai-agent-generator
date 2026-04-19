@@ -5,7 +5,7 @@
 | **Version ID** | `OSV-STORY-01` |
 | **Tier** | 2.1 |
 | **Backlog** | [`company-os-full-delivery-checklist.md`](../../architecture/company-os-full-delivery-checklist.md) §1 (first bullet) |
-| **Completion definition** | [`company-os-path-to-100-percent.md`](../../architecture/company-os-path-to-100-percent.md) §3 (**M2 / S1a**) and §4 backlog **B1–B5** |
+| **Completion definition** | [`company-os-path-to-100-percent.md`](../../architecture/company-os-path-to-100-percent.md) §3 (**M2 / S1a**) and §4 **B1–B5** (closed in-repo) |
 
 ---
 
@@ -73,7 +73,7 @@ Evidence must exist in CI, `local-prod`, or a signed reference run — not only 
 
 ## 9. Version sign-off
 
-Use **[`company-os-path-to-100-percent.md`](../../architecture/company-os-path-to-100-percent.md) §3.1 (S1a)** as the bar for “100% of this version in repo.” **§4 backlog B1–B5** resolved there (implementation + ADRs).
+Use **[`company-os-path-to-100-percent.md`](../../architecture/company-os-path-to-100-percent.md) §3.1 (S1a)** as the bar for “100% of this version in repo.” **§4 B1–B5** (closed in-repo) resolved there (implementation + ADRs).
 
 - [x] Sections **5** and **6** engineering criteria met **in-repo** (evidence above + CI `stage1-preflight`); attach **your tracker** links / run IDs when promoting beyond this repository.
 - [ ] No known **P0/P1** defects open against this version’s acceptance criteria — *program tracker*
