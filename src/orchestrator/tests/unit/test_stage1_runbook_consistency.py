@@ -128,6 +128,19 @@ def test_stage1_runbook_commands_parse_with_current_parser() -> None:
     assert export_obs.project_cmd == "export-stage1-observability"
 
 
+def test_generate_plans_curates_story01_skip_in_emitter() -> None:
+    gen = _repo_root() / "docs" / "versioning" / "_generate_plans.py"
+    body = gen.read_text(encoding="utf-8")
+    assert "CURATED_PLAN_SLUGS" in body
+    assert "story-01-stage1-intake" in body
+
+
+def test_story01_plan_retains_hand_curated_sections() -> None:
+    story = _repo_root() / "docs" / "versioning" / "plans" / "story-01-stage1-intake.md"
+    text = story.read_text(encoding="utf-8")
+    assert "## Progress note (implementation snapshot)" in text
+
+
 def test_generate_plans_index_only_does_not_touch_plan_files() -> None:
     root = _repo_root()
     story = root / "docs" / "versioning" / "plans" / "story-01-stage1-intake.md"

@@ -16,6 +16,8 @@ Plans are generated for consistency and to stay aligned with the checklist. Afte
 python3 docs/versioning/_generate_plans.py
 ```
 
+A full run **does not overwrite** plans listed in **`CURATED_PLAN_SLUGS`** inside [`_generate_plans.py`](_generate_plans.py) when the file already exists (today: **`story-01-stage1-intake`**). Remove the slug from that set, or delete the plan file, only when you intentionally want the template body back.
+
 Recompute **`INDEX.md`** from existing plan titles **without** rewriting any plan file (after hand-editing sign-off or progress notes):
 
 ```bash

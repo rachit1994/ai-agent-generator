@@ -6,6 +6,8 @@
 Refresh **INDEX.md** only (does **not** overwrite ``plans/*.md``) after editing plans by hand:
 
     python3 docs/versioning/_generate_plans.py --index-only
+
+A full run skips **curated** plan files that already exist on disk (see ``CURATED_PLAN_SLUGS``): remove the slug from that set, or delete the plan file, if you intentionally want the template to overwrite it.
 """
 from __future__ import annotations
 
@@ -134,6 +136,9 @@ def bullet_list(lines: list[str]) -> str:
 
 
 NONE = "_None beyond Tier 2.1 spine and prior versions in this folder._"
+
+# Hand-edited after first generation (checkboxes, evidence, OSV-STORY-01 §5–9). `emit` will not overwrite.
+CURATED_PLAN_SLUGS: frozenset[str] = frozenset({"story-01-stage1-intake"})
 
 VERSIONS: list[tuple[str, str, dict]] = []
 
@@ -1329,6 +1334,14 @@ def svc_plan(name: str, idx: int) -> tuple[str, str, dict]:
 
 
 def emit(slug: str, title: str, d: dict) -> None:
+    path = PLANS / f"{slug}.md"
+    if slug in CURATED_PLAN_SLUGS and path.is_file():
+        print(
+            f"generate_plans: skip emit for curated {path.name} "
+            "(remove slug from CURATED_PLAN_SLUGS or delete file to regenerate from template)",
+            file=sys.stderr,
+        )
+        return
     body = plan(
         vid=title.split("—")[0].strip(),
         slug=slug,
@@ -1345,7 +1358,6 @@ def emit(slug: str, title: str, d: dict) -> None:
         observability=d["obs"],
         documentation=d["doc"],
     )
-    path = PLANS / f"{slug}.md"
     path.write_text(body, encoding="utf-8")
 
 

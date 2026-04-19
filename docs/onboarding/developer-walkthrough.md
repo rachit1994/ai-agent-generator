@@ -133,6 +133,8 @@ The repo keeps the installable version in **`pyproject.toml`** under **`[project
 
 Manual bump without pushing: `VERSION_BUMP=minor python3 scripts/bump_version.py` (writes `pyproject.toml` and prints the new version on stdout).
 
+For the short **pre-push** + **Python 3.11 / CI parity** reminder, see **[`../ESSENTIAL.md`](../ESSENTIAL.md)** (“Check before you push”).
+
 ---
 
 ## 6. First day checklist (hands-on)
