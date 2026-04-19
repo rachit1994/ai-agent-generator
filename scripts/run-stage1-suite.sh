@@ -8,7 +8,7 @@ set -euo pipefail
 #
 # Optional wall-clock SLO: when STAGE1_SUITE_MAX_SECONDS is set to a non-negative integer,
 # the script exits 1 if total wall time (including pytest startup) exceeds that budget.
-# CI sets this in .github/workflows/ci.yml.
+# CI sets this in .github/workflows/ci.yml (Python 3.11 via setup-uv).
 
 start_epoch=$(date +%s)
 
