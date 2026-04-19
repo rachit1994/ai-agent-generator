@@ -60,9 +60,9 @@ The checklist bullet for Stage 1 also implies **autonomous** discovery/research/
 
 ---
 
-## 4. Remaining backlog to reach **M2 / S1a 100%** (ordered)
+## 4. OSV-STORY-01 **B1–B5** backlog (M2 / S1a — **closed in-repo**)
 
-Implement in order; each row is **done** only when the acceptance column is satisfied (and tests stay green).
+Rows below are **closed** for **S1a** in this repository (acceptance satisfied; tests green). Keep them as the audit trail for what “M2 / S1a 100%” meant operationally; refresh [gap analysis](company-os-gap-analysis-src-vs-checklist.md) if Stage 1 behavior changes.
 
 | # | Work item | Why it blocks “100%” today | Done when (acceptance) |
 |---|-----------|----------------------------|-------------------------|

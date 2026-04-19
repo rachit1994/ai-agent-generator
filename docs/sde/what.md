@@ -12,7 +12,7 @@ pipeline improve outcomes versus a plain one-shot baseline.
 **Product trajectory (north star):** SDE grows into the **single orchestrator** that drives **full-stack product delivery** the way a small company would: **parallel junior-class agents**, mandatory **reviews and verification**, **governed self-learning**, and **gates that support reliable production pushes**. Older **V1–V7** Markdown specs were **removed**; the roadmap story lives in [../onboarding/action-plan.md](../onboarding/action-plan.md), and **what actually runs** is this repo’s **Python + SDE docs**. See [../architecture/architecture-goal-completion.md](../architecture/architecture-goal-completion.md) for “how much of the master doc this repo claims.”
 
 Implementation language/runtime:
-- Python 3 CLI (installable import package **`orchestrator`** under `src/orchestrator/`; wheel / CLI names remain **`sde`** / **`agent`** per `pyproject.toml`).
+- Python 3 CLI (installable import package **`orchestrator`** under `src/orchestrator/`; wheel / CLI names remain **`sde`** / **`agent`** per `pyproject.toml`). **Supported floor:** **Python 3.11** (what **GitHub Actions** runs in `.github/workflows/ci.yml` after `uv sync`); keep `src/` syntax and types compatible with 3.11 unless you intentionally raise the CI pin.
 
 ## Timebox And Environment
 
