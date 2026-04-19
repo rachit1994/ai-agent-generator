@@ -16,6 +16,8 @@
   - `event_lineage_layer.py` — replay manifest + event store envelope.
   - `memory_artifact_layer.py`, `evolution_layer.py`, `organization_layer.py` — memory / evolution / org harness files + matching gate modules under `sde_gates/`.
 
+**CI / Python:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs **Python 3.11**. If your machine defaults to **3.12+**, run **`uv run --python 3.11 pytest …`** before pushing so you catch syntax or typing issues CI would see first.
+
 ## Master OS layout
 
 The full multi-service tree (contracts, services, infra, tools, …) is described in **[`docs/architecture/operating-system-folder-structure.md`](../docs/architecture/operating-system-folder-structure.md)** as the **target** layout. This repo keeps **`src/`** minimal until those slices ship.
