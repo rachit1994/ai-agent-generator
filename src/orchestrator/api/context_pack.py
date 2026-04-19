@@ -379,6 +379,7 @@ def build_context_pack(
     runs_map = latest_runs_by_step or {}
 
     failures_md = _failures_markdown(session_dir, prior_failures)
+    failures_display = failures_md if failures_md else "- (none)\n"
     intake_budget = min(6_000, max(1_500, max_chars // 2))
     intake_section, intake_loaded = _intake_context_section(session_dir, budget_chars=intake_budget)
     paths_preview = "\n".join(f"- `{p}`" for p in index.get("paths", [])[:80])
@@ -400,7 +401,7 @@ def build_context_pack(
         f"{paths_preview}\n\n"
         f"{prior_section}"
         "## Recent failures / retries\n"
-        f"{failures_md or '- (none)\\n'}\n"
+        f"{failures_display}\n"
         "## Step\n"
         f"- step_id: `{step.get('step_id')}`\n"
         f"- title: {step.get('title', '')}\n"
