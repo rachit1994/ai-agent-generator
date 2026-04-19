@@ -8,6 +8,27 @@ on:
       - feat/**
 
 jobs:
+  stage1-preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Stage 1 suite
+        env:
+          # Wall-clock budget for Stage 1 pytest subset (fail-closed in script after tests pass).
+          STAGE1_SUITE_MAX_SECONDS: "300"
+        run: ./scripts/run-stage1-suite.sh
+
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -24,6 +45,11 @@ jobs:
 
       - name: Lint
         run: uv run python -m compileall src
+
+      - name: Version plan INDEX matches generator
+        run: |
+          ./scripts/version-index-only.sh
+          git diff --exit-code docs/versioning/INDEX.md
 
       - name: Test
         run: uv run pytest
