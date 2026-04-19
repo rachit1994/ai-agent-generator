@@ -46,3 +46,33 @@ def test_run_project_session_invalid_plan_emits_stop(tmp_path: Path) -> None:
     out = run_project_session(sess, repo_root=tmp_path, max_steps=5, mode="baseline")
     assert out["exit_code"] == 2
     assert (sess / "stop_report.json").is_file()
+
+
+def test_run_project_session_plan_lock_gate_blocks(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+            }
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    out = run_project_session(
+        sess,
+        repo_root=tmp_path,
+        max_steps=5,
+        mode="baseline",
+        enforce_plan_lock=True,
+    )
+    assert out["exit_code"] == 1
+    assert out["stopped_reason"] == "blocked_human"
+    assert out["detail"] == "plan_lock_not_ready"
+    assert (sess / "stop_report.json").is_file()

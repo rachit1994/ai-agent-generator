@@ -163,6 +163,8 @@ def run_continuous_project_session(
     progress_file: Path | None = None,
     parallel_worktrees: bool = False,
     lease_stale_sec: int | None = None,
+    enforce_plan_lock: bool = False,
+    require_non_stub_reviewer: bool = False,
 ) -> dict[str, Any]:
     """
     Run :func:`run_project_session` with ``max_steps=max_iterations`` (same budget knob as ``continuous``).
@@ -171,6 +173,8 @@ def run_continuous_project_session(
     Optional ``progress_file`` overrides the default ``<session-dir>/progress.json`` (Phase 5).
     Optional ``parallel_worktrees`` forwards to :func:`run_project_session` (Phase 6).
     Optional ``lease_stale_sec`` forwards Phase 8 lease TTL / pruning (``0`` disables).
+    Optional ``enforce_plan_lock`` requires Stage 1 lock-readiness before project execution.
+    Optional ``require_non_stub_reviewer`` applies strict reviewer policy when enforcing the lock.
     """
     summary = run_project_session(
         session_dir,
@@ -181,5 +185,7 @@ def run_continuous_project_session(
         progress_file=progress_file,
         parallel_worktrees=parallel_worktrees,
         lease_stale_sec=lease_stale_sec,
+        enforce_plan_lock=enforce_plan_lock,
+        require_non_stub_reviewer=require_non_stub_reviewer,
     )
     return {"driver": "project_session", **summary}

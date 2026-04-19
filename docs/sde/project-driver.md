@@ -15,18 +15,20 @@ All paths are relative to a chosen **session directory** (e.g. `.agent/sde/proje
 | File / directory | Purpose |
 |------------------|---------|
 | `project_plan.json` | Authoritative plan (`schema_version` **1.0**). |
-| `progress.json` | `completed_step_ids`, `pending_step_ids`, `blocked_reason`, last run pointers. |
-| `driver_state.json` | `status`: `running` \| `completed_review_pass` \| `blocked_human` \| `exhausted_budget` \| `dependency_cycle` \| `invalid_session`; budget counters; on terminal outcomes **`exit_code`** + **`stopped_reason`** (mirrors CLI exit). |
+| `progress.json` | `completed_step_ids`, `pending_step_ids`, `blocked_reason`, last run pointers, `intake_loaded_last` (whether the last step’s context pack merged `intake/`). |
+| `driver_state.json` | `status`: `running` \| `completed_review_pass` \| `blocked_human` \| `exhausted_budget` \| `dependency_cycle` \| `invalid_session`; budget counters; while **`running`**, optional **`intake_loaded_last`** (same meaning as `progress.json`); on terminal outcomes **`exit_code`** + **`stopped_reason`** (mirrors CLI exit); terminal **`intake_loaded_last`** is copied from `progress.json` when present. |
 | `stop_report.json` | **Phase 4:** CI-oriented snapshot (`exit_code`, `stopped_reason`, `driver_status`, budget, `block_detail`, `ci.exit_code_meaning` + exit-code legend). Written on **every** terminal session outcome (including invalid plan). |
 | `step_runs.jsonl` | Append-only map `step_id` → SDE `run_id` / `output_dir`. |
 | `verification/<step_id>.json` | Orchestrator-run command results for that step. |
 | `verification_aggregate.json` | **Phase 3:** roll-up of every plan step’s verification bundle (presence, ``passed``, timestamps); refreshed after each successful step. |
 | `definition_of_done.json` | **Phase 3:** session **DoD** (not per-run ``review.json``): ``plan_graph_complete`` + ``aggregate_verification`` checks; ``all_required_passed`` only when driver status is ``completed_review_pass`` and both checks pass. |
 | `context_packs/<step_id>.json` | Capped markdown + metadata injected into the task string (`schema_version` **1.1**): prior-dep excerpts, **HS03-style** ``truncation_events`` / ``reductions`` when capped, ``markdown_sha256_full``. |
-| `context_pack_lineage.jsonl` | Append-only audit of each pack build (step_id, sha256, truncated, ``truncation_hs03_ok``). |
+| `context_pack_lineage.jsonl` | Append-only audit of each pack build (step_id, sha256, truncated, ``truncation_hs03_ok``, ``intake_loaded``). |
 | `leases.json` | Path lease audit trail (MVP; overlap detection uses plan scopes). **Phase 8:** rows older than the lease TTL are pruned each driver tick; ``try_acquire`` also blocks on **fresh** persisted rows from other ``step_id``s. |
 | `_worktrees/<step_id>/` | **Phase 6:** ephemeral detached git worktrees for a parallel tick (removed after the batch). |
 | `session_events.jsonl` | **Phase 11:** append-only driver events (``session_driver_start``, ``tick``, ``session_terminal``); schema **1.0** per line. |
+| `intake/` | Stage 1 artifacts (discovery, digest, workbook, `doc_review.json`, revise state, reviewer identity, lineage manifest, etc.); consumed by lock-readiness and context packs when present. |
+| `project_plan_lock.json` | Optional Stage 1 lock artifact written by `sde project plan-lock`; read by status and lock-readiness checks. |
 
 ---
 
@@ -54,15 +56,18 @@ Top-level keys:
 - `session_id`: directory name or explicit id
 - `completed_step_ids`, `pending_step_ids`: string arrays
 - `failed_step_id`, `blocked_reason`, `last_run_id`, `last_output_dir`
+- `intake_loaded_last` (boolean): set after each step’s context pack is built; mirrors `context_packs/<step_id>.json` → `intake_loaded`
 
 ---
 
 ## CLI
 
-- `sde project run (--session-dir <path> | --plan <path/to/project_plan.json>) [--repo-root <path>] [--max-steps N] [--mode ...] [--max-concurrent-agents K] [--progress-file <path>] [--parallel-worktrees] [--lease-stale-sec N]` — **`--plan`** is the file path to the authoritative plan; the **session directory** is the file’s parent. **`--progress-file`** (Phase 5) stores `progress.json` elsewhere. **`--parallel-worktrees`** (Phase 6) runs a multi-step tick in detached git worktrees when applicable. **`--lease-stale-sec`** (Phase 8) sets the lease stale TTL in seconds (**0** = disable pruning; overrides ``workspace.lease_ttl_sec``).
-- `sde continuous (--project-session-dir <path> | --project-plan <path/to/project_plan.json>) [--progress-file <path>] [--parallel-worktrees] [--lease-stale-sec N] ...` — same driver as `sde project run`, reuses `--max-iterations` as the step budget. **`--stop-when`** still applies only to **task** mode (repeat `--task`); project mode stops per driver + `stop_report.json`.
-- **`sde project validate (--session-dir <path> \| --plan <path>) [--repo-root <path>] [--skip-workspace] [--progress-file <path>]`** — **Phase 9:** validates ``project_plan.json`` (schema + workspace path rules), detects **dependency cycles**, optionally runs **Phase 7** git workspace checks (skip with ``--skip-workspace``), and emits **non-fatal** warnings if an optional ``progress.json`` does not match the progress schema. Exit codes: **0** ok, **1** workspace contract, **2** invalid plan / missing file / cycle. Does **not** write ``stop_report.json`` or run the driver loop.
+- `sde project run (--session-dir <path> | --plan <path/to/project_plan.json>) [--repo-root <path>] [--max-steps N] [--mode ...] [--max-concurrent-agents K] [--progress-file <path>] [--parallel-worktrees] [--lease-stale-sec N] [--enforce-plan-lock] [--require-non-stub-reviewer]` — **`--plan`** is the file path to the authoritative plan; the **session directory** is the file’s parent. **`--progress-file`** (Phase 5) stores `progress.json` elsewhere. **`--parallel-worktrees`** (Phase 6) runs a multi-step tick in detached git worktrees when applicable. **`--lease-stale-sec`** (Phase 8) sets the lease stale TTL in seconds (**0** = disable pruning; overrides ``workspace.lease_ttl_sec``). **`--enforce-plan-lock`** runs Stage 1 lock-readiness before the first step; **`--require-non-stub-reviewer`** only applies together with **`--enforce-plan-lock`** (strict reviewer policy; see Stage 1 section below).
+- `sde continuous (--project-session-dir <path> | --project-plan <path/to/project_plan.json>) [--progress-file <path>] [--parallel-worktrees] [--lease-stale-sec N] [--enforce-plan-lock] [--require-non-stub-reviewer] ...` — same driver as `sde project run`, reuses `--max-iterations` as the step budget. **`--stop-when`** still applies only to **task** mode (repeat `--task`); project mode stops per driver + `stop_report.json`. Project mode accepts the same **`--enforce-plan-lock`** / **`--require-non-stub-reviewer`** pairing as **`project run`**.
+- **`sde project validate (--session-dir <path> \| --plan <path>) [--repo-root <path>] [--skip-workspace] [--progress-file <path>] [--require-plan-lock] [--require-non-stub-reviewer]`** — **Phase 9:** validates ``project_plan.json`` (schema + workspace path rules), detects **dependency cycles**, optionally runs **Phase 7** git workspace checks (skip with ``--skip-workspace``), and emits **non-fatal** warnings if an optional ``progress.json`` does not match the progress schema. With **`--require-plan-lock`**, fails closed when Stage 1 lock-readiness is not satisfied; optional **`--require-non-stub-reviewer`** rejects ``local_stub`` reviewer attestation during that check. Exit codes: **0** ok, **1** workspace contract, **2** invalid plan / missing file / cycle. Does **not** write ``stop_report.json`` or run the driver loop.
 - **`sde project status (--session-dir <path> \| --plan <path>) [--repo-root <path>] [--progress-file <path>] [--max-concurrent-agents K] [--status-max-json-bytes N] [--status-jsonl-full-scan-max-bytes N] [--status-jsonl-tail-bytes N] [--status-max-listed-step-ids N]`** — **Phase 10 + 12–21:** prints one JSON object: plan / progress / ``driver_state`` / ``stop_report`` / **leases** (capped body + row count) / ``session_events`` (Phases 10–11, 15) plus **``verification_aggregate``**, **``definition_of_done``**, and **``step_runs``** summaries when those files exist (Phase 12). **Phase 13** flags tune read caps for huge sessions; **Phase 14** adds **`context_pack_lineage`**, **`context_packs`**, and **`verification_bundles`** (and caps how many ``step_ids`` are listed per directory); **Phase 15** adds **`parallel_worktrees`** (``_worktrees/``); **Phase 16** adds **`plan_step_rollups`**; **Phase 17** enriches **``step_runs``** / rollups with latest run pointers when ``step_runs.jsonl`` is small enough to fully scan; **Phase 18** adds **`repo_snapshot`** (``--repo-root``; default cwd); **Phase 19–20** add **`workspace_status`** (branch + path prefix checks); **Phase 21** adds **`status_at_a_glance`** (compact derived fields + ``red_flags``). CLI always exits **0** (inspect fields for red flags).
+- **`sde project export-stage1-observability`** — same session selection as ``project status`` (``--session-dir`` or ``--plan``) plus optional ``--output`` (default ``intake/stage1_observability_export.json`` under the session). Writes a small versioned JSON snapshot of ``revise_metrics`` and ``status_at_a_glance`` for operators / CI artifacts (OSV-STORY-01 B4); see runbook ``docs/runbooks/stage1-intake-failures.md``.
+- **Cold-start demo** — end-to-end Stage 1 CLI walk: ``./scripts/stage1-cold-start-demo.sh`` (runbook §Golden cold start; OSV-STORY-01 §5 / B5).
 
 ## Phase 1 — run ↔ plan linkage
 
@@ -105,8 +110,16 @@ Plain `sde run` omits these keys. **`sde replay --rerun`** copies them when pres
 
 ## Phase 9 — Plan validate subcommand (shipped)
 
-- **API:** :func:`validate_project_session` in [`project_validate.py`](../../src/orchestrator/api/project_validate.py) returns ``ok``, ``exit_code``, and structured errors; no ``execute_single_task``, no lease mutation.
-- **CLI:** ``sde project validate`` mirrors ``project run`` session/plan selection; ``--skip-workspace`` for sandboxes without git; optional ``--progress-file`` for resume-state warnings only.
+- **API:** :func:`validate_project_session` in [`project_validate.py`](../../src/orchestrator/api/project_validate.py) returns ``ok``, ``exit_code``, and structured errors; on success it also returns an ``intake`` object (``intake_dir_present``, ``merge_anchor_present``, ``progress_intake_loaded_last`` when ``progress.json`` was read). No ``execute_single_task``, no lease mutation.
+- **CLI:** ``sde project validate`` mirrors ``project run`` session/plan selection; ``--skip-workspace`` for sandboxes without git; optional ``--progress-file`` for resume-state warnings only; optional ``--require-plan-lock`` / ``--require-non-stub-reviewer`` for Stage 1 preflight (see below).
+
+## Stage 1 plan lock — validate, run, and continuous (shipped)
+
+- **Preflight:** ``sde project validate ... --require-plan-lock`` evaluates the same Stage 1 lock-readiness rules as ``sde project plan-lock --check-only`` (intake artifacts, reviewer separation, lineage, plan metadata, etc.). Optional ``--require-non-stub-reviewer`` applies strict non-stub reviewer policy **only together with** ``--require-plan-lock``; environment ``SDE_REQUIRE_NON_STUB_REVIEWER`` (``1`` / ``true`` / ``yes`` / ``on``) does the same when plan-lock is required. These CLI-only env semantics do **not** change Python API defaults used by unit tests and golden flows.
+- **Runtime:** ``sde project run ... --enforce-plan-lock`` and ``sde continuous`` in project mode with ``--enforce-plan-lock`` call :func:`evaluate_project_plan_lock_readiness` in [`project_plan_lock.py`](../../src/orchestrator/api/project_plan_lock.py) **before** any plan step runs (after workspace/repo gates). When readiness is not satisfied, the driver exits **1** with ``stopped_reason`` / ``blocked_human`` consistent with other human-facing gates; see ``stop_report.json``.
+- **Strict reviewer at runtime:** ``--require-non-stub-reviewer`` is honored only when ``--enforce-plan-lock`` is set; it forwards ``allow_local_stub_attestation=False`` into readiness (same effect as strict ``plan-lock`` / ``validate --require-plan-lock``). ``SDE_REQUIRE_NON_STUB_REVIEWER`` turns on that strict path whenever ``--enforce-plan-lock`` is present on ``project run`` / ``continuous`` (still CLI-only).
+- **API:** :func:`run_project_session` and :func:`run_continuous_project_session` accept ``enforce_plan_lock`` and ``require_non_stub_reviewer`` for programmatic parity.
+- **Runbook:** failure modes and triage commands live in **[`../runbooks/stage1-intake-failures.md`](../runbooks/stage1-intake-failures.md)**.
 
 ## Phase 10 — Status snapshot (shipped)
 
@@ -134,7 +147,7 @@ Plain `sde run` omits these keys. **`sde replay --rerun`** copies them when pres
 
 ## Phase 16 — Status: plan step rollups (shipped)
 
-- **API:** ``plan_step_rollups`` appears when ``project_plan.json`` parses as an object: ``present``, ``step_count`` (full plan length), ``steps`` (first **N** rows in plan order, **N** = ``max_status_listed_step_ids`` default **256**), ``steps_omitted`` when truncated. Each row has ``step_id``, ``verification_json_present``, ``context_pack_present``, and ``aggregate_passed`` (bool or null when unknown or aggregate body omitted / missing cell).
+- **API:** ``plan_step_rollups`` appears when ``project_plan.json`` parses as an object: ``present``, ``step_count`` (full plan length), ``steps`` (first **N** rows in plan order, **N** = ``max_status_listed_step_ids`` default **256**), ``steps_omitted`` when truncated. Each row has ``step_id``, ``verification_json_present``, ``context_pack_present``, ``context_pack_intake_loaded`` (bool from ``context_packs/<step_id>.json`` → ``intake_loaded`` when the file is **≤** ``--status-max-json-bytes``; otherwise ``null``), and ``aggregate_passed`` (bool or null when unknown or aggregate body omitted / missing cell).
 - **CLI:** ``--status-max-listed-step-ids`` bounds rollup rows; ``--status-max-json-bytes`` bounds aggregate embed used for ``aggregate_passed``.
 
 ## Phase 17 — Status: step_runs latest-by-step (shipped)
@@ -158,13 +171,13 @@ Plain `sde run` omits these keys. **`sde replay --rerun`** copies them when pres
 
 ## Phase 21 — Status: at-a-glance + red_flags (shipped)
 
-- **API:** :func:`describe_project_session` adds ``status_at_a_glance``: derived ``plan_ok``, ``all_plan_steps_complete``, runnable / next-tick counts, ``driver_status`` / ``driver_exit_code`` / ``stop_exit_code`` when the corresponding embedded bodies are dicts, ``dod_all_required_passed`` / ``aggregate_all_steps_verification_passed`` when those bodies are present, ``path_prefixes_ok`` / ``branch_commit_match`` echoed from ``workspace_status``, ``step_runs_latest_indexed`` when ``by_step`` is populated (not ``by_step_omitted``), and ``red_flags`` (``dependency_cycle`` alone when the plan graph has a cycle; otherwise ``plan_invalid_or_unreadable_or_schema`` when ``plan_ok`` is false; plus ``workspace_path_prefix_mismatch`` / ``workspace_branch_mismatch`` when ``workspace_status.present`` and the respective checks are false).
+- **API:** :func:`describe_project_session` adds ``status_at_a_glance``: derived ``plan_ok``, ``all_plan_steps_complete``, runnable / next-tick counts, ``driver_status`` / ``driver_exit_code`` / ``stop_exit_code`` when the corresponding embedded bodies are dicts, ``dod_all_required_passed`` / ``aggregate_all_steps_verification_passed`` when those bodies are present, ``path_prefixes_ok`` / ``branch_commit_match`` echoed from ``workspace_status``, ``step_runs_latest_indexed`` when ``by_step`` is populated (not ``by_step_omitted``), **intake** fields ``intake_merge_anchor_present`` (``intake/discovery.json`` or ``intake/doc_review.json`` exists), ``intake_loaded_last_progress`` / ``intake_loaded_last_driver_state`` (booleans from embedded ``progress`` / ``driver_state`` bodies when present), **rollup intake tallies** ``rollup_context_pack_intake_loaded_true_count`` / ``false_count`` / ``null_count`` (from ``plan_step_rollups`` per-step ``context_pack_intake_loaded``; rollups also expose ``context_pack_intake_loaded_skipped_oversized`` per step), and ``red_flags`` (``dependency_cycle`` alone when the plan graph has a cycle; otherwise ``plan_invalid_or_unreadable_or_schema`` when ``plan_ok`` is false; plus ``workspace_path_prefix_mismatch`` / ``workspace_branch_mismatch`` when ``workspace_status.present`` and the respective checks are false; plus ``intake_loaded_last_progress_vs_driver_state_mismatch`` when both intake booleans are present and disagree; plus ``intake_merge_anchor_present_but_context_pack_intake_loaded_unknown`` when an intake merge anchor exists but an on-disk context pack under the status JSON byte cap lacks a boolean ``intake_loaded``).
 - **CLI:** no new flags; same JSON envelope as Phase 10.
 
 ## Phase 11 — Session event log (shipped)
 
 - **Writer:** :func:`append_session_event` in [`project_events.py`](../../src/orchestrator/api/project_events.py); best-effort (swallows ``OSError`` so logging never crashes the driver).
-- **Events:** ``session_driver_start`` once per ``run_project_session`` after the session enters ``running``; ``tick`` before each non-empty lease batch; ``session_terminal`` on **every** terminal outcome via ``_emit_stop_and_session_dod`` (payload includes ``exit_code``, ``stopped_reason``, ``completed_step_ids``, …).
+- **Events:** ``session_driver_start`` once per ``run_project_session`` after the session enters ``running`` (payload includes ``intake_merge_anchor_present`` and ``intake_loaded_last`` from in-memory ``progress``); ``tick`` before each non-empty lease batch (same intake snapshot fields plus ``steps_used``, ``batch``, ``completed_step_ids``); ``session_terminal`` on **every** terminal outcome via ``_emit_stop_and_session_dod`` (payload includes ``exit_code``, ``stopped_reason``, ``completed_step_ids``, plus ``intake_merge_anchor_present`` and ``intake_loaded_last`` read from disk via ``progress.json`` when available, …). When ``intake/lineage_manifest.json`` exists, all three event kinds also carry ``intake_lineage_manifest_present``, optional ``intake_lineage_manifest_schema_version`` / ``created_at`` / ``artifact_count``, and ``intake_lineage_manifest_file_sha256`` (hash of the manifest file) for OSV-STORY-01 traceability (:func:`lineage_manifest_session_event_snapshot` in [`project_plan_lock.py`](../../src/orchestrator/api/project_plan_lock.py)).
 
 ## Phase 4 — Stop policy (shipped)
 
@@ -193,6 +206,7 @@ Plain `sde run` omits these keys. **`sde replay --rerun`** copies them when pres
 - Parallel worktrees: [`src/orchestrator/api/project_worktree.py`](../../src/orchestrator/api/project_worktree.py), [`src/orchestrator/api/project_parallel.py`](../../src/orchestrator/api/project_parallel.py)
 - Workspace gates: [`src/orchestrator/api/project_workspace.py`](../../src/orchestrator/api/project_workspace.py)
 - Plan preflight: [`src/orchestrator/api/project_validate.py`](../../src/orchestrator/api/project_validate.py)
+- Stage 1 plan lock readiness + lock artifact: [`src/orchestrator/api/project_plan_lock.py`](../../src/orchestrator/api/project_plan_lock.py)
 - Session snapshot: [`src/orchestrator/api/project_status.py`](../../src/orchestrator/api/project_status.py)
 - Session events: [`src/orchestrator/api/project_events.py`](../../src/orchestrator/api/project_events.py)
 

@@ -6,7 +6,7 @@
 
 ## Where to look first
 
-- **Orchestrator:** [`orchestrator/`](orchestrator/) — [`api/`](orchestrator/api/) (**import here from other code**; see [`api/README.md`](orchestrator/api/README.md)), `runtime/cli/main.py` (**where terminal commands start**), `tests/unit/` (pytest).
+- **Orchestrator:** [`orchestrator/`](orchestrator/) — [`api/`](orchestrator/api/) (**import here from other code**; see [`api/README.md`](orchestrator/api/README.md)), `runtime/cli/main.py` (**where terminal commands start**), `tests/unit/` (pytest). Session **Stage 1 plan lock** (readiness, `project_plan_lock.json`, `validate --require-plan-lock`, `run` / `continuous --enforce-plan-lock`): `api/project_plan_lock.py`, `project_driver.py`, `continuous_run.py`, `project_validate.py` — see [`docs/sde/project-driver.md`](../docs/sde/project-driver.md).
 - **CLI:** `sde` / `agent` → `orchestrator.runtime.cli.main:main` (`pyproject.toml`).
 - **Foundations:** [`sde_foundations/`](sde_foundations/) — types, storage, utils, model adapter, safeguards.
 - **Gates:** [`sde_gates/`](sde_gates/) — CTO gates, review, hard-stops, `validate_execution_run_directory`, split **hard-stop** helpers (`hard_stops_events.py`, `hard_stops_memory.py`, …) aligned with specs.

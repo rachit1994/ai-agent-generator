@@ -11,12 +11,14 @@ from sde_foundations.storage import ensure_dir
 from sde_pipeline.runner import execute_single_task
 
 from .context_pack import build_context_pack, latest_output_dirs_by_step, task_with_context
+from .project_intake_util import intake_merge_anchor_present
 from .project_aggregate import (
     VERIFICATION_AGGREGATE_FILENAME,
     write_project_definition_of_done,
     write_verification_aggregate,
 )
 from .project_events import append_session_event
+from .project_plan_lock import evaluate_project_plan_lock_readiness, lineage_manifest_session_event_snapshot
 from .project_lease import prune_stale_leases, release, resolve_lease_ttl_sec, touch_lease_heartbeat, try_acquire
 from .project_parallel import session_io_lock
 from .project_plan import all_steps_complete, detect_dependency_cycle
@@ -51,6 +53,19 @@ def _append_step_run(session_dir: Path, row: dict[str, Any]) -> None:
         fh.write(json.dumps(row) + "\n")
 
 
+def _session_intake_tick_fields(session_dir: Path, progress: dict[str, Any]) -> dict[str, Any]:
+    """Snapshot for session_events (matches status ``intake_merge_anchor_present`` + progress bool)."""
+    ill = progress.get("intake_loaded_last")
+    ill_b: bool | None = ill if isinstance(ill, bool) else None
+    snap = lineage_manifest_session_event_snapshot(session_dir)
+    base: dict[str, Any] = {
+        "intake_merge_anchor_present": intake_merge_anchor_present(session_dir),
+        "intake_loaded_last": ill_b,
+    }
+    base.update(snap)
+    return base
+
+
 def _step_map(plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     for row in plan.get("steps") or []:
@@ -63,6 +78,17 @@ def _driver_state_path(session_dir: Path) -> Path:
     return session_dir / "driver_state.json"
 
 
+def _progress_intake_loaded_last(progress_path: Path) -> bool | None:
+    if not progress_path.is_file():
+        return None
+    try:
+        data = read_json_dict(progress_path)
+    except (OSError, ValueError, TypeError):
+        return None
+    v = data.get("intake_loaded_last")
+    return v if isinstance(v, bool) else None
+
+
 def _write_driver_state(
     session_dir: Path,
     *,
@@ -72,6 +98,7 @@ def _write_driver_state(
     block_detail: str | None = None,
     exit_code: int | None = None,
     stopped_reason: str | None = None,
+    intake_loaded_last: bool | None = None,
 ) -> None:
     body: dict[str, Any] = {
         "schema_version": "1.0",
@@ -83,6 +110,8 @@ def _write_driver_state(
         body["exit_code"] = exit_code
     if stopped_reason is not None:
         body["stopped_reason"] = stopped_reason
+    if intake_loaded_last is not None:
+        body["intake_loaded_last"] = intake_loaded_last
     _write_json(_driver_state_path(session_dir), body)
 
 
@@ -102,21 +131,24 @@ def _emit_stop_and_session_dod(
     steps_used: int,
     block_detail: str | None = None,
     extra_for_stop: dict[str, Any] | None = None,
+    progress_path: Path | None = None,
 ) -> dict[str, Any]:
     """Phase 4: ``stop_report.json``, terminal ``driver_state`` fields, optional session DoD + aggregate."""
-    append_session_event(
-        session_dir,
-        "session_terminal",
-        {
-            "exit_code": exit_code,
-            "stopped_reason": stopped_reason,
-            "driver_status": driver_status,
-            "max_steps": max_steps,
-            "steps_used": steps_used,
-            "block_detail": block_detail,
-            "completed_step_ids": sorted(completed),
-        },
-    )
+    pp = progress_path if progress_path is not None else session_dir / "progress.json"
+    ill = _progress_intake_loaded_last(pp)
+    term_payload: dict[str, Any] = {
+        "exit_code": exit_code,
+        "stopped_reason": stopped_reason,
+        "driver_status": driver_status,
+        "max_steps": max_steps,
+        "steps_used": steps_used,
+        "block_detail": block_detail,
+        "completed_step_ids": sorted(completed),
+        "intake_merge_anchor_present": intake_merge_anchor_present(session_dir),
+        "intake_loaded_last": ill,
+    }
+    term_payload.update(lineage_manifest_session_event_snapshot(session_dir))
+    append_session_event(session_dir, "session_terminal", term_payload)
     write_stop_report(
         session_dir,
         exit_code=exit_code,
@@ -135,6 +167,7 @@ def _emit_stop_and_session_dod(
         block_detail=block_detail,
         exit_code=exit_code,
         stopped_reason=stopped_reason,
+        intake_loaded_last=ill,
     )
     tail: dict[str, Any] = {"stop_report_path": str(session_dir / STOP_REPORT_FILENAME)}
     if not _plan_valid_for_session_artifacts(plan):
@@ -196,6 +229,7 @@ def _run_batch_parallel_worktrees(
                 steps_used=steps_used,
                 block_detail="git_worktree_add_failed",
                 extra_for_stop={"step_id": sid},
+                progress_path=progress_path,
             )
             return (
                 {
@@ -209,7 +243,7 @@ def _run_batch_parallel_worktrees(
             )
         worktrees[sid] = wt
 
-    def _worker(sid: str) -> tuple[str, dict[str, Any], dict[str, Any] | None]:
+    def _worker(sid: str) -> tuple[str, dict[str, Any], dict[str, Any] | None, bool]:
         row = by_id[sid]
         wt_root = worktrees[sid]
         touch_lease_heartbeat(session_dir, sid)
@@ -220,6 +254,7 @@ def _run_batch_parallel_worktrees(
             prior_failures=failures,
             latest_runs_by_step=latest_output_dirs_by_step(session_dir),
         )
+        intake_loaded = bool(pack.get("intake_loaded"))
         full_task = task_with_context(
             context_markdown=str(pack.get("markdown", "")),
             step_description=str(row.get("description", "")),
@@ -243,7 +278,7 @@ def _run_batch_parallel_worktrees(
             )
             touch_lease_heartbeat(session_dir, sid)
         if result.get("error"):
-            return sid, result, None
+            return sid, result, None, intake_loaded
         ver = row.get("verification")
         vbundle = run_step_verification(
             repo_root=wt_root,
@@ -251,9 +286,9 @@ def _run_batch_parallel_worktrees(
             step_id=sid,
             verification=ver if isinstance(ver, dict) else None,
         )
-        return sid, result, vbundle
+        return sid, result, vbundle, intake_loaded
 
-    results: dict[str, tuple[dict[str, Any], dict[str, Any] | None]] = {}
+    results: dict[str, tuple[dict[str, Any], dict[str, Any] | None, bool]] = {}
     worker_exc: BaseException | None = None
     pool_workers = min(len(batch), max(1, max_concurrent_agents))
     try:
@@ -261,14 +296,14 @@ def _run_batch_parallel_worktrees(
             future_map = {pool.submit(_worker, sid): sid for sid in batch}
             for fut in as_completed(future_map):
                 try:
-                    sid_done, res, vb = fut.result()
+                    sid_done, res, vb, il = fut.result()
                 except Exception as exc:
                     worker_exc = exc
                     for pending in future_map:
                         if pending is not fut and not pending.done():
                             pending.cancel()
                     break
-                results[sid_done] = (res, vb)
+                results[sid_done] = (res, vb, il)
     finally:
         for sid in batch:
             remove_worktree(repo_root, worktrees[sid])
@@ -289,6 +324,7 @@ def _run_batch_parallel_worktrees(
             steps_used=steps_used + len(batch),
             block_detail=detail,
             extra_for_stop={"parallel_batch": True, "error": repr(worker_exc) if worker_exc else None},
+            progress_path=progress_path,
         )
         return (
             {
@@ -302,11 +338,12 @@ def _run_batch_parallel_worktrees(
 
     new_steps = steps_used + len(batch)
     for sid in batch:
-        res, vbundle = results[sid]
+        res, vbundle, intake_il = results[sid]
         if res.get("error"):
             failures.append({"step_id": sid, "detail": str(res.get("error"))})
             progress["failed_step_id"] = sid
             progress["blocked_reason"] = "pipeline_error"
+            progress["intake_loaded_last"] = intake_il
             _write_json(progress_path, progress)
             tail = _emit_stop_and_session_dod(
                 session_dir,
@@ -319,6 +356,7 @@ def _run_batch_parallel_worktrees(
                 steps_used=new_steps,
                 block_detail="pipeline_error",
                 extra_for_stop={"step_id": sid, "parallel_batch": True},
+                progress_path=progress_path,
             )
             return (
                 {
@@ -334,6 +372,7 @@ def _run_batch_parallel_worktrees(
             failures.append({"step_id": sid, "detail": "verification_failed"})
             progress["failed_step_id"] = sid
             progress["blocked_reason"] = "verification_failed"
+            progress["intake_loaded_last"] = intake_il
             _write_json(progress_path, progress)
             tail = _emit_stop_and_session_dod(
                 session_dir,
@@ -346,6 +385,7 @@ def _run_batch_parallel_worktrees(
                 steps_used=new_steps,
                 block_detail="verification_failed",
                 extra_for_stop={"step_id": sid, "parallel_batch": True},
+                progress_path=progress_path,
             )
             return (
                 {
@@ -359,9 +399,10 @@ def _run_batch_parallel_worktrees(
             )
 
     last_sid = batch[-1]
-    last_res, _ = results[last_sid]
+    last_res, _, last_intake_il = results[last_sid]
     progress["last_run_id"] = last_res.get("run_id")
     progress["last_output_dir"] = last_res.get("output_dir")
+    progress["intake_loaded_last"] = last_intake_il
     for sid in batch:
         completed.add(sid)
     progress["completed_step_ids"] = sorted(completed)
@@ -371,7 +412,13 @@ def _run_batch_parallel_worktrees(
     progress["schema_version"] = PROGRESS_SCHEMA_VERSION
     _write_json(progress_path, progress)
     write_verification_aggregate(session_dir, plan)
-    _write_driver_state(session_dir, status="running", max_steps=max_steps, steps_used=new_steps)
+    _write_driver_state(
+        session_dir,
+        status="running",
+        max_steps=max_steps,
+        steps_used=new_steps,
+        intake_loaded_last=bool(progress.get("intake_loaded_last", False)),
+    )
     return None, new_steps
 
 
@@ -385,6 +432,8 @@ def run_project_session(
     progress_file: Path | None = None,
     parallel_worktrees: bool = False,
     lease_stale_sec: int | None = None,
+    enforce_plan_lock: bool = False,
+    require_non_stub_reviewer: bool = False,
 ) -> dict[str, Any]:
     """
     Load ``project_plan.json`` from ``session_dir`` and ``progress.json`` from ``session_dir``
@@ -398,6 +447,9 @@ def run_project_session(
     gates apply (see ``project_workspace`` and the same doc).
     ``lease_stale_sec`` (CLI ``--lease-stale-sec``) overrides plan ``workspace.lease_ttl_sec`` for
     Phase 8 stale lease pruning; use ``0`` to disable pruning.
+    ``enforce_plan_lock`` requires Stage 1 lock-readiness before step execution.
+    When ``require_non_stub_reviewer`` is true (only meaningful with ``enforce_plan_lock``),
+    lock readiness uses the same non-stub reviewer policy as strict plan-lock / validate.
     """
     if max_steps < 1:
         raise ValueError("max_steps must be >= 1")
@@ -417,6 +469,7 @@ def run_project_session(
             steps_used=0,
             block_detail=None,
             extra_for_stop={"session_dir": str(session_dir)},
+            progress_path=progress_path,
         )
         return {"exit_code": 2, "error": "missing_project_plan_json", "session_dir": str(session_dir), **tail}
     plan = read_json_dict(plan_path)
@@ -433,6 +486,7 @@ def run_project_session(
             steps_used=0,
             block_detail="invalid_project_plan",
             extra_for_stop={"details": perrs},
+            progress_path=progress_path,
         )
         return {"exit_code": 2, "error": "invalid_project_plan", "details": perrs, **tail}
 
@@ -449,6 +503,7 @@ def run_project_session(
             steps_used=0,
             block_detail=f"dependency_cycle:{cyc}",
             extra_for_stop={"cycle": cyc},
+            progress_path=progress_path,
         )
         return {"exit_code": 1, "stopped_reason": "dependency_cycle", "cycle": cyc, **tail}
 
@@ -458,12 +513,12 @@ def run_project_session(
             progress = read_json_dict(progress_path)
             if validate_progress(progress):
                 progress = default_progress(session_id)
-        except (OSError, ValueError, json.JSONDecodeError, TypeError):
+        except (OSError, ValueError, TypeError):
             progress = default_progress(session_id)
     else:
         progress = default_progress(session_id)
 
-    completed = set(str(x) for x in progress.get("completed_step_ids", []) if isinstance(x, str))
+    completed = {str(x) for x in progress.get("completed_step_ids", []) if isinstance(x, str)}
     ws_gate = evaluate_workspace_repo_gates(plan, repo_root)
     if ws_gate:
         progress["blocked_reason"] = ws_gate
@@ -479,6 +534,7 @@ def run_project_session(
             steps_used=0,
             block_detail=ws_gate,
             extra_for_stop={"workspace_gate": ws_gate},
+            progress_path=progress_path,
         )
         return {
             "exit_code": 1,
@@ -486,15 +542,78 @@ def run_project_session(
             "detail": ws_gate,
             **tail,
         }
+    if enforce_plan_lock:
+        lock = evaluate_project_plan_lock_readiness(
+            session_dir,
+            allow_local_stub_attestation=not require_non_stub_reviewer,
+        )
+        if not lock.get("ok"):
+            detail = str(lock.get("error") or "plan_lock_readiness_error")
+            progress["blocked_reason"] = detail
+            _write_json(progress_path, progress)
+            tail = _emit_stop_and_session_dod(
+                session_dir,
+                plan,
+                completed,
+                exit_code=EXIT_SESSION_BLOCKED_OR_BUDGET,
+                stopped_reason="plan_lock_gate_failed",
+                driver_status="blocked_human",
+                max_steps=max_steps,
+                steps_used=0,
+                block_detail=detail,
+                extra_for_stop={"plan_lock": lock},
+                progress_path=progress_path,
+            )
+            return {
+                "exit_code": 1,
+                "stopped_reason": "blocked_human",
+                "detail": detail,
+                **tail,
+            }
+        if not lock.get("ready"):
+            detail = "plan_lock_not_ready"
+            progress["blocked_reason"] = detail
+            _write_json(progress_path, progress)
+            tail = _emit_stop_and_session_dod(
+                session_dir,
+                plan,
+                completed,
+                exit_code=EXIT_SESSION_BLOCKED_OR_BUDGET,
+                stopped_reason="plan_lock_gate_failed",
+                driver_status="blocked_human",
+                max_steps=max_steps,
+                steps_used=0,
+                block_detail=detail,
+                extra_for_stop={"plan_lock": lock},
+                progress_path=progress_path,
+            )
+            return {
+                "exit_code": 1,
+                "stopped_reason": "blocked_human",
+                "detail": detail,
+                "plan_lock": lock,
+                **tail,
+            }
 
     failures: list[dict[str, Any]] = []
     steps_used = 0
     lease_ttl_sec = resolve_lease_ttl_sec(plan, lease_stale_sec)
-    _write_driver_state(session_dir, status="running", max_steps=max_steps, steps_used=0)
+    _write_driver_state(
+        session_dir,
+        status="running",
+        max_steps=max_steps,
+        steps_used=0,
+        intake_loaded_last=bool(progress.get("intake_loaded_last", False)),
+    )
     append_session_event(
         session_dir,
         "session_driver_start",
-        {"max_steps": max_steps, "mode": mode, "lease_ttl_sec": lease_ttl_sec},
+        {
+            "max_steps": max_steps,
+            "mode": mode,
+            "lease_ttl_sec": lease_ttl_sec,
+            **_session_intake_tick_fields(session_dir, progress),
+        },
     )
 
     while steps_used < max_steps:
@@ -515,6 +634,7 @@ def run_project_session(
                 max_steps=max_steps,
                 steps_used=steps_used,
                 block_detail=None,
+                progress_path=progress_path,
             )
             return {
                 "exit_code": 0,
@@ -541,6 +661,7 @@ def run_project_session(
                 steps_used=steps_used,
                 block_detail="deadlock_or_missing_dependency",
                 extra_for_stop={"pending_step_ids": pending},
+                progress_path=progress_path,
             )
             return {
                 "exit_code": 1,
@@ -564,6 +685,7 @@ def run_project_session(
                 "steps_used": steps_used,
                 "batch": list(batch),
                 "completed_step_ids": sorted(completed),
+                **_session_intake_tick_fields(session_dir, progress),
             },
         )
 
@@ -595,6 +717,7 @@ def run_project_session(
                     steps_used=steps_used,
                     block_detail=reason or "lease_denied",
                     extra_for_stop={"step_id": step_id, "detail": reason},
+                    progress_path=progress_path,
                 )
                 return {
                     "exit_code": 1,
@@ -642,6 +765,7 @@ def run_project_session(
                 prior_failures=failures,
                 latest_runs_by_step=latest_output_dirs_by_step(session_dir),
             )
+            progress["intake_loaded_last"] = bool(pack.get("intake_loaded"))
             full_task = task_with_context(
                 context_markdown=str(pack.get("markdown", "")),
                 step_description=str(row.get("description", "")),
@@ -685,6 +809,7 @@ def run_project_session(
                     steps_used=steps_used,
                     block_detail="pipeline_error",
                     extra_for_stop={"step_id": step_id},
+                    progress_path=progress_path,
                 )
                 return {
                     "exit_code": 1,
@@ -719,6 +844,7 @@ def run_project_session(
                     steps_used=steps_used,
                     block_detail="verification_failed",
                     extra_for_stop={"step_id": step_id},
+                    progress_path=progress_path,
                 )
                 return {
                     "exit_code": 1,
@@ -736,7 +862,13 @@ def run_project_session(
             progress["schema_version"] = PROGRESS_SCHEMA_VERSION
             _write_json(progress_path, progress)
             write_verification_aggregate(session_dir, plan)
-            _write_driver_state(session_dir, status="running", max_steps=max_steps, steps_used=steps_used)
+            _write_driver_state(
+                session_dir,
+                status="running",
+                max_steps=max_steps,
+                steps_used=steps_used,
+                intake_loaded_last=bool(progress.get("intake_loaded_last", False)),
+            )
 
         if steps_used >= max_steps and not all_steps_complete(plan, completed):
             progress["completed_step_ids"] = sorted(completed)
@@ -753,6 +885,7 @@ def run_project_session(
                 steps_used=steps_used,
                 block_detail="max_steps",
                 extra_for_stop={"budget": "max_steps"},
+                progress_path=progress_path,
             )
             return {
                 "exit_code": 1,
@@ -772,5 +905,6 @@ def run_project_session(
         max_steps=max_steps,
         steps_used=steps_used,
         block_detail="unexpected_end",
+        progress_path=progress_path,
     )
     return {"exit_code": 2, "error": "unexpected_end", "completed_step_ids": sorted(completed), **tail}

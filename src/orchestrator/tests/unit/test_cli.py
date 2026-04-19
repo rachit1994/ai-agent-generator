@@ -146,3 +146,24 @@ def test_cli_replay_html_and_write_html() -> None:
     args = parser.parse_args(["replay", "--run-id", "x", "--format", "html", "--write-html"])
     assert args.format == "html"
     assert args.write_html is True
+
+
+def test_cli_project_remaining_work_parse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "project",
+            "remaining-work",
+            "--repo-root",
+            "/tmp/repo",
+            "--rules",
+            "docs/rules.json",
+            "--format",
+            "json",
+        ]
+    )
+    assert args.command == "project"
+    assert args.project_cmd == "remaining-work"
+    assert args.repo_root == "/tmp/repo"
+    assert args.rules == "docs/rules.json"
+    assert args.format == "json"

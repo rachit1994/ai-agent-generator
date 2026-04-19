@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
 
+import orchestrator.runtime.cli.main as cli_main
 from orchestrator.api.project_driver import run_project_session
 from orchestrator.api.project_plan import detect_dependency_cycle, plan_step_ids, runnable_step_ids
 from orchestrator.api.project_schema import validate_project_plan, validate_progress
 from orchestrator.api.project_scheduler import select_steps_for_tick
-from orchestrator.runtime.cli.main import build_parser
+from orchestrator.runtime.cli.main import build_parser, main, _env_require_non_stub_reviewer
 
 
 def test_validate_project_plan_ok() -> None:
@@ -94,6 +96,30 @@ def test_select_steps_disjoint() -> None:
 def test_run_project_session_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     session = tmp_path / "sess"
     session.mkdir()
+    intake = session / "intake"
+    intake.mkdir()
+    (intake / "discovery.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "goal_excerpt": "smoke session goal",
+                "constraints": [],
+                "non_goals": [],
+                "open_questions": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (intake / "lineage_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "created_at": "2035-01-01T00:00:00+00:00",
+                "artifacts": {"intake/discovery.json": "not-a-real-hash"},
+            }
+        ),
+        encoding="utf-8",
+    )
     plan = {
         "schema_version": "1.0",
         "steps": [
@@ -163,11 +189,43 @@ def test_run_project_session_smoke(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert "session_driver_start" in ev_names
     assert ev_names.count("tick") >= 2
     assert ev_names[-1] == "session_terminal"
+    term_ev = ev_lines[-1]
+    assert term_ev["event"] == "session_terminal"
+    assert term_ev["payload"].get("intake_merge_anchor_present") is True
+    assert term_ev["payload"].get("intake_loaded_last") is True
+    assert term_ev["payload"].get("intake_lineage_manifest_present") is True
+    assert term_ev["payload"].get("intake_lineage_manifest_artifact_count") == 1
+    assert isinstance(term_ev["payload"].get("intake_lineage_manifest_file_sha256"), str)
+    start_ev = next(x for x in ev_lines if x["event"] == "session_driver_start")
+    assert start_ev["payload"].get("intake_merge_anchor_present") is True
+    assert start_ev["payload"].get("intake_loaded_last") is False
+    assert start_ev["payload"].get("intake_lineage_manifest_present") is True
+    tick_events = [x for x in ev_lines if x["event"] == "tick"]
+    assert tick_events[0]["payload"].get("intake_merge_anchor_present") is True
+    assert tick_events[0]["payload"].get("intake_loaded_last") is False
+    assert tick_events[0]["payload"].get("intake_lineage_manifest_present") is True
+    assert tick_events[1]["payload"].get("intake_loaded_last") is True
+    assert tick_events[1]["payload"].get("intake_lineage_manifest_present") is True
+    prog_final = json.loads((session / "progress.json").read_text(encoding="utf-8"))
+    assert prog_final.get("intake_loaded_last") is True
+    assert validate_progress(prog_final) == []
+    ds_final = json.loads((session / "driver_state.json").read_text(encoding="utf-8"))
+    assert ds_final.get("intake_loaded_last") is True
 
 
 def test_validate_progress_bad() -> None:
     errs = validate_progress({"schema_version": "0.9", "completed_step_ids": [], "pending_step_ids": []})
     assert errs
+
+
+def test_validate_progress_intake_loaded_last_must_be_bool() -> None:
+    body = {
+        "schema_version": "1.0",
+        "completed_step_ids": [],
+        "pending_step_ids": [],
+        "intake_loaded_last": "yes",
+    }
+    assert validate_progress(body) == ["progress_intake_loaded_last_bad"]
 
 
 def test_cli_project_run_parse() -> None:
@@ -192,6 +250,8 @@ def test_cli_project_run_parse() -> None:
     assert getattr(args, "project_plan_file", None) is None
     assert args.max_steps == 12
     assert args.max_concurrent_agents == 2
+    assert args.enforce_plan_lock is False
+    assert args.require_non_stub_reviewer is False
 
 
 def test_cli_project_run_plan_parse() -> None:
@@ -224,6 +284,8 @@ def test_cli_continuous_project_parse() -> None:
     assert args.repo_root == "/tmp/r"
     assert args.max_concurrent_agents == 1
     assert args.progress_file == "/tmp/state/progress.json"
+    assert args.enforce_plan_lock is False
+    assert args.require_non_stub_reviewer is False
 
 
 def test_cli_continuous_project_plan_parse() -> None:
@@ -332,6 +394,181 @@ def test_cli_project_validate_parse() -> None:
     assert args.project_plan_file == "/tmp/x/project_plan.json"
     assert args.skip_workspace is True
     assert args.progress_file == "/tmp/p/progress.json"
+    assert args.require_plan_lock is False
+    assert args.require_non_stub_reviewer is False
+
+
+def test_cli_project_validate_require_plan_lock_parse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "project",
+            "validate",
+            "--session-dir",
+            "/tmp/s",
+            "--require-plan-lock",
+        ]
+    )
+    assert args.project_cmd == "validate"
+    assert args.require_plan_lock is True
+    assert args.require_non_stub_reviewer is False
+
+
+def test_cli_project_validate_require_non_stub_reviewer_parse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "project",
+            "validate",
+            "--session-dir",
+            "/tmp/s",
+            "--require-plan-lock",
+            "--require-non-stub-reviewer",
+        ]
+    )
+    assert args.project_cmd == "validate"
+    assert args.require_plan_lock is True
+    assert args.require_non_stub_reviewer is True
+
+
+def test_cli_project_plan_lock_parse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "project",
+            "plan-lock",
+            "--session-dir",
+            "/tmp/sess",
+            "--check-only",
+            "--allow-missing-revise-state",
+        ]
+    )
+    assert args.project_cmd == "plan-lock"
+    assert args.session_dir == "/tmp/sess"
+    assert args.check_only is True
+    assert args.allow_missing_revise_state is True
+    assert args.require_non_stub_reviewer is False
+
+
+def test_cli_project_plan_lock_require_non_stub_reviewer_parse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "project",
+            "plan-lock",
+            "--session-dir",
+            "/tmp/sess",
+            "--require-non-stub-reviewer",
+        ]
+    )
+    assert args.project_cmd == "plan-lock"
+    assert args.require_non_stub_reviewer is True
+
+
+def test_env_require_non_stub_reviewer_helper(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SDE_REQUIRE_NON_STUB_REVIEWER", raising=False)
+    assert _env_require_non_stub_reviewer() is False
+    for v in ("1", "TRUE", "yes", "On"):
+        monkeypatch.setenv("SDE_REQUIRE_NON_STUB_REVIEWER", v)
+        assert _env_require_non_stub_reviewer() is True
+    monkeypatch.setenv("SDE_REQUIRE_NON_STUB_REVIEWER", "0")
+    assert _env_require_non_stub_reviewer() is False
+
+
+def test_cli_plan_lock_check_only_env_strict_calls_readiness(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    calls: list[bool] = []
+
+    def spy(
+        session_dir,
+        *,
+        require_revise_state=True,
+        allow_local_stub_attestation=True,
+    ):
+        calls.append(allow_local_stub_attestation)
+        return {
+            "ok": True,
+            "ready": False,
+            "session_dir": str(session_dir),
+            "reasons": ["x"],
+            "require_revise_state": require_revise_state,
+        }
+
+    monkeypatch.setenv("SDE_REQUIRE_NON_STUB_REVIEWER", "1")
+    monkeypatch.setattr(cli_main, "evaluate_project_plan_lock_readiness", spy)
+    sess = tmp_path / "sl"
+    sess.mkdir()
+    (sess / "project_plan.json").write_text(
+        json.dumps({"schema_version": "1.0", "steps": []}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["sde", "project", "plan-lock", "--session-dir", str(sess), "--check-only"],
+    )
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 1
+    assert calls == [False]
+
+
+def test_cli_validate_env_strict_only_when_require_plan_lock(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    seq: list[bool | None] = []
+
+    def spy(*_args, **kwargs):
+        seq.append(kwargs.get("require_non_stub_reviewer"))
+        return {"exit_code": 0, "ok": True}
+
+    monkeypatch.setenv("SDE_REQUIRE_NON_STUB_REVIEWER", "1")
+    monkeypatch.setattr(cli_main, "validate_project_session", spy)
+    sess = tmp_path / "vsl"
+    sess.mkdir()
+    (sess / "project_plan.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "steps": [
+                    {
+                        "step_id": "a",
+                        "phase": "p",
+                        "title": "A",
+                        "description": "d",
+                        "depends_on": [],
+                        "path_scope": [],
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "sde",
+            "project",
+            "validate",
+            "--session-dir",
+            str(sess),
+            "--skip-workspace",
+            "--require-plan-lock",
+        ],
+    )
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 0
+    assert seq == [True]
+
+    seq.clear()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["sde", "project", "validate", "--session-dir", str(sess), "--skip-workspace"],
+    )
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == 0
+    assert seq == [False]
 
 
 def test_cli_lease_stale_sec_parse() -> None:
@@ -352,6 +589,47 @@ def test_cli_lease_stale_sec_parse() -> None:
         ]
     )
     assert c.lease_stale_sec == 120
+
+
+def test_cli_enforce_plan_lock_parse() -> None:
+    parser = build_parser()
+    pr = parser.parse_args(
+        ["project", "run", "--session-dir", "/tmp/s", "--enforce-plan-lock"]
+    )
+    assert pr.enforce_plan_lock is True
+    assert pr.require_non_stub_reviewer is False
+    cont = parser.parse_args(
+        [
+            "continuous",
+            "--project-session-dir",
+            "/tmp/p",
+            "--repo-root",
+            "/tmp/r",
+            "--enforce-plan-lock",
+        ]
+    )
+    assert cont.enforce_plan_lock is True
+    assert cont.require_non_stub_reviewer is False
+
+
+def test_cli_project_run_enforce_lock_require_non_stub_parse() -> None:
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "project",
+            "run",
+            "--session-dir",
+            "/tmp/s",
+            "--enforce-plan-lock",
+            "--require-non-stub-reviewer",
+            "--max-steps",
+            "3",
+            "--mode",
+            "baseline",
+        ]
+    )
+    assert args.enforce_plan_lock is True
+    assert args.require_non_stub_reviewer is True
 
 
 def test_run_project_session_custom_progress_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -403,3 +681,64 @@ def test_run_project_session_custom_progress_file(tmp_path: Path, monkeypatch: p
     assert out["exit_code"] == 0
     assert prog_path.is_file()
     assert not (session / "progress.json").is_file()
+
+
+def test_run_project_session_require_non_stub_forwards_to_lock_readiness(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    captured: dict[str, bool] = {}
+
+    def fake_eval(
+        _session_dir,
+        *,
+        require_revise_state=True,
+        allow_local_stub_attestation=True,
+    ):
+        captured["allow_local_stub"] = allow_local_stub_attestation
+        return {
+            "ok": True,
+            "ready": False,
+            "session_dir": str(_session_dir),
+            "reasons": ["stub_gate"],
+            "require_revise_state": require_revise_state,
+        }
+
+    monkeypatch.setattr("orchestrator.api.project_driver.evaluate_project_plan_lock_readiness", fake_eval)
+    sess = tmp_path / "plrun"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+            },
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    out = run_project_session(
+        sess,
+        repo_root=tmp_path,
+        max_steps=1,
+        mode="baseline",
+        enforce_plan_lock=True,
+        require_non_stub_reviewer=True,
+    )
+    assert out["exit_code"] == 1
+    assert captured.get("allow_local_stub") is False
+
+    captured.clear()
+    out2 = run_project_session(
+        sess,
+        repo_root=tmp_path,
+        max_steps=1,
+        mode="baseline",
+        enforce_plan_lock=True,
+        require_non_stub_reviewer=False,
+    )
+    assert out2["exit_code"] == 1
+    assert captured.get("allow_local_stub") is True

@@ -75,6 +75,16 @@ def test_guarded_pipeline_writes_completion_harness_and_passes_extended_gates(
     output_dir = Path(result["output_dir"])
 
     assert (output_dir / "program" / "project_plan.json").is_file()
+    assert (output_dir / "program" / "research_digest.md").is_file()
+    assert (output_dir / "product_brief.md").is_file()
+    assert (output_dir / "architecture_sketch.md").is_file()
+    assert (output_dir / "test_plan_stub.md").is_file()
+    assert (output_dir / "program" / "plan_lock.json").is_file()
+    disc = json.loads((output_dir / "program" / "discovery.json").read_text(encoding="utf-8"))
+    assert disc.get("goal_excerpt") == "task text"
+    assert disc.get("non_goals") == []
+    assert "task excerpt" in (output_dir / "program" / "research_digest.md").read_text(encoding="utf-8").lower()
+    assert "Product brief" in (output_dir / "product_brief.md").read_text(encoding="utf-8")
     assert (output_dir / "step_reviews" / "step_verify.json").is_file()
     assert (output_dir / "verification_bundle.json").is_file()
     review = json.loads((output_dir / "review.json").read_text(encoding="utf-8"))

@@ -12,7 +12,7 @@
 
 | Capability | Shipped in this repo? | Notes |
 |------------|----------------------|--------|
-| Multi-step execution from a **real** `project_plan.json` | **Yes** | `sde project run` / `sde continuous --project-plan` (see [project-driver.md](project-driver.md)). Steps have `depends_on`, `path_scope`, optional per-step **shell** `verification.commands`. |
+| Multi-step execution from a **real** `project_plan.json` | **Yes** | `sde project run` / `sde continuous --project-plan` (see [project-driver.md](project-driver.md)). Steps have `depends_on`, `path_scope`, optional per-step **shell** `verification.commands`. Optional **`--enforce-plan-lock`** gates the first tick on Stage 1 lock-readiness (pair with **`--require-non-stub-reviewer`** or **`SDE_REQUIRE_NON_STUB_REVIEWER`** when policy requires). |
 | Bounded context per step (ContextPack) + optional repo index | **Yes** | Session `context_packs/<step_id>.json`, lineage JSONL. |
 | Honest terminal state + CI-oriented `stop_report.json` | **Yes** | `driver_state.json`, session `definition_of_done.json` vs per-run `validation_ready`. |
 | Workspace contract (branch, path prefixes, leases, worktrees) | **Partial / opt-in** | Documented in project-driver; parallel lanes are **sequential on one checkout** unless `--parallel-worktrees` and git + disjoint scopes apply. |
@@ -28,15 +28,16 @@
 Read in this order before claiming “done” or “X% left”:
 
 1. [what.md](what.md) — CLI commands, what is in vs out of scope for the **local** SDE.
-2. [project-driver.md](project-driver.md) — session layout, **gap inventory** paragraph at the top (Categories 1–5, Phases 1–21).
+2. [project-driver.md](project-driver.md) — session layout, **gap inventory** paragraph at the top (Categories 1–5, Phases 1–21), plus the **Stage 1 plan lock** section (validate / run / `continuous` flags and `SDE_REQUIRE_NON_STUB_REVIEWER`).
 3. [implementation-contract.md](implementation-contract.md) — artifact checklist for a baseline run.
 4. [core-features-and-upstream-parity.md](core-features-and-upstream-parity.md) — **implemented** table vs suggested gaps.
 5. [../onboarding/action-plan.md](../onboarding/action-plan.md) — full-stack **story**; use **“Shipped slice”** notes to separate vision from code.
 
 For a **project session** you are driving from disk:
 
-6. `sde project validate` — plan + cycle + workspace preflight (see what.md / project-driver).
+6. `sde project validate` — plan + cycle + workspace preflight; add **`--require-plan-lock`** (and optional **`--require-non-stub-reviewer`**) when you need Stage 1 lock-readiness before trusting the session (see what.md / project-driver).
 7. `sde project status` — JSON snapshot; use `status_at_a_glance` + `red_flags` for a quick health read (Phase 21).
+8. For Stage 1 intake failures, triage **`docs/runbooks/stage1-intake-failures.md`** and use **`./scripts/run-stage1-suite.sh`** in CI or locally.
 
 ---
 
@@ -50,7 +51,7 @@ For a **project session** you are driving from disk:
 | **Session health** | `sde project status --plan …` (or `--session-dir`) | `plan_ok`, `red_flags`, rollups, DoD embed | Only applies when using a **session directory** |
 | **Proof of behavior** | `uv run pytest …`, `sde validate --run-id …` | Objective | Scoped to what tests / runs cover |
 
-**Rule:** After every implementation slice, **re-run at least one objective check** (tests, `project validate`, or `project status` on a fixture session) **and** refresh roadmap-review if you rely on `%` for planning.
+**Rule:** After every implementation slice, **re-run at least one objective check** (tests, `project validate` with the same flags your pipeline uses—often **`--require-plan-lock`** for Stage 1 sessions—or `project status` on a fixture session) **and** refresh roadmap-review if you rely on `%` for planning.
 
 ---
 
@@ -67,8 +68,8 @@ Use this loop literally; do not skip the re-measure step.
 
 For **closing a project session** (not the whole V1–V7 spec):
 
-- Ensure `sde project validate` is clean (or exit codes understood).
-- Run `sde project run` / `continuous` until `stop_report.json` / `driver_state.json` reflect the intended terminal state, or fix plan and re-run.
+- Ensure `sde project validate` is clean (or exit codes understood); for Stage 1–aligned sessions, prefer **`--require-plan-lock`** (and strict reviewer flags if your policy requires them—see project-driver).
+- Run `sde project run` / `continuous` until `stop_report.json` / `driver_state.json` reflect the intended terminal state, or fix plan and re-run; use **`--enforce-plan-lock`** when execution must match the same lock-readiness bar as validate.
 - Use `sde project status` and `status_at_a_glance.red_flags` before declaring the session green.
 
 ---
@@ -80,7 +81,7 @@ You are working inside the coding-agent / SDE repo. Ground truth for “what exi
 
 Task:
 1. Read docs/sde/what.md, docs/sde/project-driver.md (first paragraph = gap inventory), docs/onboarding/action-plan.md (note “Shipped slice” vs vision).
-2. Run: sde roadmap-review --repo-root .   (requires Ollama/support model as configured)
+2. Run: sde roadmap-review --repo-root .   (requires Ollama/support model as configured). For a disk-backed project session, also run: sde project validate --session-dir <dir> --skip-workspace --require-plan-lock   when Stage 1 gates apply.
 3. List concrete “remaining” items: cite doc section OR file/CLI gap, not vague percentages alone.
 4. Pick the smallest shippable slice; implement with tests; run uv run pytest on touched areas.
 5. Re-run sde roadmap-review OR explicitly reconcile docs/sde/core-features-and-upstream-parity.md “Gap” column — state what is STILL open after your change.
@@ -94,10 +95,11 @@ Do not claim “whole project complete” unless project_plan-driven session + v
 
 - `sde roadmap-review` — structured “% / remaining” (support model).
 - `sde evolve` — bounded rounds: roadmap-review + optional fixed task ([what.md](what.md)).
-- `sde project validate` / `sde project status` / `sde project run` / `sde continuous --project-plan` — session meta-orchestrator ([project-driver.md](project-driver.md)).
+- `sde project validate` / `status` / `plan-lock` / `intake-revise` / `run` / `continuous --project-plan` — session meta-orchestrator; lock flags on **validate** / **run** / **continuous** and **`SDE_REQUIRE_NON_STUB_REVIEWER`** → [project-driver.md](project-driver.md) (Stage 1 section), [stage1-intake-failures.md](../runbooks/stage1-intake-failures.md).
 
 ---
 
 ## Document history
 
 - **2026-04-18:** Kept in sync with **project status Phase 21** (`status_at_a_glance`), `orchestrator.api` exports, and the “follow latest code” path in `docs/README.md` / onboarding guides.
+- **2026-04-19:** Documented Stage 1 **validate / run / continuous** lock and strict-reviewer workflow + Stage 1 runbook / suite script in the session checklist.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import json
 import subprocess
 from pathlib import Path
@@ -9,7 +10,9 @@ from typing import Any
 
 from .project_aggregate import VERIFICATION_AGGREGATE_FILENAME
 from .project_events import SESSION_EVENTS_FILENAME
+from .project_intake_util import intake_doc_review_errors, intake_merge_anchor_present
 from .project_plan import all_steps_complete, detect_dependency_cycle, plan_step_ids, runnable_step_ids
+from .project_plan_lock import lineage_manifest_session_event_snapshot
 from .project_scheduler import select_steps_for_tick
 from .project_schema import read_json_dict, validate_project_plan
 from .project_workspace import git_head_matches_branch, plan_workspace_path_errors
@@ -26,6 +29,8 @@ DEFAULT_STATUS_MAX_JSON_BYTES = 512 * 1024
 DEFAULT_STATUS_JSONL_FULL_SCAN_BYTES = 1024 * 1024
 DEFAULT_STATUS_JSONL_TAIL_BYTES = 256 * 1024
 DEFAULT_STATUS_MAX_LISTED_STEP_IDS = 256
+_REVIEWED_AT_SKEW_MAX_SEC = 300
+_REVIEWER_ATTESTATION_ALLOWLIST = {"local_stub", "agent_signature", "service_token"}
 
 
 def _git_stdout(repo_root: Path, *git_args: str) -> tuple[bool, str | None]:
@@ -113,6 +118,153 @@ def _workspace_status_block(
     return out_block
 
 
+def _plan_lock_status_block(session_dir: Path, *, max_bytes: int) -> dict[str, Any]:
+    """Embed ``project_plan_lock.json`` and lift core booleans for glance dashboards."""
+    lock_path = session_dir / "project_plan_lock.json"
+    block = _embed_dict_json_file(lock_path, max_bytes=max_bytes)
+    body = block.get("body") if isinstance(block.get("body"), dict) else None
+    block["ready"] = body.get("ready") if isinstance(body, dict) else None
+    block["locked"] = body.get("locked") if isinstance(body, dict) else None
+    reasons = body.get("reasons") if isinstance(body, dict) else None
+    block["reasons_count"] = len(reasons) if isinstance(reasons, list) else None
+    proof = body.get("reviewer_proof_summary") if isinstance(body, dict) else None
+    block["reviewer_proof_summary"] = proof if isinstance(proof, dict) else None
+    return block
+
+
+def _parse_iso_seconds(value: Any) -> int | None:
+    if not isinstance(value, str) or not value.strip():
+        return None
+    txt = value.strip()
+    if txt.endswith("Z"):
+        txt = txt[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(txt)
+    except ValueError:
+        return None
+    return int(dt.timestamp())
+
+
+def _reviewer_proof_status_block(session_dir: Path) -> dict[str, Any]:
+    intake_dir = session_dir / "intake"
+    out: dict[str, Any] = {"present": intake_dir.is_dir()}
+    if not intake_dir.is_dir():
+        return out
+    doc = _read_json_optional(intake_dir / "doc_review.json")
+    planner = _read_json_optional(intake_dir / "planner_identity.json")
+    reviewer = _read_json_optional(intake_dir / "reviewer_identity.json")
+    out["doc_review_present"] = doc is not None
+    out["planner_identity_present"] = planner is not None
+    out["reviewer_identity_present"] = reviewer is not None
+    doc_reviewer = doc.get("reviewer") if isinstance(doc, dict) else None
+    reviewer_actor = reviewer.get("actor_id") if isinstance(reviewer, dict) else None
+    planner_actor = planner.get("actor_id") if isinstance(planner, dict) else None
+    out["doc_review_reviewer"] = doc_reviewer if isinstance(doc_reviewer, str) else None
+    out["reviewer_actor_id"] = reviewer_actor if isinstance(reviewer_actor, str) else None
+    out["planner_actor_id"] = planner_actor if isinstance(planner_actor, str) else None
+    out["reviewer_matches_doc_review"] = (
+        isinstance(doc_reviewer, str)
+        and doc_reviewer.strip()
+        and isinstance(reviewer_actor, str)
+        and reviewer_actor.strip()
+        and doc_reviewer.strip() == reviewer_actor.strip()
+    )
+    out["reviewer_differs_from_planner"] = (
+        isinstance(reviewer_actor, str)
+        and reviewer_actor.strip()
+        and isinstance(planner_actor, str)
+        and planner_actor.strip()
+        and reviewer_actor.strip() != planner_actor.strip()
+    )
+    att_type = reviewer.get("attestation_type") if isinstance(reviewer, dict) else None
+    out["attestation_type"] = att_type if isinstance(att_type, str) else None
+    out["attestation_type_allowed"] = isinstance(att_type, str) and att_type.strip() in _REVIEWER_ATTESTATION_ALLOWLIST
+    doc_reviewed_at = doc.get("reviewed_at") if isinstance(doc, dict) else None
+    reviewer_reviewed_at = reviewer.get("reviewed_at") if isinstance(reviewer, dict) else None
+    out["doc_reviewed_at"] = doc_reviewed_at if isinstance(doc_reviewed_at, str) else None
+    out["reviewer_reviewed_at"] = reviewer_reviewed_at if isinstance(reviewer_reviewed_at, str) else None
+    doc_s = _parse_iso_seconds(doc_reviewed_at)
+    reviewer_s = _parse_iso_seconds(reviewer_reviewed_at)
+    out["doc_reviewed_at_valid"] = doc_s is not None
+    out["reviewer_reviewed_at_valid"] = reviewer_s is not None
+    if doc_s is not None and reviewer_s is not None:
+        skew = abs(doc_s - reviewer_s)
+        out["reviewed_at_skew_sec"] = skew
+        out["reviewed_at_skew_ok"] = skew <= _REVIEWED_AT_SKEW_MAX_SEC
+    else:
+        out["reviewed_at_skew_sec"] = None
+        out["reviewed_at_skew_ok"] = None
+    return out
+
+
+def _revise_metrics_status_block(
+    session_dir: Path,
+    *,
+    max_full_scan_bytes: int,
+    max_tail_bytes: int,
+) -> dict[str, Any]:
+    path = session_dir / "intake" / "revise_metrics.jsonl"
+    block = {"path": str(path), "present": path.is_file()}
+    stats = _jsonl_line_count_and_last(
+        path,
+        max_full_scan_bytes=max_full_scan_bytes,
+        max_tail_bytes=max_tail_bytes,
+    )
+    block.update(stats)
+    if not path.is_file():
+        block["summary"] = {
+            "events_count": 0,
+            "blocked_human_count": 0,
+            "avg_latency_sec": None,
+            "last_status": None,
+        }
+        return block
+    if stats.get("line_count_omitted"):
+        block["summary"] = {
+            "events_count": None,
+            "blocked_human_count": None,
+            "avg_latency_sec": None,
+            "last_status": (stats.get("last") or {}).get("status") if isinstance(stats.get("last"), dict) else None,
+            "summary_omitted_due_to_size": True,
+        }
+        return block
+    events_count = 0
+    blocked_human_count = 0
+    latency_total = 0
+    latency_count = 0
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        block["summary"] = {"events_count": 0, "blocked_human_count": 0, "avg_latency_sec": None, "last_status": None}
+        return block
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(row, dict):
+            continue
+        events_count += 1
+        if row.get("blocked_human") is True:
+            blocked_human_count += 1
+        lat = row.get("latency_sec")
+        if isinstance(lat, int):
+            latency_total += lat
+            latency_count += 1
+    avg_latency_sec = (latency_total / latency_count) if latency_count > 0 else None
+    last_status = (stats.get("last") or {}).get("status") if isinstance(stats.get("last"), dict) else None
+    block["summary"] = {
+        "events_count": events_count,
+        "blocked_human_count": blocked_human_count,
+        "avg_latency_sec": avg_latency_sec,
+        "last_status": last_status,
+    }
+    return block
+
+
 def _status_at_a_glance(snapshot: dict[str, Any]) -> dict[str, Any]:
     """Compact booleans and counts derived from the rest of the snapshot (Phase 21)."""
     plan = snapshot.get("plan") or {}
@@ -125,6 +277,15 @@ def _status_at_a_glance(snapshot: dict[str, Any]) -> dict[str, Any]:
     )
     ds = snapshot.get("driver_state") or {}
     ds_body = ds.get("body") if isinstance(ds.get("body"), dict) else None
+    prog = snapshot.get("progress") or {}
+    prog_body = prog.get("body") if isinstance(prog.get("body"), dict) else None
+    ill_p = prog_body.get("intake_loaded_last") if prog_body else None
+    ill_p = ill_p if isinstance(ill_p, bool) else None
+    ill_d = ds_body.get("intake_loaded_last") if ds_body else None
+    ill_d = ill_d if isinstance(ill_d, bool) else None
+    sess_s = snapshot.get("session_dir")
+    session_dir = Path(sess_s) if isinstance(sess_s, str) else None
+    intake_anchor = intake_merge_anchor_present(session_dir) if session_dir is not None else False
     sr = snapshot.get("stop_report") or {}
     sr_body = sr.get("body") if isinstance(sr.get("body"), dict) else None
     dod = snapshot.get("definition_of_done") or {}
@@ -133,6 +294,18 @@ def _status_at_a_glance(snapshot: dict[str, Any]) -> dict[str, Any]:
     agg_body = agg.get("body") if isinstance(agg.get("body"), dict) else None
     ws = snapshot.get("workspace_status") or {}
     runs = snapshot.get("step_runs") or {}
+    pl = snapshot.get("plan_lock") or {}
+    rm = snapshot.get("revise_metrics") or {}
+    rm_summary = rm.get("summary") if isinstance(rm.get("summary"), dict) else {}
+    rp = snapshot.get("reviewer_proof") or {}
+    se_lineage = snapshot.get("session_events") or {}
+    ilm_present = se_lineage.get("intake_lineage_manifest_present")
+    ilm_present_b = ilm_present if isinstance(ilm_present, bool) else False
+    ilm_unread = se_lineage.get("intake_lineage_manifest_unreadable")
+    ilm_unread_b = ilm_unread if isinstance(ilm_unread, bool) else False
+    pl_proof = pl.get("reviewer_proof_summary")
+    reviewer_source = pl_proof if isinstance(pl_proof, dict) else rp
+    reviewer_source_name = "plan_lock" if isinstance(pl_proof, dict) else "intake"
     runnable = plan.get("runnable_step_ids")
     nxt = plan.get("next_tick_batch")
     runnable_n = len(runnable) if isinstance(runnable, list) else None
@@ -143,6 +316,34 @@ def _status_at_a_glance(snapshot: dict[str, Any]) -> dict[str, Any]:
         runs_indexed = True
     else:
         runs_indexed = False
+    roll = snapshot.get("plan_step_rollups") or {}
+    roll_steps = roll.get("steps") if isinstance(roll.get("steps"), list) else []
+    r_intake_true = 0
+    r_intake_false = 0
+    r_intake_null = 0
+    for s in roll_steps:
+        if not isinstance(s, dict):
+            continue
+        v = s.get("context_pack_intake_loaded")
+        if v is True:
+            r_intake_true += 1
+        elif v is False:
+            r_intake_false += 1
+        else:
+            r_intake_null += 1
+    rollup_intake_unknown_with_anchor = False
+    if intake_anchor and roll.get("present") is True:
+        for s in roll_steps:
+            if not isinstance(s, dict):
+                continue
+            if not s.get("context_pack_present"):
+                continue
+            if s.get("context_pack_intake_loaded") is not None:
+                continue
+            if s.get("context_pack_intake_loaded_skipped_oversized") is True:
+                continue
+            rollup_intake_unknown_with_anchor = True
+            break
     glance: dict[str, Any] = {
         "plan_ok": plan_ok,
         "all_plan_steps_complete": plan.get("all_steps_complete"),
@@ -158,6 +359,27 @@ def _status_at_a_glance(snapshot: dict[str, Any]) -> dict[str, Any]:
         "path_prefixes_ok": ws.get("path_prefixes_ok"),
         "branch_commit_match": ws.get("branch_commit_match"),
         "step_runs_latest_indexed": runs_indexed,
+        "plan_lock_ready": pl.get("ready"),
+        "plan_lock_locked": pl.get("locked"),
+        "revise_metrics_last_status": rm_summary.get("last_status"),
+        "revise_metrics_blocked_human_count": rm_summary.get("blocked_human_count"),
+        "revise_metrics_avg_latency_sec": rm_summary.get("avg_latency_sec"),
+        "reviewer_attestation_type": reviewer_source.get("attestation_type"),
+        "reviewer_attestation_type_allowed": reviewer_source.get("attestation_type_allowed"),
+        "reviewer_local_stub_allowed": reviewer_source.get("local_stub_allowed"),
+        "reviewer_attestation_policy_ok": reviewer_source.get("attestation_policy_ok"),
+        "reviewer_matches_doc_review": reviewer_source.get("reviewer_matches_doc_review"),
+        "reviewer_differs_from_planner": reviewer_source.get("reviewer_differs_from_planner"),
+        "reviewed_at_skew_ok": reviewer_source.get("reviewed_at_skew_ok"),
+        "reviewer_signal_source": reviewer_source_name,
+        "intake_merge_anchor_present": intake_anchor,
+        "intake_loaded_last_progress": ill_p,
+        "intake_loaded_last_driver_state": ill_d,
+        "rollup_context_pack_intake_loaded_true_count": r_intake_true,
+        "rollup_context_pack_intake_loaded_false_count": r_intake_false,
+        "rollup_context_pack_intake_loaded_null_count": r_intake_null,
+        "intake_lineage_manifest_present": ilm_present_b,
+        "intake_lineage_manifest_unreadable": ilm_unread_b,
     }
     red: list[str] = []
     if plan.get("dependency_cycle"):
@@ -168,6 +390,32 @@ def _status_at_a_glance(snapshot: dict[str, Any]) -> dict[str, Any]:
         red.append("workspace_path_prefix_mismatch")
     if ws.get("present") and ws.get("branch_commit_match") is False:
         red.append("workspace_branch_mismatch")
+    if ill_p is not None and ill_d is not None and ill_p != ill_d:
+        red.append("intake_loaded_last_progress_vs_driver_state_mismatch")
+    if rollup_intake_unknown_with_anchor:
+        red.append("intake_merge_anchor_present_but_context_pack_intake_loaded_unknown")
+    if pl.get("present") and pl.get("ready") is False:
+        red.append("plan_lock_not_ready")
+    if pl.get("present") and pl.get("locked") is False:
+        red.append("plan_lock_not_locked")
+    sess_s = snapshot.get("session_dir")
+    if isinstance(sess_s, str):
+        dre = intake_doc_review_errors(Path(sess_s))
+        if dre:
+            red.append("intake_doc_review_invalid")
+    if ilm_unread_b:
+        red.append("intake_lineage_manifest_unreadable")
+    if isinstance(reviewer_source, dict) and reviewer_source:
+        if reviewer_source.get("attestation_type_allowed") is False:
+            red.append("reviewer_attestation_type_invalid")
+        if reviewer_source.get("reviewer_matches_doc_review") is False:
+            red.append("reviewer_identity_doc_review_mismatch")
+        if reviewer_source.get("reviewer_differs_from_planner") is False:
+            red.append("reviewer_identity_matches_planner")
+        if reviewer_source.get("reviewed_at_skew_ok") is False:
+            red.append("reviewed_at_skew_exceeded")
+        if reviewer_source.get("attestation_policy_ok") is False:
+            red.append("reviewer_attestation_policy_failed")
     glance["red_flags"] = red
     return glance
 
@@ -418,6 +666,36 @@ def _build_step_runs_status(path: Path, *, max_full_scan_bytes: int, max_tail_by
     return block
 
 
+def _context_pack_intake_skipped_oversized(pack_path: Path, *, max_bytes: int) -> bool:
+    """True when a pack file exists but is larger than ``max_bytes`` (``intake_loaded`` not read)."""
+    if not pack_path.is_file():
+        return False
+    try:
+        return int(pack_path.stat().st_size) > int(max_bytes)
+    except OSError:
+        return False
+
+
+def _context_pack_intake_loaded_field(pack_path: Path, *, max_bytes: int) -> bool | None:
+    """Read ``intake_loaded`` from ``context_packs/<step_id>.json`` when the file is under ``max_bytes``."""
+    if not pack_path.is_file():
+        return None
+    try:
+        sz = pack_path.stat().st_size
+    except OSError:
+        return None
+    if int(sz) > int(max_bytes):
+        return None
+    try:
+        raw = json.loads(pack_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
+    v = raw.get("intake_loaded")
+    return v if isinstance(v, bool) else None
+
+
 def _plan_step_rollups(
     plan: dict[str, Any] | None,
     session_dir: Path,
@@ -425,6 +703,7 @@ def _plan_step_rollups(
     aggregate_body: dict[str, Any] | None,
     max_rows: int,
     latest_by_step: dict[str, dict[str, str]] | None = None,
+    max_context_pack_json_bytes: int = DEFAULT_STATUS_MAX_JSON_BYTES,
 ) -> dict[str, Any]:
     """Per-``step_id`` hints: on-disk verification/context-pack presence + aggregate ``passed`` when known."""
     if plan is None:
@@ -441,10 +720,20 @@ def _plan_step_rollups(
     pack_dir = session_dir / CONTEXT_PACKS_DIRNAME
     rows: list[dict[str, Any]] = []
     for sid in sliced:
+        pack_path = pack_dir / f"{sid}.json"
+        skipped = _context_pack_intake_skipped_oversized(
+            pack_path,
+            max_bytes=max_context_pack_json_bytes,
+        )
         row: dict[str, Any] = {
             "step_id": sid,
             "verification_json_present": (ver_dir / f"{sid}.json").is_file(),
-            "context_pack_present": (pack_dir / f"{sid}.json").is_file(),
+            "context_pack_present": pack_path.is_file(),
+            "context_pack_intake_loaded_skipped_oversized": skipped,
+            "context_pack_intake_loaded": _context_pack_intake_loaded_field(
+                pack_path,
+                max_bytes=max_context_pack_json_bytes,
+            ),
         }
         ap: bool | None = None
         if agg_steps is not None:
@@ -492,8 +781,10 @@ def describe_project_session(
     ``*.json`` stems under ``context_packs/``), and ``verification_bundles`` (child ``*.json`` under
     ``verification/``) with a capped ``step_ids`` list. **Phase 15** embeds ``leases.json`` under the same
     JSON byte cap (with ``active_row_count`` / ``active_row_count_omitted``) and summarizes ``_worktrees/``
-    as ``parallel_worktrees``. **Phase 16** adds ``plan_step_rollups`` (bounded list of per-step presence
-    flags + ``aggregate_passed`` from the embedded aggregate when available). **Phase 17** adds a full
+    as ``parallel_worktrees``.     **Phase 16** adds ``plan_step_rollups`` (bounded list of per-step presence
+    flags + ``aggregate_passed`` from the embedded aggregate when available, plus ``context_pack_intake_loaded``
+    read from each ``context_packs/<step_id>.json`` when under the JSON byte cap, with
+    ``context_pack_intake_loaded_skipped_oversized`` when the pack file exceeds that cap). **Phase 17** adds a full
     scan of ``step_runs.jsonl`` for ``latest_by_step`` (and per-row ``latest_run_id`` / ``latest_output_dir``)
     only while the file is under the JSONL full-scan byte cap; otherwise ``by_step_omitted`` is set.
     **Phase 18** adds ``repo_snapshot`` (read-only ``git rev-parse`` for ``HEAD`` / short SHA / branch when
@@ -501,7 +792,19 @@ def describe_project_session(
     the parsed plan plus ``branch_commit_match`` via :func:`git_head_matches_branch` when a plan branch and
     git are available). **Phase 20** extends ``workspace_status`` with ``path_prefix_errors`` (from
     :func:`plan_workspace_path_errors`), ``path_prefixes_configured``, and ``path_prefixes_ok``.
-    **Phase 21** adds ``status_at_a_glance`` (compact derived fields + ``red_flags``).
+    **Phase 21** adds ``status_at_a_glance`` (compact derived fields + ``red_flags``). Glance also surfaces
+    **intake** hints: ``intake_merge_anchor_present``, ``intake_loaded_last_progress``, and
+    ``intake_loaded_last_driver_state`` (with a red flag when both booleans disagree), plus
+    ``rollup_context_pack_intake_loaded_{true,false,null}_count`` tallies from ``plan_step_rollups`` steps
+    (null counts steps with missing/omitted ``context_pack_intake_loaded``). When ``intake_merge_anchor_present``
+    is true, ``red_flags`` may include ``intake_merge_anchor_present_but_context_pack_intake_loaded_unknown`` if
+    some in-cap context pack omits a boolean ``intake_loaded`` (oversized packs are excluded via
+    ``context_pack_intake_loaded_skipped_oversized``). Status also embeds ``plan_lock`` from
+    ``project_plan_lock.json`` (when present) and surfaces ``plan_lock_ready`` / ``plan_lock_locked``
+    in ``status_at_a_glance``. **Phase 22** merges ``intake_lineage_manifest_*`` (same contract as
+    ``session_events.jsonl`` driver payloads) into the ``session_events`` status block via
+    :func:`lineage_manifest_session_event_snapshot`; ``status_at_a_glance`` mirrors presence/unreadable
+    and may add ``intake_lineage_manifest_unreadable`` to ``red_flags``.
     """
     session_dir = session_dir.resolve()
     jcap = int(max_status_json_bytes) if max_status_json_bytes is not None else DEFAULT_STATUS_MAX_JSON_BYTES
@@ -564,6 +867,13 @@ def describe_project_session(
                 )
 
     out["workspace_status"] = _workspace_status_block(plan_parsed, repo_root, out["repo_snapshot"])
+    out["plan_lock"] = _plan_lock_status_block(session_dir, max_bytes=jcap)
+    out["revise_metrics"] = _revise_metrics_status_block(
+        session_dir,
+        max_full_scan_bytes=jl_full,
+        max_tail_bytes=jl_tail,
+    )
+    out["reviewer_proof"] = _reviewer_proof_status_block(session_dir)
 
     out["progress"] = {"path": str(progress_path), "present": progress_path.is_file()}
     if progress_path.is_file():
@@ -598,6 +908,7 @@ def describe_project_session(
     )
     out["session_events"] = {"path": str(events_path), "present": events_path.is_file()}
     out["session_events"].update(ev_stats)
+    out["session_events"].update(lineage_manifest_session_event_snapshot(session_dir))
 
     agg_path = session_dir / VERIFICATION_AGGREGATE_FILENAME
     out["verification_aggregate"] = _embed_dict_json_file(agg_path, max_bytes=jcap)
@@ -620,6 +931,7 @@ def describe_project_session(
         aggregate_body=agg_for_rollups,
         max_rows=list_cap,
         latest_by_step=latest_for_rollups,
+        max_context_pack_json_bytes=jcap,
     )
 
     dod_path = session_dir / DEFINITION_OF_DONE_FILENAME

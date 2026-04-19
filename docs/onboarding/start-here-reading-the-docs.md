@@ -14,6 +14,7 @@ Skim here if you want a **glossary** or a **story** about why the project exists
 | **Orchestrator** | The **Python package** that wraps the pipeline and prints the CLI. |
 | **CTO gates / hard-stops** | **Automatic checks** on run output; if they fail, the run is not “green.” |
 | **V1–V7** | **Labels** for slices of one roadmap in the **action plan**; Markdown specs under **`docs/coding-agent/`** were **removed**—gates live in **`src/sde_gates/`**. |
+| **Stage 1 / plan lock** | Session **`intake/`**, **`sde project plan-lock`**, **`validate --require-plan-lock`**, optional **`run` / `continuous` + `--enforce-plan-lock`** (and strict reviewer flags / **`SDE_REQUIRE_NON_STUB_REVIEWER`**). See **`docs/sde/project-driver.md`** and **`docs/runbooks/stage1-intake-failures.md`**. |
 
 ---
 
@@ -26,5 +27,6 @@ Skim here if you want a **glossary** or a **story** about why the project exists
 
 ## Changelog
 
+- **2026-04-19:** Glossary row for **Stage 1 / plan lock** (pointers to **project-driver** + intake runbook).
 - **2026-04-18 (later):** Noted removal of **`docs/coding-agent/*`** versioned Markdown specs.
 - **2026-04-18:** Page trimmed; **canonical path** is now [`../ESSENTIAL.md`](../ESSENTIAL.md).

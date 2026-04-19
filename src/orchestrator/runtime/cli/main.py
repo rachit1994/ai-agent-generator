@@ -2,28 +2,51 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from pathlib import Path
 
 from orchestrator.api import (
+    apply_intake_doc_review_result,
     append_roadmap_learning_line,
+    evaluate_remaining_work,
+    evaluate_project_plan_lock_readiness,
+    describe_project_session,
     execute_single_task,
     generate_report,
+    load_remaining_work_rules,
     replay_run,
+    render_remaining_work_markdown,
     roadmap_review,
     run_benchmark,
     run_bounded_evolve_loop,
     run_continuous_project_session,
     run_continuous_until,
     run_project_session,
-    describe_project_session,
+    scaffold_project_intake,
     validate_project_session,
     validate_run,
+    write_project_plan_lock,
+    write_project_stage1_observability_export,
 )
 
 
+def _env_require_non_stub_reviewer() -> bool:
+    """True when ``SDE_REQUIRE_NON_STUB_REVIEWER`` requests strict reviewer policy (CLI only)."""
+    raw = os.environ.get("SDE_REQUIRE_NON_STUB_REVIEWER", "").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def _strict_reviewer_when_enforcing_project_lock(args: object) -> bool:
+    """Strict reviewer policy when ``--enforce-plan-lock`` is set (``project run`` / ``continuous`` project modes)."""
+    if not bool(getattr(args, "enforce_plan_lock", False)):
+        return False
+    return bool(getattr(args, "require_non_stub_reviewer", False)) or _env_require_non_stub_reviewer()
+
+
 def build_parser() -> argparse.ArgumentParser:
+    plan_parent_help = "Path to project_plan.json; session directory is its parent"
     parser = argparse.ArgumentParser(prog="sde")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -184,6 +207,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="Prune leases.json rows older than N seconds each tick (Phase 8); 0 disables; default from plan or 86400",
     )
     continuous.add_argument(
+        "--enforce-plan-lock",
+        action="store_true",
+        help="When using project session mode, require lock-readiness before running steps",
+    )
+    continuous.add_argument(
+        "--require-non-stub-reviewer",
+        action="store_true",
+        help=(
+            "With --enforce-plan-lock, reject local_stub reviewer in lock readiness; "
+            "also when SDE_REQUIRE_NON_STUB_REVIEWER is set (CLI only)"
+        ),
+    )
+    continuous.add_argument(
         "--repo-root",
         default=None,
         help="Repository root when using --project-session-dir (default: cwd)",
@@ -233,7 +269,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--plan",
         dest="project_plan_file",
         metavar="PATH",
-        help="Path to project_plan.json; session directory is its parent (Phase 1: same store as --session-dir)",
+        help=f"{plan_parent_help} (Phase 1: same store as --session-dir)",
     )
     p_run.add_argument(
         "--repo-root",
@@ -271,6 +307,19 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Stale lease pruning TTL in seconds (Phase 8); 0 disables; overrides plan workspace.lease_ttl_sec",
     )
+    p_run.add_argument(
+        "--enforce-plan-lock",
+        action="store_true",
+        help="Require Stage 1 intake lock-readiness before executing project steps",
+    )
+    p_run.add_argument(
+        "--require-non-stub-reviewer",
+        action="store_true",
+        help=(
+            "With --enforce-plan-lock, reject local_stub reviewer in lock readiness; "
+            "also when SDE_REQUIRE_NON_STUB_REVIEWER is set (CLI only)"
+        ),
+    )
     p_val = p_sub.add_parser(
         "validate",
         help="Read-only checks on project_plan.json (schema, cycles, workspace); no steps executed (Phase 9)",
@@ -284,7 +333,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--plan",
         dest="project_plan_file",
         metavar="PATH",
-        help="Path to project_plan.json; session directory is its parent",
+        help=plan_parent_help,
     )
     p_val.add_argument(
         "--repo-root",
@@ -302,6 +351,88 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="Optional progress.json path for non-fatal conformance warnings",
     )
+    p_val.add_argument(
+        "--require-plan-lock",
+        action="store_true",
+        help="Fail validate when Stage 1 plan-lock readiness is not satisfied",
+    )
+    p_val.add_argument(
+        "--require-non-stub-reviewer",
+        action="store_true",
+        help=(
+            "With --require-plan-lock, reject local_stub reviewer attestation_type; "
+            "same when SDE_REQUIRE_NON_STUB_REVIEWER is 1/true/yes/on (CLI only)"
+        ),
+    )
+    p_scaffold = p_sub.add_parser(
+        "scaffold-intake",
+        help="Write intake/ stubs (discovery, research digest, doc review, questions) for Stage 1 alignment; does not edit project_plan.json",
+    )
+    p_scaffold.add_argument(
+        "--session-dir",
+        required=True,
+        dest="intake_session_dir",
+        help="Project session directory (e.g. contains or will contain project_plan.json)",
+    )
+    p_scaffold.add_argument(
+        "--goal",
+        required=True,
+        help="Non-empty goal text (stored as goal excerpt in discovery.json)",
+    )
+    p_scaffold.add_argument(
+        "--repo-label",
+        default="unknown",
+        help="Short label stored in discovery.json repo_id (default: unknown)",
+    )
+    p_revise = p_sub.add_parser(
+        "intake-revise",
+        help="Apply bounded revise-loop state from intake/doc_review.json (failed -> retry count -> blocked_human)",
+    )
+    p_revise.add_argument(
+        "--session-dir",
+        required=True,
+        dest="intake_session_dir",
+        help="Project session directory containing intake/doc_review.json",
+    )
+    p_revise.add_argument(
+        "--max-retries",
+        type=int,
+        default=2,
+        help="Max failed doc-review retries before blocked_human (default: 2)",
+    )
+    p_lock = p_sub.add_parser(
+        "plan-lock",
+        help="Evaluate Stage 1 intake + plan lock-readiness and write project_plan_lock.json",
+    )
+    l_sess = p_lock.add_mutually_exclusive_group(required=True)
+    l_sess.add_argument(
+        "--session-dir",
+        help="Project session directory containing project_plan.json and intake/",
+    )
+    l_sess.add_argument(
+        "--plan",
+        dest="project_plan_file",
+        metavar="PATH",
+        help=plan_parent_help,
+    )
+    p_lock.add_argument(
+        "--check-only",
+        action="store_true",
+        help="Evaluate lock-readiness only; do not write project_plan_lock.json",
+    )
+    p_lock.add_argument(
+        "--allow-missing-revise-state",
+        action="store_true",
+        help="Do not require intake/revise_state.json with review_passed status",
+    )
+    p_lock.add_argument(
+        "--require-non-stub-reviewer",
+        action="store_true",
+        help=(
+            "Reject local_stub reviewer attestation_type; require service-backed reviewer identity proof; "
+            "same when SDE_REQUIRE_NON_STUB_REVIEWER is 1/true/yes/on (CLI only)"
+        ),
+    )
     p_stat = p_sub.add_parser(
         "status",
         help="Print JSON snapshot of plan, progress, driver_state, stop_report, leases (Phase 10; read-only)",
@@ -315,7 +446,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--plan",
         dest="project_plan_file",
         metavar="PATH",
-        help="Path to project_plan.json; session directory is its parent",
+        help=plan_parent_help,
     )
     p_stat.add_argument(
         "--repo-root",
@@ -366,6 +497,91 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="N",
         help="Max step_ids listed under context_packs/ and verification/ in status JSON (Phase 14; default 256)",
     )
+    p_obs = p_sub.add_parser(
+        "export-stage1-observability",
+        help="Write intake/stage1_observability_export.json (revise_metrics + status_at_a_glance; OSV-STORY-01 B4)",
+    )
+    o_sess = p_obs.add_mutually_exclusive_group(required=True)
+    o_sess.add_argument(
+        "--session-dir",
+        help="Directory containing project_plan.json",
+    )
+    o_sess.add_argument(
+        "--plan",
+        dest="project_plan_file",
+        metavar="PATH",
+        help=plan_parent_help,
+    )
+    p_obs.add_argument(
+        "--output",
+        default=None,
+        metavar="PATH",
+        help="Destination JSON file (default: <session-dir>/intake/stage1_observability_export.json)",
+    )
+    p_obs.add_argument(
+        "--repo-root",
+        default=None,
+        help="Repository root for describe_project_session (default: cwd)",
+    )
+    p_obs.add_argument(
+        "--progress-file",
+        default=None,
+        metavar="PATH",
+        help="Override progress.json path (default: <session-dir>/progress.json)",
+    )
+    p_obs.add_argument(
+        "--max-concurrent-agents",
+        type=int,
+        default=1,
+        help="For describe_project_session next_tick_batch hint only (default: 1)",
+    )
+    p_obs.add_argument(
+        "--status-max-json-bytes",
+        dest="status_max_json_bytes",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Same as project status --status-max-json-bytes",
+    )
+    p_obs.add_argument(
+        "--status-jsonl-full-scan-max-bytes",
+        dest="status_jsonl_full_scan_max_bytes",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Same as project status --status-jsonl-full-scan-max-bytes",
+    )
+    p_obs.add_argument(
+        "--status-jsonl-tail-bytes",
+        dest="status_jsonl_tail_bytes",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Same as project status --status-jsonl-tail-bytes",
+    )
+    p_obs.add_argument(
+        "--status-max-listed-step-ids",
+        dest="status_max_listed_step_ids",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Same as project status --status-max-listed-step-ids",
+    )
+    p_remaining = p_sub.add_parser(
+        "remaining-work",
+        help="Evaluate planned-vs-remaining work from repo evidence and explicit rules",
+    )
+    p_remaining.add_argument("--repo-root", default=None, help="Repository root (default: cwd)")
+    p_remaining.add_argument(
+        "--rules",
+        default="docs/architecture/company-os-progress-rules.json",
+        help="Rules JSON path relative to --repo-root",
+    )
+    p_remaining.add_argument("--output-json", default=None, help="Optional file path for JSON artifact")
+    p_remaining.add_argument("--output-md", default=None, help="Optional file path for markdown summary")
+    p_remaining.add_argument("--format", default="text", choices=["text", "json"], help="Stdout format")
+    p_remaining.add_argument("--min-completion-pct", type=float, default=None, help="Optional minimum completion")
+    p_remaining.add_argument("--require-gates", action="store_true", help="Fail when any configured gate fails")
     return parser
 
 
@@ -436,6 +652,8 @@ def main() -> None:
                 progress_file=progress_arg,
                 parallel_worktrees=bool(getattr(args, "parallel_worktrees", False)),
                 lease_stale_sec=getattr(args, "lease_stale_sec", None),
+                enforce_plan_lock=bool(getattr(args, "enforce_plan_lock", False)),
+                require_non_stub_reviewer=_strict_reviewer_when_enforcing_project_lock(args),
             )
             print(json.dumps(summary, indent=2))
             sys.exit(int(summary.get("exit_code", 1)))
@@ -450,6 +668,8 @@ def main() -> None:
                 progress_file=progress_arg,
                 parallel_worktrees=bool(getattr(args, "parallel_worktrees", False)),
                 lease_stale_sec=getattr(args, "lease_stale_sec", None),
+                enforce_plan_lock=bool(getattr(args, "enforce_plan_lock", False)),
+                require_non_stub_reviewer=_strict_reviewer_when_enforcing_project_lock(args),
             )
             print(json.dumps(summary, indent=2))
             sys.exit(int(summary.get("exit_code", 1)))
@@ -465,7 +685,45 @@ def main() -> None:
         print(json.dumps(summary, indent=2))
         sys.exit(summary.get("exit_code", 1))
     if args.command == "project":
-        root = Path(args.repo_root).resolve() if args.repo_root else Path.cwd()
+        _rr = getattr(args, "repo_root", None)
+        root = Path(_rr).resolve() if _rr else Path.cwd()
+        if args.project_cmd == "scaffold-intake":
+            out = scaffold_project_intake(
+                Path(args.intake_session_dir).resolve(),
+                goal=str(getattr(args, "goal", "")),
+                repo_label=str(getattr(args, "repo_label", "unknown") or "unknown"),
+            )
+            print(json.dumps(out, indent=2))
+            sys.exit(0 if out.get("ok") else 2)
+        if args.project_cmd == "intake-revise":
+            out = apply_intake_doc_review_result(
+                Path(args.intake_session_dir).resolve(),
+                max_retries=int(getattr(args, "max_retries", 2)),
+            )
+            print(json.dumps(out, indent=2))
+            if not out.get("ok"):
+                sys.exit(2)
+            if out.get("state") == "review_passed":
+                sys.exit(0)
+            sys.exit(1)
+        if args.project_cmd == "remaining-work":
+            rr = Path(getattr(args, "repo_root", None)).resolve() if getattr(args, "repo_root", None) else Path.cwd()
+            rules_path = (rr / str(getattr(args, "rules", ""))).resolve()
+            rules = load_remaining_work_rules(rules_path)
+            result = evaluate_remaining_work(rr, rules)
+            if getattr(args, "output_json", None):
+                Path(args.output_json).resolve().write_text(json.dumps(result, indent=2), encoding="utf-8")
+            md = render_remaining_work_markdown(result)
+            if getattr(args, "output_md", None):
+                Path(args.output_md).resolve().write_text(md, encoding="utf-8")
+            print(json.dumps(result, indent=2) if args.format == "json" else md)
+            gates = result.get("gates") if isinstance(result.get("gates"), dict) else {}
+            gates_ok = all(bool(v.get("passed")) for v in gates.values()) if gates else True
+            floor = getattr(args, "min_completion_pct", None)
+            completion_ok = float(result.get("completion_pct", 0.0)) >= float(floor) if floor is not None else True
+            if completion_ok and (gates_ok or not bool(getattr(args, "require_gates", False))):
+                sys.exit(0)
+            sys.exit(1)
         plan_file = getattr(args, "project_plan_file", None)
         if plan_file:
             plan_path = Path(plan_file).resolve()
@@ -476,14 +734,38 @@ def main() -> None:
             if not getattr(args, "session_dir", None):
                 parser.error("--session-dir is required when --plan is not set")
             session_dir = Path(args.session_dir).resolve()
+        if args.project_cmd == "plan-lock":
+            require_revise_state = not bool(getattr(args, "allow_missing_revise_state", False))
+            require_non_stub = bool(getattr(args, "require_non_stub_reviewer", False)) or _env_require_non_stub_reviewer()
+            allow_local_stub_attestation = not require_non_stub
+            if getattr(args, "check_only", False):
+                out = evaluate_project_plan_lock_readiness(
+                    session_dir,
+                    require_revise_state=require_revise_state,
+                    allow_local_stub_attestation=allow_local_stub_attestation,
+                )
+            else:
+                out = write_project_plan_lock(
+                    session_dir,
+                    require_revise_state=require_revise_state,
+                    allow_local_stub_attestation=allow_local_stub_attestation,
+                )
+            print(json.dumps(out, indent=2))
+            if not out.get("ok"):
+                sys.exit(2)
+            sys.exit(0 if out.get("ready") else 1)
         if args.project_cmd == "validate":
             pf_val = getattr(args, "progress_file", None)
             progress_val = Path(pf_val).resolve() if pf_val else None
+            require_plan_lock = bool(getattr(args, "require_plan_lock", False))
+            require_non_stub = bool(getattr(args, "require_non_stub_reviewer", False)) or _env_require_non_stub_reviewer()
             vout = validate_project_session(
                 session_dir,
                 repo_root=root,
                 check_workspace=not bool(getattr(args, "skip_workspace", False)),
                 progress_file=progress_val,
+                require_plan_lock=require_plan_lock,
+                require_non_stub_reviewer=require_plan_lock and require_non_stub,
             )
             print(json.dumps(vout, indent=2))
             sys.exit(int(vout.get("exit_code", 2)))
@@ -502,6 +784,24 @@ def main() -> None:
             )
             print(json.dumps(snap, indent=2))
             sys.exit(0)
+        if args.project_cmd == "export-stage1-observability":
+            pf_ob = getattr(args, "progress_file", None)
+            progress_ob = Path(pf_ob).resolve() if pf_ob else None
+            out_dest = getattr(args, "output", None)
+            out_path = Path(out_dest).resolve() if out_dest else None
+            wout = write_project_stage1_observability_export(
+                session_dir,
+                output_path=out_path,
+                repo_root=root,
+                progress_file=progress_ob,
+                max_concurrent_agents=int(getattr(args, "max_concurrent_agents", 1) or 1),
+                max_status_json_bytes=getattr(args, "status_max_json_bytes", None),
+                max_status_jsonl_full_scan_bytes=getattr(args, "status_jsonl_full_scan_max_bytes", None),
+                max_status_jsonl_tail_bytes=getattr(args, "status_jsonl_tail_bytes", None),
+                max_status_listed_step_ids=getattr(args, "status_max_listed_step_ids", None),
+            )
+            print(json.dumps(wout, indent=2))
+            sys.exit(0 if wout.get("ok") else 2)
         if args.project_cmd != "run":
             parser.error("unknown project subcommand")
         if args.max_steps < 1:
@@ -517,6 +817,8 @@ def main() -> None:
             progress_file=progress_run,
             parallel_worktrees=bool(getattr(args, "parallel_worktrees", False)),
             lease_stale_sec=getattr(args, "lease_stale_sec", None),
+            enforce_plan_lock=bool(getattr(args, "enforce_plan_lock", False)),
+            require_non_stub_reviewer=_strict_reviewer_when_enforcing_project_lock(args),
         )
         print(json.dumps(out, indent=2))
         sys.exit(int(out.get("exit_code", 1)))

@@ -6,6 +6,8 @@
 
 **Per-feature version plans:** each checklist line is tracked as a version with completion + verification sections in [`../versioning/`](../versioning/) ([`README`](../versioning/README.md), [`INDEX`](../versioning/INDEX.md), [`plans/`](../versioning/plans/)).
 
+**Path to 100% (milestones vs `src/`):** [`company-os-path-to-100-percent.md`](company-os-path-to-100-percent.md) — defines **M0–M3**, counts open checklist items, and lists the **actionable backlog** to honestly claim **OSV-STORY-01** complete in this repository without implying every §3–15 service exists.
+
 ---
 
 ## How to read “100%”
@@ -187,4 +189,5 @@ When **every** checkbox in **§1–2** (Tier 2.1) **and** **§3–15** (Tier 2.2
 
 ## Changelog
 
+- **2026-04-19:** Linked **[`company-os-path-to-100-percent.md`](company-os-path-to-100-percent.md)** — milestone definitions vs **`src/`** and OSV-STORY-01 closure backlog.
 - **2026-04-18:** Initial checklist (backlog-only; aligns action-plan stages with master-aligned layout and completion tiers).

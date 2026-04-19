@@ -10,6 +10,14 @@ from sde_foundations.storage import ensure_dir, write_json
 from sde_gates.time_util import iso_now
 
 STEP_IDS = ("step_planner", "step_implement", "step_verify")
+_TASK_EXCERPT_MAX = 800
+
+
+def _task_excerpt(task: str) -> str:
+    t = (task or "").strip()
+    if len(t) <= _TASK_EXCERPT_MAX:
+        return t
+    return t[: _TASK_EXCERPT_MAX] + "…"
 
 
 def _learning_stub_lines() -> list[dict[str, Any]]:
@@ -47,11 +55,13 @@ def write_completion_artifacts(
     *,
     output_dir: Path,
     run_id: str,
+    task: str,
     parsed: dict[str, Any],
     events: list[dict[str, Any]],
 ) -> None:
     """Emit minimal planning + completion paths under the run directory (harness / local SDE)."""
     _ = events
+    excerpt = _task_excerpt(task)
     program = output_dir / "program"
     ensure_dir(program)
     ensure_dir(output_dir / "step_reviews")
@@ -67,17 +77,118 @@ def write_completion_artifacts(
     write_json(program / "project_plan.json", plan)
     write_json(
         program / "discovery.json",
-        {"schema_version": "1.0", "repo_id": "sde_harness", "constraints": []},
+        {
+            "schema_version": "1.0",
+            "repo_id": "sde_harness",
+            "source": "completion_harness",
+            "goal_excerpt": excerpt,
+            "constraints": [],
+            "non_goals": [],
+            "open_questions": [],
+        },
     )
+    digest_lines = [
+        "# Research digest (harness)",
+        "",
+        f"- **Run:** `{run_id}`",
+        "- **Scope:** Stub artifact for Stage 1 (V2) intake parity with `docs/onboarding/action-plan.md`.",
+        "- **Sources:** Placeholder until planner-backed research is wired.",
+        "",
+        "## Task excerpt (from CLI)",
+        "",
+        "```text",
+        excerpt if excerpt else "(empty task)",
+        "```",
+        "",
+        "## Constraints",
+        "",
+        "- None recorded in harness beyond the task excerpt.",
+        "",
+        "## Risks / unknowns",
+        "",
+        "- Deferred to real discovery pipeline.",
+        "",
+    ]
+    (program / "research_digest.md").write_text("\n".join(digest_lines), encoding="utf-8")
     write_json(
         program / "doc_review.json",
-        {"schema_version": "1.0", "passed": True, "reviewed_at": iso_now()},
+        {
+            "schema_version": "1.0",
+            "passed": True,
+            "reviewed_at": iso_now(),
+            "findings": [],
+            "reviewer": "harness_stub",
+        },
     )
+    brief = "\n".join(
+        [
+            "# Product brief (harness)",
+            "",
+            f"- **Run:** `{run_id}`",
+            "- **Intent:** Stub Stage 1 doc pack entry until planner-authored briefs ship.",
+            "",
+            "## Goals",
+            "",
+            "- Satisfy `program/doc_pack_manifest.json` + HS12 with on-disk evidence.",
+            "",
+            "## Non-goals",
+            "",
+            "- None declared in harness.",
+            "",
+            "## Task excerpt",
+            "",
+            "```text",
+            excerpt if excerpt else "(empty task)",
+            "```",
+            "",
+        ]
+    )
+    (output_dir / "product_brief.md").write_text(brief, encoding="utf-8")
+    arch = "\n".join(
+        [
+            "# Architecture sketch (harness)",
+            "",
+            f"- **Run:** `{run_id}`",
+            "- **Intent:** Stub Stage 1 architecture note until planner-owned ADRs ship.",
+            "",
+            "## Context",
+            "",
+            "- See `product_brief.md` and `planner_doc.md` in this run directory.",
+            "",
+            "## Components (placeholder)",
+            "",
+            "- **Orchestrator:** SDE guarded pipeline (local).",
+            "- **Persistence:** Run artifacts under `outputs/runs/<id>/`.",
+            "",
+        ]
+    )
+    (output_dir / "architecture_sketch.md").write_text(arch, encoding="utf-8")
+    test_plan = "\n".join(
+        [
+            "# Test plan (harness stub)",
+            "",
+            f"- **Run:** `{run_id}`",
+            "- **Intent:** Stub Stage 1 test-plan surface until plan steps declare real commands.",
+            "",
+            "## Strategy",
+            "",
+            "- Use `verification_bundle.json` from this run as the harness signal.",
+            "- Replace with repo-specific pytest / lint / typecheck when wired to `project_plan.json`.",
+            "",
+        ]
+    )
+    (output_dir / "test_plan_stub.md").write_text(test_plan, encoding="utf-8")
     write_json(
         program / "doc_pack_manifest.json",
         {
             "schema_version": "1.0",
-            "entries": [{"path": "planner_doc.md", "content_sha256": None}],
+            "entries": [
+                {"path": "planner_doc.md", "content_sha256": None},
+                {"path": "product_brief.md", "content_sha256": None},
+                {"path": "architecture_sketch.md", "content_sha256": None},
+                {"path": "test_plan_stub.md", "content_sha256": None},
+                {"path": "program/research_digest.md", "content_sha256": None},
+            ],
         },
     )
     q_lines = [
@@ -158,5 +269,15 @@ def write_completion_artifacts(
             ],
             "passed": vb_passed,
             "captured_at": iso_now(),
+        },
+    )
+    write_json(
+        program / "plan_lock.json",
+        {
+            "schema_version": "1.0",
+            "run_id": run_id,
+            "locked_at": iso_now(),
+            "source": "completion_harness",
+            "note": "Stub plan-lock record for OSV-STORY-01; real plan lock is session-scoped when using `sde project run`.",
         },
     )

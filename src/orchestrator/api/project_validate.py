@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .project_intake_util import intake_doc_review_errors, intake_merge_anchor_present
+from .project_plan_lock import evaluate_project_plan_lock_readiness
 from .project_plan import detect_dependency_cycle
 from .project_schema import read_json_dict, validate_progress, validate_project_plan
 from .project_workspace import evaluate_workspace_repo_gates
@@ -20,12 +22,17 @@ def validate_project_session(
     repo_root: Path,
     check_workspace: bool = True,
     progress_file: Path | None = None,
+    require_plan_lock: bool = False,
+    require_non_stub_reviewer: bool = False,
 ) -> dict[str, Any]:
     """
     Validate ``project_plan.json`` and optional workspace gates without executing steps.
 
     Returns a JSON-serializable dict including ``exit_code``:
     **0** ok, **1** workspace contract failed, **2** missing/invalid plan or dependency cycle.
+
+    On **exit 0**, ``intake`` summarizes ``intake/`` vs context-pack merge rules and, when
+    ``progress.json`` was read as an object, ``progress_intake_loaded_last`` (else ``null``).
     """
     session_dir = session_dir.resolve()
     repo_root = repo_root.resolve()
@@ -71,13 +78,31 @@ def validate_project_session(
             out["error"] = "workspace_contract"
             out["detail"] = gate
             return out
+    if require_plan_lock:
+        lock = evaluate_project_plan_lock_readiness(
+            session_dir,
+            allow_local_stub_attestation=not require_non_stub_reviewer,
+        )
+        if not lock.get("ok"):
+            out["exit_code"] = EXIT_VALIDATE_INVALID
+            out["ok"] = False
+            out["error"] = "plan_lock_readiness_error"
+            out["detail"] = lock.get("error")
+            return out
+        if not lock.get("ready"):
+            out["exit_code"] = EXIT_VALIDATE_INVALID
+            out["ok"] = False
+            out["error"] = "plan_lock_not_ready"
+            out["details"] = lock.get("reasons") or []
+            return out
 
     progress_path = progress_file.resolve() if progress_file is not None else session_dir / "progress.json"
     progress_warnings: list[str] = []
+    progress_body: dict[str, Any] | None = None
     if progress_path.is_file():
         try:
-            prog = read_json_dict(progress_path)
-            prog_errs = validate_progress(prog)
+            progress_body = read_json_dict(progress_path)
+            prog_errs = validate_progress(progress_body)
             if prog_errs:
                 progress_warnings.append(f"progress_nonconforming:{prog_errs}")
         except (OSError, ValueError, TypeError) as exc:
@@ -87,6 +112,22 @@ def validate_project_session(
     out["ok"] = True
     out["plan_path"] = str(plan_path)
     out["step_count"] = len(plan.get("steps") or [])
+    doc_review_errors = intake_doc_review_errors(session_dir)
+    if doc_review_errors:
+        out["exit_code"] = EXIT_VALIDATE_INVALID
+        out["ok"] = False
+        out["error"] = "invalid_doc_review_json"
+        out["details"] = doc_review_errors
+        return out
+    ill: bool | None = None
+    if progress_body is not None:
+        raw_ill = progress_body.get("intake_loaded_last")
+        ill = raw_ill if isinstance(raw_ill, bool) else None
+    out["intake"] = {
+        "intake_dir_present": (session_dir / "intake").is_dir(),
+        "merge_anchor_present": intake_merge_anchor_present(session_dir),
+        "progress_intake_loaded_last": ill,
+    }
     if progress_warnings:
         out["progress_warnings"] = progress_warnings
     return out

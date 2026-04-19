@@ -24,8 +24,8 @@ This project is an **architecture and local-runtime workspace** for an *AI Profe
 - **`sde replay`** — print a trajectory narrative or JSON/HTML for a run id; **`--rerun`** re-executes a single-task run from `run-manifest.json`.
 - **`sde validate --run-id …`** — re-check an existing folder (`orchestrator.api.validate_run`): strict **single-task** contract when a run manifest exists; lighter check for **benchmark-only** trees.
 - **`sde roadmap-review`**, **`sde evolve`** — support-model digest + bounded “review loop” (see `docs/sde/what.md`).
-- **`sde continuous`** — repeat **`--task`** until a stop condition **or** drive a **`project_plan.json`** session (`--project-plan` / `--project-session-dir`).
-- **`sde project run|validate|status`** — meta-orchestrator over a session directory (plan, progress, verification, `stop_report.json`, …); full story in **`docs/sde/project-driver.md`**.
+- **`sde continuous`** — repeat **`--task`** until a stop condition **or** drive a **`project_plan.json`** session (`--project-plan` / `--project-session-dir`; optional **`--enforce-plan-lock`**, **`--require-non-stub-reviewer`**, **`--progress-file`**, …).
+- **`sde project`** — **`run`**, **`validate`**, **`status`**, **`plan-lock`**, **`intake-revise`**, **`scaffold-intake`**, … over a session directory (plan, progress, verification, `stop_report.json`, optional Stage 1 lock / intake gates); full story in **`docs/sde/project-driver.md`** (including Stage 1 plan lock).
 
 The **vision** (full multi-service OS, rich planning agents, production IAM) still mostly lives in Markdown under **`docs/`**. The **Python** that tracks the runnable slice lives under **`src/orchestrator/`** (CLI + **`api/`** package) and **`sde_pipeline`**, **`sde_modes`**, **`sde_gates`**, **`sde_foundations`**. **Stable imports for other code:** `from orchestrator.api import …` (listed in **`src/orchestrator/api/README.md`**).
 
@@ -95,7 +95,7 @@ When you run `uv run sde run …` or `uv run sde benchmark …`:
 5. **Modes:** [`sde_modes/modes/baseline/pipeline.py`](../src/sde_modes/modes/baseline/pipeline.py), [`sde_modes/modes/guarded.py`](../src/sde_modes/modes/guarded.py), [`sde_modes/modes/guarded_pipeline/pipeline.py`](../src/sde_modes/modes/guarded_pipeline/pipeline.py) — concrete execution strategies.
 6. **Gates / validation:** [`sde_gates/run_directory.py`](../src/sde_gates/run_directory.py) (`validate_execution_run_directory`) — validates a run directory against strict contracts (tests and CI-style checks). **`orchestrator.api.validate_run`** wraps this for the `sde validate` command.
 
-**Project sessions** (`sde project …`, `sde continuous --project-plan`): start at [`orchestrator/api/project_driver.py`](../src/orchestrator/api/project_driver.py) and [`project_status.py`](../src/orchestrator/api/project_status.py); CLI wiring still lives in `main.py`.
+**Project sessions** (`sde project …`, `sde continuous --project-plan`): start at [`orchestrator/api/project_driver.py`](../src/orchestrator/api/project_driver.py) and [`project_status.py`](../src/orchestrator/api/project_status.py); Stage 1 lock readiness + `project_plan_lock.json` in [`project_plan_lock.py`](../src/orchestrator/api/project_plan_lock.py); preflight in [`project_validate.py`](../src/orchestrator/api/project_validate.py); project-mode loop in [`continuous_run.py`](../src/orchestrator/api/continuous_run.py); CLI wiring in `main.py`.
 
 **Suggested first code read:** [`orchestrator/api/README.md`](../src/orchestrator/api/README.md) → `orchestrator/api/__init__.py` → `orchestrator/runtime/cli/main.py` → `sde_pipeline/runner/single_task.py` → `sde_modes/modes/guarded_pipeline/pipeline.py` (longest path) → `sde_gates/run_directory.py`.
 

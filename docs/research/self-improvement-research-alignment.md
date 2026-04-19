@@ -83,6 +83,14 @@ This document summarizes **peer-reviewed and widely cited preprints** relevant t
 
 ---
 
+## 3b. Engineering stack choices (optional libraries; gates unchanged)
+
+Optional **LangGraph**, **Mem0-class long-term memory**, **RAG**, and **async self-learning jobs** must still respect hard-stops and contracts if you adopt them in a **from-scratch** build. Mem0 (scalable extract / consolidate / retrieve) is summarized in [arXiv:2504.19413](https://arxiv.org/abs/2504.19413) and fits the **governed memory** story when combined with quarantine and provenance (`memory_artifact_layer`, `hard_stops_memory.py`).
+
+**Stable products / pros–cons (2025–2026 snapshot):** **[`stable-libraries-advancements-2026.md`](stable-libraries-advancements-2026.md)** — LangGraph 1.0, Temporal, Instructor, LlamaIndex, Mem0, E2B, OpenTelemetry, etc., with **when to use / defer**. Version scope lives under **[`../versioning/`](../versioning/)** (`plans/`, `README`).
+
+---
+
 ## 4. Suggested benchmark extensions (optional)
 
 When implementing benchmarks, consider **explicit** rows for:
@@ -98,5 +106,7 @@ These are **not** new hard-stop IDs by default; they are **recommended metrics**
 
 ## 5. Changelog
 
+- **2026-04-18:** Removed versioning migration doc pointer from §3b; stack choices point at **[`stable-libraries-advancements-2026.md`](stable-libraries-advancements-2026.md)** and **`../versioning/`** only.
+- **2026-04-18:** Added link in §3b to **[`stable-libraries-advancements-2026.md`](stable-libraries-advancements-2026.md)** (stable products, pros/cons).
 - **2026-04-18:** Removed links to deleted **`docs/coding-agent/*`** specs; maps to **code paths** instead.
 - **2026-04-17:** Initial bibliography and mapping.

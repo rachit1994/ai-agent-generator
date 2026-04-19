@@ -11,7 +11,10 @@ from typing import Any
 
 from sde_gates.time_util import iso_now
 
+from .project_intake_util import intake_merge_anchor_present
 from .repo_index import build_repo_index
+
+_MD_FENCE_CLOSE = "\n```\n\n"
 
 
 def latest_output_dirs_by_step(session_dir: Path) -> dict[str, str]:
@@ -119,6 +122,152 @@ def _append_lineage(session_dir: Path, row: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+
+
+def _load_intake_json(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    return raw if isinstance(raw, dict) else None
+
+
+def _intake_discovery_chunks(disc: dict[str, Any]) -> list[str]:
+    parts: list[str] = []
+    ge = disc.get("goal_excerpt")
+    if isinstance(ge, str) and ge.strip():
+        parts.append("### discovery.json → goal_excerpt\n\n```text\n")
+        parts.append(ge.strip())
+        parts.append(_MD_FENCE_CLOSE)
+    for key, label in (
+        ("constraints", "constraints"),
+        ("non_goals", "non_goals"),
+        ("open_questions", "open_questions"),
+    ):
+        val = disc.get(key)
+        if isinstance(val, list) and val:
+            snippet = json.dumps(val, indent=2, ensure_ascii=False)
+            parts.append(f"### discovery.json → {label}\n\n```json\n{snippet}\n```\n\n")
+    return parts
+
+
+def _intake_doc_review_chunks(doc_rev: dict[str, Any]) -> list[str]:
+    meta_lines: list[str] = []
+    pv = doc_rev.get("passed")
+    if isinstance(pv, bool):
+        meta_lines.append(f"passed: {pv}")
+    rev = doc_rev.get("reviewer")
+    if isinstance(rev, str) and rev.strip():
+        meta_lines.append(f"reviewer: `{rev.strip()}`")
+    findings = doc_rev.get("findings")
+    findings_body = ""
+    if isinstance(findings, list) and findings:
+        cap_list = findings[:25]
+        snippet = json.dumps(cap_list, indent=2, ensure_ascii=False)
+        cap_snip = 4_500
+        if len(snippet) > cap_snip:
+            snippet = snippet[:cap_snip] + "\n…"
+        findings_body = f"**findings** (capped)\n\n```json\n{snippet}\n```\n\n"
+    elif isinstance(findings, dict) and findings:
+        snippet = json.dumps(findings, indent=2, ensure_ascii=False)
+        if len(snippet) > 4_500:
+            snippet = snippet[:4_500] + "\n…"
+        findings_body = f"**findings** (capped)\n\n```json\n{snippet}\n```\n\n"
+    if not meta_lines and not findings_body.strip():
+        return []
+    out = ["### doc_review.json\n\n"]
+    if meta_lines:
+        out.append("\n".join(f"- {m}" for m in meta_lines) + "\n\n")
+    if findings_body:
+        out.append(findings_body)
+    return out
+
+
+def _intake_try_append_digest(intake_dir: Path, chunks: list[str]) -> None:
+    digest_path = intake_dir / "research_digest.md"
+    if not digest_path.is_file() or not chunks:
+        return
+    try:
+        dig_raw = digest_path.read_text(encoding="utf-8")
+    except OSError:
+        return
+    if not dig_raw.strip():
+        return
+    chunks.append("### research_digest.md (excerpt)\n\n```markdown\n")
+    chunks.append(dig_raw.strip())
+    chunks.append(_MD_FENCE_CLOSE)
+
+
+def _intake_try_append_question_workbook(intake_dir: Path, chunks: list[str]) -> None:
+    """Append last JSONL records when discovery or doc_review already populated the section."""
+    wb_path = intake_dir / "question_workbook.jsonl"
+    if not wb_path.is_file() or not chunks:
+        return
+    try:
+        lines = wb_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    rows: list[dict[str, Any]] = []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(obj, dict):
+            rows.append(obj)
+    if not rows:
+        return
+    tail = rows[-30:]
+    snippet = json.dumps(tail, indent=2, ensure_ascii=False)
+    cap = 3_000
+    if len(snippet) > cap:
+        snippet = snippet[:cap] + "\n…"
+    chunks.append("### question_workbook.jsonl (last entries, capped)\n\n```json\n")
+    chunks.append(snippet)
+    chunks.append(_MD_FENCE_CLOSE)
+
+
+def _intake_context_section(session_dir: Path, *, budget_chars: int) -> tuple[str, bool]:
+    """Merge ``intake/`` into markdown: discovery, doc review, digest, then workbook (when anchored).
+
+    Digest and question_workbook are included only after discovery or doc_review produced body
+    text, so stray files under ``intake/`` do not open a section alone. Bounded by ``budget_chars``.
+    """
+    if not intake_merge_anchor_present(session_dir):
+        return "", False
+    intake_dir = session_dir / "intake"
+
+    header = "## Session intake (`intake/`)\n\n"
+    chunks: list[str] = []
+    disc = _load_intake_json(intake_dir / "discovery.json")
+    dchunks = _intake_discovery_chunks(disc) if disc else []
+    if dchunks:
+        chunks.append(header)
+        chunks.extend(dchunks)
+
+    doc_rev = _load_intake_json(intake_dir / "doc_review.json")
+    rchunks = _intake_doc_review_chunks(doc_rev) if doc_rev else []
+    if rchunks:
+        if not chunks:
+            chunks.append(header)
+        chunks.extend(rchunks)
+
+    _intake_try_append_digest(intake_dir, chunks)
+    _intake_try_append_question_workbook(intake_dir, chunks)
+
+    text = "".join(chunks)
+    body = text.strip()
+    if body == "## Session intake (`intake/`)":
+        return "", False
+    if not body:
+        return "", False
+    if len(text) > budget_chars:
+        text = text[:budget_chars] + "\n…[intake section capped]\n"
+    return text, True
 
 
 def _failures_markdown(session_dir: Path, prior_failures: list[dict[str, Any]]) -> str:
@@ -230,6 +379,8 @@ def build_context_pack(
     runs_map = latest_runs_by_step or {}
 
     failures_md = _failures_markdown(session_dir, prior_failures)
+    intake_budget = min(6_000, max(1_500, max_chars // 2))
+    intake_section, intake_loaded = _intake_context_section(session_dir, budget_chars=intake_budget)
     paths_preview = "\n".join(f"- `{p}`" for p in index.get("paths", [])[:80])
     prior_section, prior_refs = _prior_section_and_refs(
         step,
@@ -244,6 +395,7 @@ def build_context_pack(
         f"- repo_root: `{repo_root.resolve()}`\n"
         f"- git_head: `{head or 'unknown'}`\n"
         f"- path_scope: {scopes_str}\n\n"
+        f"{intake_section}"
         "## Repo index (capped)\n"
         f"{paths_preview}\n\n"
         f"{prior_section}"
@@ -269,6 +421,7 @@ def build_context_pack(
         "reductions": reductions,
         "truncation_hs03_ok": hs03_ok,
         "git_head": head,
+        "intake_loaded": intake_loaded,
         "repo_index_summary": {"file_count": index.get("file_count"), "scopes": scopes_str},
         "references": prior_refs,
         "markdown": body,
@@ -285,6 +438,7 @@ def build_context_pack(
             "markdown_sha256_full": full_sha,
             "truncated": truncated,
             "truncation_hs03_ok": hs03_ok,
+            "intake_loaded": intake_loaded,
         },
     )
     return pack

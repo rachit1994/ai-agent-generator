@@ -95,6 +95,7 @@ def default_progress(session_id: str) -> dict[str, Any]:
         "blocked_reason": None,
         "last_run_id": None,
         "last_output_dir": None,
+        "intake_loaded_last": False,
     }
 
 
@@ -105,6 +106,9 @@ def validate_progress(body: dict[str, Any]) -> list[str]:
     for key in ("completed_step_ids", "pending_step_ids"):
         if not _is_str_list(body.get(key, [])):
             errs.append(f"progress_{key}_bad")
+    ill = body.get("intake_loaded_last")
+    if ill is not None and not isinstance(ill, bool):
+        errs.append("progress_intake_loaded_last_bad")
     return errs
 
 

@@ -40,6 +40,8 @@ def test_describe_project_session_minimal(tmp_path: Path) -> None:
             "step_id": "a",
             "verification_json_present": False,
             "context_pack_present": False,
+            "context_pack_intake_loaded_skipped_oversized": False,
+            "context_pack_intake_loaded": None,
             "aggregate_passed": None,
         }
     ]
@@ -52,16 +54,145 @@ def test_describe_project_session_minimal(tmp_path: Path) -> None:
     se = out.get("session_events") or {}
     assert se.get("present") is False
     assert se.get("line_count") == 0
+    assert se.get("intake_lineage_manifest_present") is False
     pw = out.get("parallel_worktrees") or {}
     assert pw.get("present") is False
     assert pw.get("dir_count") == 0
     ws = out["workspace_status"]
     assert ws["present"] is False
+    pl = out["plan_lock"]
+    assert pl["present"] is False
+    assert pl["ready"] is None
+    assert pl["locked"] is None
     g = out["status_at_a_glance"]
     assert g["plan_ok"] is True
     assert g["red_flags"] == []
     assert g["next_tick_batch_count"] == 1
     assert g["runnable_step_ids_count"] == 1
+    assert g["intake_merge_anchor_present"] is False
+    assert g["intake_loaded_last_progress"] is None
+    assert g["intake_loaded_last_driver_state"] is None
+    assert g["rollup_context_pack_intake_loaded_true_count"] == 0
+    assert g["rollup_context_pack_intake_loaded_false_count"] == 0
+    assert g["rollup_context_pack_intake_loaded_null_count"] == 1
+    assert g["plan_lock_ready"] is None
+    assert g["plan_lock_locked"] is None
+    assert g["intake_lineage_manifest_present"] is False
+    assert g["intake_lineage_manifest_unreadable"] is False
+    assert "intake_merge_anchor_present_but_context_pack_intake_loaded_unknown" not in g["red_flags"]
+
+
+def test_describe_project_session_glance_intake_fields(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+            },
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "discovery.json").write_text(
+        json.dumps({"goal_excerpt": "x", "constraints": []}),
+        encoding="utf-8",
+    )
+    (sess / "progress.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "session_id": "s",
+                "completed_step_ids": [],
+                "pending_step_ids": ["a"],
+                "failed_step_id": None,
+                "blocked_reason": None,
+                "last_run_id": None,
+                "last_output_dir": None,
+                "intake_loaded_last": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (sess / "driver_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "status": "running",
+                "budget": {"max_steps": 5, "steps_used": 0},
+                "block_detail": None,
+                "intake_loaded_last": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    g = out["status_at_a_glance"]
+    assert g["intake_merge_anchor_present"] is True
+    assert g["intake_loaded_last_progress"] is True
+    assert g["intake_loaded_last_driver_state"] is True
+    assert "intake_loaded_last_progress_vs_driver_state_mismatch" not in g["red_flags"]
+    assert g["rollup_context_pack_intake_loaded_true_count"] == 0
+    assert g["rollup_context_pack_intake_loaded_false_count"] == 0
+    assert g["rollup_context_pack_intake_loaded_null_count"] == 1
+    assert "intake_merge_anchor_present_but_context_pack_intake_loaded_unknown" not in g["red_flags"]
+
+
+def test_describe_project_session_glance_intake_mismatch_red_flag(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+            },
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    (sess / "progress.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "session_id": "s",
+                "completed_step_ids": [],
+                "pending_step_ids": ["a"],
+                "failed_step_id": None,
+                "blocked_reason": None,
+                "last_run_id": None,
+                "last_output_dir": None,
+                "intake_loaded_last": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (sess / "driver_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "status": "running",
+                "budget": {"max_steps": 5, "steps_used": 0},
+                "block_detail": None,
+                "intake_loaded_last": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    g = out["status_at_a_glance"]
+    assert "intake_loaded_last_progress_vs_driver_state_mismatch" in g["red_flags"]
 
 
 def test_describe_project_session_status_at_a_glance_dependency_cycle(tmp_path: Path) -> None:
@@ -376,6 +507,45 @@ def test_describe_project_session_events_tail(tmp_path: Path) -> None:
     assert se["present"] is True
     assert se["line_count"] == 1
     assert se["last"]["event"] == "tick"
+    assert se.get("intake_lineage_manifest_present") is False
+
+
+def test_describe_project_session_lineage_in_status_block(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    (sess / "project_plan.json").write_text("{}", encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir(parents=True)
+    body = {
+        "schema_version": "1.0",
+        "created_at": "2035-01-01T00:00:00+00:00",
+        "artifacts": {"intake/discovery.json": "abc"},
+    }
+    (intake / "lineage_manifest.json").write_text(json.dumps(body), encoding="utf-8")
+    out = describe_project_session(sess)
+    se = out["session_events"]
+    assert se["intake_lineage_manifest_present"] is True
+    assert se["intake_lineage_manifest_schema_version"] == "1.0"
+    assert se["intake_lineage_manifest_artifact_count"] == 1
+    assert isinstance(se.get("intake_lineage_manifest_file_sha256"), str)
+    assert len(se["intake_lineage_manifest_file_sha256"]) == 64
+    g = out["status_at_a_glance"]
+    assert g["intake_lineage_manifest_present"] is True
+    assert g["intake_lineage_manifest_unreadable"] is False
+
+
+def test_describe_project_session_lineage_unreadable_red_flag(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    (sess / "project_plan.json").write_text("{}", encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir(parents=True)
+    (intake / "lineage_manifest.json").write_text("{", encoding="utf-8")
+    out = describe_project_session(sess)
+    se = out["session_events"]
+    assert se["intake_lineage_manifest_present"] is False
+    assert se.get("intake_lineage_manifest_unreadable") is True
+    assert "intake_lineage_manifest_unreadable" in out["status_at_a_glance"]["red_flags"]
 
 
 def test_describe_project_session_leases_embed_and_parallel_worktrees(tmp_path: Path) -> None:
@@ -494,7 +664,14 @@ def test_describe_project_session_plan_step_rollups(tmp_path: Path) -> None:
     (ver / "a.json").write_text(json.dumps({"passed": True, "schema_version": "1.0"}), encoding="utf-8")
     packs = sess / "context_packs"
     packs.mkdir()
-    (packs / "b.json").write_text("{}", encoding="utf-8")
+    (packs / "a.json").write_text(
+        json.dumps({"schema_version": "1.1", "intake_loaded": True, "markdown": ""}),
+        encoding="utf-8",
+    )
+    (packs / "b.json").write_text(
+        json.dumps({"schema_version": "1.1", "intake_loaded": False, "markdown": ""}),
+        encoding="utf-8",
+    )
     agg = {
         "schema_version": "1.0",
         "steps": {
@@ -517,15 +694,23 @@ def test_describe_project_session_plan_step_rollups(tmp_path: Path) -> None:
     assert len(rollup["steps"]) == 2
     sa = next(s for s in rollup["steps"] if s["step_id"] == "a")
     assert sa["verification_json_present"] is True
-    assert sa["context_pack_present"] is False
+    assert sa["context_pack_present"] is True
+    assert sa["context_pack_intake_loaded"] is True
+    assert sa["context_pack_intake_loaded_skipped_oversized"] is False
     assert sa["aggregate_passed"] is True
     sb = next(s for s in rollup["steps"] if s["step_id"] == "b")
     assert sb["verification_json_present"] is False
     assert sb["context_pack_present"] is True
+    assert sb["context_pack_intake_loaded"] is False
+    assert sb["context_pack_intake_loaded_skipped_oversized"] is False
     assert sb["aggregate_passed"] is None
     assert sa["latest_run_id"] == "r1"
     assert sa["latest_output_dir"] == "/new"
     assert "latest_run_id" not in sb
+    g = out["status_at_a_glance"]
+    assert g["rollup_context_pack_intake_loaded_true_count"] == 1
+    assert g["rollup_context_pack_intake_loaded_false_count"] == 1
+    assert g["rollup_context_pack_intake_loaded_null_count"] == 0
 
 
 def test_describe_project_session_plan_step_rollups_cap_and_aggregate_omitted(tmp_path: Path) -> None:
@@ -555,6 +740,375 @@ def test_describe_project_session_plan_step_rollups_cap_and_aggregate_omitted(tm
     out2 = describe_project_session(sess, max_status_json_bytes=800)
     r2 = out2["plan_step_rollups"]
     assert r2["steps"][0]["aggregate_passed"] is None
+
+
+def test_describe_project_session_rollups_context_pack_intake_omitted_when_pack_too_large(
+    tmp_path: Path,
+) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    packs = sess / "context_packs"
+    packs.mkdir()
+    big = {"schema_version": "1.1", "intake_loaded": True, "pad": "x" * 800}
+    (packs / "a.json").write_text(json.dumps(big), encoding="utf-8")
+    out = describe_project_session(sess, max_status_json_bytes=400)
+    row = out["plan_step_rollups"]["steps"][0]
+    assert row["context_pack_present"] is True
+    assert row["context_pack_intake_loaded"] is None
+    assert row["context_pack_intake_loaded_skipped_oversized"] is True
+
+
+def test_describe_project_session_glance_red_flag_anchor_pack_intake_loaded_unknown(
+    tmp_path: Path,
+) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "discovery.json").write_text(
+        json.dumps({"goal_excerpt": "g", "constraints": []}),
+        encoding="utf-8",
+    )
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    packs = sess / "context_packs"
+    packs.mkdir()
+    (packs / "a.json").write_text(
+        json.dumps({"schema_version": "1.1", "markdown": ""}),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess)
+    g = out["status_at_a_glance"]
+    assert g["intake_merge_anchor_present"] is True
+    assert "intake_merge_anchor_present_but_context_pack_intake_loaded_unknown" in g["red_flags"]
+
+
+def test_describe_project_session_glance_no_red_flag_anchor_when_pack_intake_skipped_oversized(
+    tmp_path: Path,
+) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "discovery.json").write_text(
+        json.dumps({"goal_excerpt": "g", "constraints": []}),
+        encoding="utf-8",
+    )
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    packs = sess / "context_packs"
+    packs.mkdir()
+    big = {"schema_version": "1.1", "intake_loaded": True, "pad": "x" * 800}
+    (packs / "a.json").write_text(json.dumps(big), encoding="utf-8")
+    out = describe_project_session(sess, max_status_json_bytes=400)
+    row = out["plan_step_rollups"]["steps"][0]
+    assert row["context_pack_intake_loaded_skipped_oversized"] is True
+    g = out["status_at_a_glance"]
+    assert g["intake_merge_anchor_present"] is True
+    assert "intake_merge_anchor_present_but_context_pack_intake_loaded_unknown" not in g["red_flags"]
+
+
+def test_describe_project_session_glance_red_flag_invalid_doc_review(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "doc_review.json").write_text(
+        json.dumps({"passed": "nope", "findings": "bad"}),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    g = out["status_at_a_glance"]
+    assert "intake_doc_review_invalid" in g["red_flags"]
+
+
+def test_describe_project_session_plan_lock_status_and_red_flags(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    (sess / "project_plan_lock.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "ready": False,
+                "locked": False,
+                "reasons": ["x", "y"],
+                "reviewer_proof_summary": {
+                    "attestation_type": "local_stub",
+                    "attestation_type_allowed": True,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    pl = out["plan_lock"]
+    assert pl["present"] is True
+    assert pl["ready"] is False
+    assert pl["locked"] is False
+    assert pl["reasons_count"] == 2
+    rps = pl.get("reviewer_proof_summary") or {}
+    assert rps.get("attestation_type") == "local_stub"
+    assert rps.get("attestation_type_allowed") is True
+    g = out["status_at_a_glance"]
+    assert g["plan_lock_ready"] is False
+    assert g["plan_lock_locked"] is False
+    assert "plan_lock_not_ready" in g["red_flags"]
+    assert "plan_lock_not_locked" in g["red_flags"]
+
+
+def test_describe_project_session_revise_metrics_summary(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir()
+    rows = [
+        {
+            "schema_version": "1.0",
+            "event": "intake_revise_result",
+            "at": "2035-01-01T00:00:01+00:00",
+            "attempt": 1,
+            "status": "retry_allowed",
+            "blocked_human": False,
+            "findings_count": 2,
+            "latency_sec": 5,
+        },
+        {
+            "schema_version": "1.0",
+            "event": "intake_revise_result",
+            "at": "2035-01-01T00:01:01+00:00",
+            "attempt": 2,
+            "status": "blocked_human",
+            "blocked_human": True,
+            "findings_count": 1,
+            "latency_sec": 7,
+        },
+    ]
+    (intake / "revise_metrics.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in rows) + "\n",
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    rm = out["revise_metrics"]
+    assert rm["present"] is True
+    assert rm["line_count"] == 2
+    assert rm["last"]["status"] == "blocked_human"
+    summary = rm["summary"]
+    assert summary["events_count"] == 2
+    assert summary["blocked_human_count"] == 1
+    assert summary["avg_latency_sec"] == pytest.approx(6.0)
+    assert summary["last_status"] == "blocked_human"
+    g = out["status_at_a_glance"]
+    assert g["revise_metrics_last_status"] == "blocked_human"
+    assert g["revise_metrics_blocked_human_count"] == 1
+    assert g["revise_metrics_avg_latency_sec"] == pytest.approx(6.0)
+
+
+def test_describe_project_session_reviewer_proof_summary_and_red_flags(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "doc_review.json").write_text(
+        json.dumps(
+            {
+                "passed": True,
+                "findings": [],
+                "reviewer": "reviewer-a",
+                "reviewed_at": "2035-01-01T00:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (intake / "planner_identity.json").write_text(
+        json.dumps({"actor_id": "planner-a"}),
+        encoding="utf-8",
+    )
+    (intake / "reviewer_identity.json").write_text(
+        json.dumps(
+            {
+                "actor_id": "reviewer-a",
+                "role": "reviewer",
+                "attestation_type": "invalid_type",
+                "attestation": "x",
+                "reviewed_at": "2035-01-01T00:20:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    rp = out["reviewer_proof"]
+    assert rp["present"] is True
+    assert rp["reviewer_matches_doc_review"] is True
+    assert rp["reviewer_differs_from_planner"] is True
+    assert rp["attestation_type_allowed"] is False
+    assert rp["reviewed_at_skew_ok"] is False
+    g = out["status_at_a_glance"]
+    assert g["reviewer_matches_doc_review"] is True
+    assert g["reviewer_differs_from_planner"] is True
+    assert g["reviewer_attestation_type_allowed"] is False
+    assert g["reviewer_attestation_policy_ok"] is None
+    assert g["reviewer_signal_source"] == "intake"
+    assert g["reviewed_at_skew_ok"] is False
+    assert "reviewer_attestation_type_invalid" in g["red_flags"]
+    assert "reviewed_at_skew_exceeded" in g["red_flags"]
+
+
+def test_describe_project_session_glance_prefers_plan_lock_reviewer_proof_summary(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "doc_review.json").write_text(
+        json.dumps(
+            {
+                "passed": True,
+                "findings": [],
+                "reviewer": "reviewer-a",
+                "reviewed_at": "2035-01-01T00:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (intake / "planner_identity.json").write_text(
+        json.dumps({"actor_id": "planner-a"}),
+        encoding="utf-8",
+    )
+    (intake / "reviewer_identity.json").write_text(
+        json.dumps(
+            {
+                "actor_id": "reviewer-a",
+                "role": "reviewer",
+                "attestation_type": "invalid_type",
+                "attestation": "x",
+                "reviewed_at": "2035-01-01T00:20:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (sess / "project_plan_lock.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "ready": True,
+                "locked": True,
+                "reasons": [],
+                "reviewer_proof_summary": {
+                    "attestation_type": "agent_signature",
+                    "attestation_type_allowed": True,
+                    "local_stub_allowed": False,
+                    "attestation_policy_ok": True,
+                    "reviewer_matches_doc_review": True,
+                    "reviewer_differs_from_planner": True,
+                    "reviewed_at_skew_ok": True,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    rp = out["reviewer_proof"]
+    assert rp["attestation_type_allowed"] is False
+    assert rp["reviewed_at_skew_ok"] is False
+    g = out["status_at_a_glance"]
+    assert g["reviewer_attestation_type"] == "agent_signature"
+    assert g["reviewer_attestation_type_allowed"] is True
+    assert g["reviewer_local_stub_allowed"] is False
+    assert g["reviewer_attestation_policy_ok"] is True
+    assert g["reviewer_signal_source"] == "plan_lock"
+    assert g["reviewer_matches_doc_review"] is True
+    assert g["reviewer_differs_from_planner"] is True
+    assert g["reviewed_at_skew_ok"] is True
+    assert "reviewer_attestation_type_invalid" not in g["red_flags"]
+    assert "reviewed_at_skew_exceeded" not in g["red_flags"]
+
+
+def test_describe_project_session_glance_red_flag_reviewer_attestation_policy_failed(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {"step_id": "a", "phase": "p", "title": "A", "description": "d", "depends_on": [], "path_scope": []},
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    (sess / "project_plan_lock.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "ready": False,
+                "locked": False,
+                "reasons": ["reviewer_identity_attestation_stub_disallowed"],
+                "reviewer_proof_summary": {
+                    "attestation_type": "local_stub",
+                    "attestation_type_allowed": True,
+                    "local_stub_allowed": False,
+                    "attestation_policy_ok": False,
+                    "reviewer_matches_doc_review": True,
+                    "reviewer_differs_from_planner": True,
+                    "reviewed_at_skew_ok": True,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = describe_project_session(sess, repo_root=tmp_path)
+    g = out["status_at_a_glance"]
+    assert g["reviewer_signal_source"] == "plan_lock"
+    assert g["reviewer_attestation_policy_ok"] is False
+    assert "reviewer_attestation_policy_failed" in g["red_flags"]
 
 
 def test_describe_project_session_step_runs_by_step_omitted_when_large(tmp_path: Path) -> None:

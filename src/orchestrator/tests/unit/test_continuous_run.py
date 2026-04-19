@@ -132,3 +132,90 @@ def test_run_continuous_until_max_without_match(monkeypatch: pytest.MonkeyPatch)
     )
     assert out["exit_code"] == 1
     assert out["stopped_reason"] == "max_iterations_without_match"
+
+
+def test_run_continuous_project_session_forwards_enforce_plan_lock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_run_project_session(
+        session_dir: Path,
+        *,
+        repo_root: Path,
+        max_steps: int,
+        mode: str,
+        max_concurrent_agents: int = 1,
+        progress_file: Path | None = None,
+        parallel_worktrees: bool = False,
+        lease_stale_sec: int | None = None,
+        enforce_plan_lock: bool = False,
+        require_non_stub_reviewer: bool = False,
+    ) -> dict:
+        calls.append(
+            {
+                "session_dir": session_dir,
+                "repo_root": repo_root,
+                "max_steps": max_steps,
+                "mode": mode,
+                "enforce_plan_lock": enforce_plan_lock,
+                "require_non_stub_reviewer": require_non_stub_reviewer,
+            }
+        )
+        return {"exit_code": 0, "stopped_reason": "completed_review_pass"}
+
+    monkeypatch.setattr(
+        "orchestrator.api.continuous_run.run_project_session",
+        fake_run_project_session,
+    )
+    from orchestrator.api.continuous_run import run_continuous_project_session
+
+    out = run_continuous_project_session(
+        session_dir=tmp_path / "s",
+        repo_root=tmp_path,
+        max_iterations=3,
+        mode="baseline",
+        enforce_plan_lock=True,
+    )
+    assert out["driver"] == "project_session"
+    assert calls and calls[0]["enforce_plan_lock"] is True
+    assert calls[0]["require_non_stub_reviewer"] is False
+
+
+def test_run_continuous_project_session_forwards_require_non_stub_reviewer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_run_project_session(
+        session_dir: Path,
+        *,
+        repo_root: Path,
+        max_steps: int,
+        mode: str,
+        max_concurrent_agents: int = 1,
+        progress_file: Path | None = None,
+        parallel_worktrees: bool = False,
+        lease_stale_sec: int | None = None,
+        enforce_plan_lock: bool = False,
+        require_non_stub_reviewer: bool = False,
+    ) -> dict:
+        calls.append({"require_non_stub_reviewer": require_non_stub_reviewer})
+        return {"exit_code": 0, "stopped_reason": "completed_review_pass"}
+
+    monkeypatch.setattr(
+        "orchestrator.api.continuous_run.run_project_session",
+        fake_run_project_session,
+    )
+    from orchestrator.api.continuous_run import run_continuous_project_session
+
+    out = run_continuous_project_session(
+        session_dir=tmp_path / "s",
+        repo_root=tmp_path,
+        max_iterations=2,
+        mode="baseline",
+        enforce_plan_lock=True,
+        require_non_stub_reviewer=True,
+    )
+    assert out["exit_code"] == 0
+    assert calls == [{"require_non_stub_reviewer": True}]

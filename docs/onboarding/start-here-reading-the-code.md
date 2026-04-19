@@ -20,6 +20,8 @@ src/
 
 **Outputs:** runs write under repo-root **`outputs/`** (usually gitignored).
 
+**Project sessions** (`sde project …`, `sde continuous` with `--project-plan` / `--project-session-dir`): implementation under **`src/orchestrator/api/`** — start with **`project_driver.py`**, **`project_plan_lock.py`**, **`project_validate.py`**, **`continuous_run.py`**, **`project_status.py`**; CLI switches in **`orchestrator/runtime/cli/main.py`**. Operator flow + Stage 1 lock flags / **`SDE_REQUIRE_NON_STUB_REVIEWER`**: **`docs/sde/project-driver.md`** and **`docs/runbooks/stage1-intake-failures.md`**.
+
 ---
 
 ## Prove a change
@@ -33,4 +35,5 @@ uv run pytest src/orchestrator/tests/unit -q
 
 ## Changelog
 
+- **2026-04-19:** Added **project session** file pointers + Stage 1 / runbook links (same surface as glossary in [`start-here-reading-the-docs.md`](start-here-reading-the-docs.md)).
 - **2026-04-18:** Page trimmed; **canonical path** is [`../ESSENTIAL.md`](../ESSENTIAL.md).

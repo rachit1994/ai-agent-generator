@@ -35,7 +35,7 @@ Then jump to the one module you need (e.g. `project_driver.py`, `single_task.py`
 
 ## 4 — Only for `sde project …` / session plans
 
-Read **[`sde/project-driver.md`](sde/project-driver.md)**. Ignore until you touch **`orchestrator/api/project_*.py`** or **`sde project`** in **`main.py`**.
+Read **[`sde/project-driver.md`](sde/project-driver.md)** (including the **Stage 1 plan lock** section for `validate` / `project run` / `continuous` flags and `SDE_REQUIRE_NON_STUB_REVIEWER`). Ignore until you touch **`orchestrator/api/project_*.py`** or **`sde project`** / project **`continuous`** paths in **`main.py`**.
 
 ---
 

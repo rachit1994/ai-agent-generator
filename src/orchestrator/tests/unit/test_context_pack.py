@@ -19,6 +19,172 @@ def test_latest_output_dirs_by_step_order(tmp_path: Path) -> None:
     assert latest_output_dirs_by_step(sess) == {"a": "/second"}
 
 
+def test_build_context_pack_includes_intake_when_present(tmp_path: Path) -> None:
+    sess = tmp_path / "session"
+    sess.mkdir()
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "discovery.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "goal_excerpt": "Ship the widget API",
+                "constraints": ["no breaking changes"],
+                "non_goals": [],
+                "open_questions": ["auth model?"],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (intake / "research_digest.md").write_text("# Digest\n\nstub\n", encoding="utf-8")
+    (intake / "doc_review.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "passed": True,
+                "reviewer": "unit-test",
+                "findings": [{"id": "f1", "severity": "info", "text": "check TLS"}],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (intake / "question_workbook.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps({"id": "early", "status": "open", "topic": "old"}),
+                json.dumps({"id": "wb-latest", "status": "open", "topic": "latency"}),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    step = {
+        "step_id": "s1",
+        "title": "S",
+        "description": "do work",
+        "depends_on": [],
+        "path_scope": [],
+    }
+    pack = build_context_pack(
+        repo_root=tmp_path,
+        session_dir=sess,
+        step=step,
+        prior_failures=[],
+        max_chars=20_000,
+    )
+    assert pack.get("intake_loaded") is True
+    md = pack["markdown"]
+    assert "Session intake" in md
+    assert "Ship the widget API" in md
+    assert "research_digest" in md
+    assert "doc_review.json" in md
+    assert "unit-test" in md
+    assert "TLS" in md
+    assert "question_workbook.jsonl" in md
+    assert "wb-latest" in md
+    assert "latency" in md
+    lineage = (sess / "context_pack_lineage.jsonl").read_text(encoding="utf-8").strip().splitlines()
+    row = json.loads(lineage[-1])
+    assert row.get("intake_loaded") is True
+
+
+def test_build_context_pack_intake_workbook_only_not_loaded(tmp_path: Path) -> None:
+    """Orphan JSONL without discovery/doc_review does not open an intake section."""
+    sess = tmp_path / "session"
+    sess.mkdir()
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "question_workbook.jsonl").write_text(
+        json.dumps({"id": "solo", "topic": "orphan"}) + "\n",
+        encoding="utf-8",
+    )
+    step = {
+        "step_id": "s1",
+        "title": "S",
+        "description": "d",
+        "depends_on": [],
+        "path_scope": [],
+    }
+    pack = build_context_pack(
+        repo_root=tmp_path,
+        session_dir=sess,
+        step=step,
+        prior_failures=[],
+        max_chars=20_000,
+    )
+    assert pack.get("intake_loaded") is False
+    assert "Session intake" not in pack["markdown"]
+    assert "### question_workbook.jsonl" not in pack["markdown"]
+
+
+def test_build_context_pack_intake_doc_review_only(tmp_path: Path) -> None:
+    sess = tmp_path / "session"
+    sess.mkdir()
+    intake = sess / "intake"
+    intake.mkdir()
+    (intake / "doc_review.json").write_text(
+        json.dumps(
+            {
+                "passed": False,
+                "reviewer": "design-review",
+                "findings": [{"topic": "scope", "detail": "too broad"}],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (intake / "question_workbook.jsonl").write_text(
+        json.dumps({"id": "from-doc-only", "topic": "follow-up"}) + "\n",
+        encoding="utf-8",
+    )
+
+    step = {
+        "step_id": "s1",
+        "title": "S",
+        "description": "d",
+        "depends_on": [],
+        "path_scope": [],
+    }
+    pack = build_context_pack(
+        repo_root=tmp_path,
+        session_dir=sess,
+        step=step,
+        prior_failures=[],
+        max_chars=20_000,
+    )
+    assert pack.get("intake_loaded") is True
+    md = pack["markdown"]
+    assert "doc_review.json" in md
+    assert "design-review" in md
+    assert "too broad" in md
+    assert "question_workbook.jsonl" in md
+    assert "from-doc-only" in md
+
+
+def test_build_context_pack_no_intake_flag(tmp_path: Path) -> None:
+    sess = tmp_path / "session"
+    sess.mkdir()
+    step = {
+        "step_id": "s1",
+        "title": "S",
+        "description": "d",
+        "depends_on": [],
+        "path_scope": [],
+    }
+    pack = build_context_pack(
+        repo_root=tmp_path,
+        session_dir=sess,
+        step=step,
+        prior_failures=[],
+        max_chars=20_000,
+    )
+    assert pack.get("intake_loaded") is False
+    assert "Session intake" not in pack["markdown"]
+
+
 def test_build_context_pack_prior_dep_excerpts(tmp_path: Path) -> None:
     sess = tmp_path / "session"
     sess.mkdir()
@@ -83,3 +249,4 @@ def test_build_context_pack_truncation_hs03(tmp_path: Path, monkeypatch: pytest.
     row = json.loads(lineage[-1])
     assert row["step_id"] == "x"
     assert row["truncated"] is True
+    assert row.get("intake_loaded") is False

@@ -168,6 +168,7 @@ def _run_single_attempt(
         write_completion_artifacts(
             output_dir=output_dir,
             run_id=run_id,
+            task=task,
             parsed=parsed,
             events=events,
         )
