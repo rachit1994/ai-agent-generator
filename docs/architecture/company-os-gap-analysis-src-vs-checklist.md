@@ -15,6 +15,7 @@ Scope note:
 
 ## Evidence snapshot (repo shape)
 
+- Python **3.11** for local **`uv`** and CI: repo-root **`.python-version`**, **`pyproject.toml`** `requires-python`, **`.github/workflows/ci.yml`**
 - Present core runtime: `src/orchestrator`, `src/sde_pipeline`, `src/sde_gates`, `src/sde_modes`, `src/sde_foundations`
 - Missing top-level implementation trees: no `src/contracts/`, no `src/services/`, no `tools/`, no `infra/`
 - Tests are mainly unit tests under `src/orchestrator/tests/unit/`

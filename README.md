@@ -6,7 +6,7 @@ This repository still holds the **full production architecture** story: local-fi
 
 **Where to start:** **`docs/ESSENTIAL.md`** — shortest path to follow the code and the CLI (links to at most four Markdown docs, then `src/` READMEs).
 
-**Run / contribute (Python):** `uv sync --group dev`; **`uv run --python 3.11 pytest`** matches [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Optional git hooks (minor version bump on push): `scripts/init-git-hooks.sh` — use **`SKIP_VERSION_BUMP=1 git push`** when you do not want a bump. Longer checklist: **[`docs/onboarding/developer-walkthrough.md`](docs/onboarding/developer-walkthrough.md)**.
+**Run / contribute (Python):** `uv sync --group dev`; **`uv run pytest`** uses **`.python-version`** (**3.11**), same as [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Optional git hooks (minor version bump on push): `scripts/init-git-hooks.sh` — use **`SKIP_VERSION_BUMP=1 git push`** when you do not want a bump. Longer checklist: **[`docs/onboarding/developer-walkthrough.md`](docs/onboarding/developer-walkthrough.md)**.
 
 **Optional (vision and long specs):**
 - `docs/architecture/AI-Professional-Evolution-Master-Architecture.md` — full platform blueprint (reference, long).
