@@ -7,7 +7,7 @@ dev-mode-dirs = ["src"]
 
 [project]
 name = "sde"
-version = "0.9.5"
+version = "0.10.0"
 description = "SDE: local CLI orchestrator toward full-stack, gated delivery (guarded vs baseline; contracts in docs/sde and src/sde_gates)"
 requires-python = ">=3.10"
 dependencies = []
