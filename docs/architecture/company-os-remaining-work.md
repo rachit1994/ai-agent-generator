@@ -140,4 +140,4 @@ It intentionally focuses on **remaining work only**:
 
 - The local SDE spine is materially stronger and now includes Stage 1 lock/preflight/revise controls.
 - Full Company OS completion remains blocked primarily by absent multi-service platform components and durable infra/data planes.
-- To **close a “100%” milestone in this repo**, execute the **M2 / S1a** backlog in [`company-os-path-to-100-percent.md`](company-os-path-to-100-percent.md) §4 (**B1–B5**) and update this file + the [gap analysis](company-os-gap-analysis-src-vs-checklist.md) when each row is done.
+- To **close the M2 / S1a “100%” milestone in this repo**, see [`company-os-path-to-100-percent.md`](company-os-path-to-100-percent.md) §4 (**B1–B5**), which is **closed for S1a** in `src/` + CI; refresh this file + the [gap analysis](company-os-gap-analysis-src-vs-checklist.md) when Stage 1 behavior or scope shifts. **S1b** and **M0/M1** platform gaps above remain.
