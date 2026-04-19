@@ -142,7 +142,7 @@ For the short **pre-push** + **Python 3.11 / CI parity** reminder, see **[`../ES
 From the repository root:
 
 1. **Python env:** `uv sync --group dev` (uses `pyproject.toml`).
-2. **Sanity tests:** `uv run pytest src/orchestrator/tests/` — should be green before you rely on local changes.
+2. **Sanity tests:** `uv run pytest src/orchestrator/tests/` — should be green before you rely on local changes. If your default Python is **3.12+**, also run **`uv run --python 3.11 pytest src/orchestrator/tests/`** so you match **GitHub Actions** (see [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)).
 3. **Optional smoke (needs local Ollama/models per docs):**  
    `uv run sde run --mode baseline --task "return the string hello"`  
    If models are missing, expect failures; that is an environment issue, not necessarily your code.
@@ -154,7 +154,7 @@ From the repository root:
 
 - **Small changes:** Match existing style; keep imports at top of files; extend tests beside **`src/orchestrator/tests/unit/`**.
 - **Contracts:** If you change artifact names or schemas, update **`docs/sde/implementation-contract.md`** and **`sde_gates/`**, then adjust tests.
-- **CI:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs `compileall` on `src/` and pytest — keep both green.
+- **CI:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) uses **Python 3.11**, runs **`python -m compileall src`**, **`pytest`**, **`scripts/run-stage1-suite.sh`** (`stage1-preflight`), and **`scripts/version-index-only.sh`** + a clean **`docs/versioning/INDEX.md`** diff (`lint-and-test`) — keep jobs green.
 
 ---
 

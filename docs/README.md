@@ -33,4 +33,5 @@
 ### Handy scripts
 
 - Stage 1 verification subset: `scripts/run-stage1-suite.sh` (optional wall clock: `STAGE1_SUITE_MAX_SECONDS`; flags/env for lock enforcement: [`sde/project-driver.md`](sde/project-driver.md) Stage 1 section).
+- Stage 1 golden CLI path (scaffold → lock → validate → export): `scripts/stage1-cold-start-demo.sh` (see [`runbooks/stage1-intake-failures.md`](runbooks/stage1-intake-failures.md) §Golden cold start).
 - Version plan index only: `scripts/version-index-only.sh` — refreshes [`versioning/INDEX.md`](versioning/INDEX.md) from `plans/*.md` titles without overwriting plan bodies ([`versioning/README.md`](versioning/README.md)).
