@@ -97,4 +97,4 @@ Completing **that** set is what moves you toward **M1** then **M0**.
 - **2026-04-19 (B4 export):** ``export-stage1-observability`` CLI + ``write_project_stage1_observability_export`` / schema validator (`project_stage1_observability_export.py`).
 - **2026-04-19 (B5 cold start):** ``scripts/stage1-cold-start-demo.sh`` + runbook narrative + suite test `test_stage1_cold_start_demo.py`.
 - **2026-04-19 (B1/B2 ADRs):** [ADR 0001](../adrs/0001-s1a-reviewer-attestation-policy.md), [ADR 0002](../adrs/0002-s1a-model-assisted-revise-deferred.md); OSV-STORY-01 §3 out-of-scope updated.
-- **2026-04-19 (release):** **`sde` 0.9.5** in `pyproject.toml` / `uv.lock`; versioning log row consolidated; OSV-STORY-01 plan §4–§6 checkboxes updated for in-repo S1a evidence (§9 tracker lines still program-owned).
+- **2026-04-19 (release):** **`sde` 0.11.0** in `pyproject.toml` / `uv.lock` (S1a M2 shipped in **0.9.5**; subsequent **minor** bumps follow `.githooks/pre-push`); versioning log row consolidated; OSV-STORY-01 plan §4–§6 checkboxes updated for in-repo S1a evidence (§9 tracker lines still program-owned).
