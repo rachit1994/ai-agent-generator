@@ -142,7 +142,7 @@ For the short **pre-push** + **Python 3.11 / CI parity** reminder, see **[`../ES
 From the repository root:
 
 1. **Python env:** `uv sync --group dev` (uses `pyproject.toml`; repo-root **`.python-version`** pins **3.11** for **`uv`**, matching CI).
-2. **Sanity tests:** `uv run pytest src/orchestrator/tests/` — should be green before you rely on local changes. If your default Python is **3.12+**, also run **`uv run --python 3.11 pytest src/orchestrator/tests/`** so you match **GitHub Actions** (see [`.github/workflows/ci.yml`](../.github/workflows/ci.yml)).
+2. **Sanity tests:** `uv run pytest src/orchestrator/tests/` — should be green before you rely on local changes. Confirm **`uv run python -V`** is **3.11.x** (repo **`.python-version`**); if not, fix the **`uv`** toolchain or pass **`--python 3.11`** on pytest to match [`.github/workflows/ci.yml`](../.github/workflows/ci.yml).
 3. **Optional smoke (needs local Ollama/models per docs):**  
    `uv run sde run --mode baseline --task "return the string hello"`  
    If models are missing, expect failures; that is an environment issue, not necessarily your code.

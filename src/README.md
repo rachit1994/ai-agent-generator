@@ -16,7 +16,7 @@
   - `event_lineage_layer.py` — replay manifest + event store envelope.
   - `memory_artifact_layer.py`, `evolution_layer.py`, `organization_layer.py` — memory / evolution / org harness files + matching gate modules under `sde_gates/`.
 
-**CI / Python:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs **Python 3.11**. If your machine defaults to **3.12+**, run **`uv run --python 3.11 pytest …`** before pushing so you catch syntax or typing issues CI would see first.
+**CI / Python:** [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) uses **3.11**, same as repo-root **`.python-version`** for **`uv`**. Check with **`uv run python -V`**; use **`uv run --python 3.11 …`** only if **`uv`** is not honoring the pin.
 
 ## Master OS layout
 

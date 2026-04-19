@@ -29,8 +29,6 @@ src/
 ```bash
 uv sync --group dev
 uv run pytest src/orchestrator/tests/unit -q
-# If your default Python is 3.12+, match CI (3.11):
-# uv run --python 3.11 pytest src/orchestrator/tests/unit -q
 ```
 
 ---

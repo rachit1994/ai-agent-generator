@@ -4,7 +4,7 @@
 
 **In plain words:** this package is the **stable front door** for Python code that wants to drive SDE without reaching deep into `sde_pipeline` or `sde_modes`. The CLI in `orchestrator.runtime.cli.main` calls these same functions.
 
-**CI:** [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) runs **Python 3.11**; from repo root use **`uv run --python 3.11 pytest src/orchestrator/tests/unit/ -q`** before pushing if your default Python is newer.
+**CI:** [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) uses **Python 3.11**; repo-root **`uv run pytest`** follows **`.python-version`**. Use **`uv run --python 3.11 pytest …`** only when **`uv run python -V`** is not **3.11.x**.
 
 Prefer:
 
