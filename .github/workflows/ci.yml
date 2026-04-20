@@ -44,12 +44,7 @@ jobs:
         run: uv sync --group dev
 
       - name: Lint
-        run: uv run python -m compileall src
-
-      - name: Version plan INDEX matches generator
-        run: |
-          ./scripts/version-index-only.sh
-          git diff --exit-code docs/versioning/INDEX.md
+        run: uv run python -m compileall src libs
 
       - name: Test
         run: uv run pytest

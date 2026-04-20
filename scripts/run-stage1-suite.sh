@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Stage 1 intake verification subset (OSV-STORY-01).
 #
-# Operator + CLI semantics: docs/runbooks/stage1-intake-failures.md
-# Stage 1 flags (validate / run / continuous, SDE_REQUIRE_NON_STUB_REVIEWER): docs/sde/project-driver.md
+# Operator + CLI semantics: docs/UNDERSTANDING-THE-CODE.md (Stage 1 intake section)
+# Stage 1 flags (validate / run / continuous, SDE_REQUIRE_NON_STUB_REVIEWER): same file, project driver section
 #
 # Optional wall-clock SLO: when STAGE1_SUITE_MAX_SECONDS is set to a non-negative integer,
 # the script exits 1 if total wall time (including pytest startup) exceeds that budget.
@@ -13,18 +13,18 @@ set -euo pipefail
 start_epoch=$(date +%s)
 
 uv run pytest \
-  src/orchestrator/tests/unit/test_project_intake_scaffold.py \
-  src/orchestrator/tests/unit/test_project_intake_util.py \
-  src/orchestrator/tests/unit/test_project_intake_revise.py \
-  src/orchestrator/tests/unit/test_project_plan_lock.py \
-  src/orchestrator/tests/unit/test_project_validate.py \
-  src/orchestrator/tests/unit/test_project_status.py \
-  src/orchestrator/tests/unit/test_project_stage1_observability_export.py \
-  src/orchestrator/tests/unit/test_project_stop.py \
-  src/orchestrator/tests/unit/test_stage1_golden_flow.py \
-  src/orchestrator/tests/unit/test_stage1_cold_start_demo.py \
-  src/orchestrator/tests/unit/test_stage1_runbook_consistency.py \
-  src/orchestrator/tests/unit/test_stage1_suite_script.py -q
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_intake_scaffold.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_intake_util.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_intake_revise.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_plan_lock.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_validate.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_status.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_stage1_observability_export.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_project_stop.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_stage1_golden_flow.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_stage1_cold_start_demo.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_stage1_runbook_consistency.py \
+  src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_stage1_suite_script.py -q
 
 end_epoch=$(date +%s)
 elapsed=$((end_epoch - start_epoch))

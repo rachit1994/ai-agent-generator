@@ -3,12 +3,12 @@ requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
-dev-mode-dirs = ["src"]
+dev-mode-dirs = ["src", "src/production_architecture_what_runs_on_the_laptop", "libs"]
 
 [project]
 name = "sde"
-version = "0.11.0"
-description = "SDE: local CLI orchestrator toward full-stack, gated delivery (guarded vs baseline; contracts in docs/sde and src/sde_gates)"
+version = "0.12.0"
+description = "SDE: local CLI orchestrator toward full-stack, gated delivery (guarded vs baseline; see docs/ and src/guardrails_and_safety)"
 requires-python = ">=3.11"
 dependencies = []
 
@@ -20,13 +20,21 @@ agent = "orchestrator.runtime.cli.main:main"
 dev = ["pytest>=8.0.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/orchestrator/tests/unit", "tests"]
+testpaths = ["src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit", "tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = [
-  "src/orchestrator",
-  "src/sde_foundations",
-  "src/sde_gates",
-  "src/sde_modes",
-  "src/sde_pipeline",
+  "src/guardrails_and_safety",
+  "src/production_architecture_what_runs_on_the_laptop/orchestrator",
+  "src/workflow_pipelines",
+  "libs/storage",
+  "libs/sde_types",
+  "libs/common",
+  "libs/artifacts",
+  "libs/sde_eval",
+  "libs/model_adapter",
+  "libs/safeguards",
+  "libs/gates_constants",
+  "libs/gates_manifest",
+  "libs/time_and_budget",
 ]

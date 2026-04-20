@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stage 1 cold-start demo (OSV-STORY-01 §5 / path-to-100 B5).
-# Mirrors the success path in src/orchestrator/tests/unit/test_stage1_golden_flow.py::test_stage1_golden_scaffold_revise_lock_validate
+# Mirrors the success path in src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit/test_stage1_golden_flow.py::test_stage1_golden_scaffold_revise_lock_validate
 #
 # Usage (from repo root):
 #   ./scripts/stage1-cold-start-demo.sh

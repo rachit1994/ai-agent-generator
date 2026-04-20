@@ -4,15 +4,15 @@
 
 This repository still holds the **full production architecture** story: local-first, event-sourced, policy-governed operation — with agents treated as **junior contributors** who need **process, review, and evidence**, not a single chat transcript.
 
-**Where to start:** **`docs/ESSENTIAL.md`** — shortest path to follow the code and the CLI (links to at most four Markdown docs, then `src/` READMEs).
+**Where to start:** **`docs/UNDERSTANDING-THE-CODE.md`** — CLI, `src/` map, contracts, project driver, Stage 1 runbook (single file).
 
-**Run / contribute (Python):** `uv sync --group dev`; **`uv run pytest`** uses **`.python-version`** (**3.11**), same as [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Optional git hooks (minor version bump on push): `scripts/init-git-hooks.sh` — use **`SKIP_VERSION_BUMP=1 git push`** when you do not want a bump. Longer checklist: **[`docs/onboarding/developer-walkthrough.md`](docs/onboarding/developer-walkthrough.md)**.
+**Run / contribute (Python):** `uv sync --group dev`; **`uv run pytest`** uses **`.python-version`** (**3.11**), same as [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Optional git hooks (minor version bump on push): `scripts/init-git-hooks.sh` — use **`SKIP_VERSION_BUMP=1 git push`** when you do not want a bump.
 
-**Optional (vision and long specs):**
-- `docs/architecture/AI-Professional-Evolution-Master-Architecture.md` — full platform blueprint (reference, long).
-- `docs/onboarding/action-plan.md` — product story and phased roadmap.
-- `docs/architecture/architecture-goal-completion.md` — what this **repo’s SDE spine** does and does **not** mean vs the master doc (extension Markdown specs were removed).
-- Full doc tree (lookup only): **`docs/README.md`**. Deeper onboarding: **`docs/onboarding/`**. Stub for removed V1–V7 Markdown: **`docs/coding-agent/README.md`**. Demo seed: **`docs/templates/sde-demo/`**.
+**Documentation (four files under `docs/` only):**
+- **`docs/AI-Professional-Evolution-Master-Architecture.md`** — architecture **source of truth** (full blueprint).
+- **`docs/UNDERSTANDING-THE-CODE.md`** — how to follow and change the **Python** tool.
+- **`docs/RESEARCH.md`** — external papers and library notes (never relaxes gates).
+- **`docs/architecture/master-architecture-feature-completion.md`** — master blueprint vs **% implemented** in this repo.
 
 ---
 
@@ -270,9 +270,9 @@ Major services include:
 # 16. Repository Structure
 
 Canonical OS-style structure is defined in:
-- `docs/architecture/operating-system-folder-structure.md`
+- `docs/AI-Professional-Evolution-Master-Architecture.md` (§21 target layout)
 
-In **this** repository, `src/` is intentionally **flat** (`orchestrator` + `sde_*` packages only); empty scaffold folders from the master diagram are omitted until implemented — see the “This repository” section in the doc above.
+In **this** repository, Python code follows the **completion-doc-aligned** layout: **`src/<section_snake>/<row_snake>/`** plus repo-root **`libs/`** for shared packages. The **`orchestrator`** import package lives under `src/production_architecture_what_runs_on_the_laptop/orchestrator/`. The live tree and legacy-path mapping keys are documented in [`docs/architecture/repository-layout-from-completion-inventory.md`](docs/architecture/repository-layout-from-completion-inventory.md). Empty scaffold folders from the master diagram are still omitted until implemented.
 
 Key roots (master vision):
 - `contracts/` (versioned schemas),
@@ -353,10 +353,7 @@ Performance release thresholds are binary and fail-closed.
 
 # 21. Swarm Budget and System Requirement Math
 
-Quantitative planning model is defined in:
-- `docs/architecture/swarm-token-and-system-requirements-math.md`
-
-It provides:
+Quantitative planning is part of the **architecture source of truth** (`docs/AI-Professional-Evolution-Master-Architecture.md` — resource budgets, scalability, and readiness sections). It provides:
 - balanced utility function (equal quality/cost effectiveness),
 - token throughput and spend math,
 - protected budget floors for safety/evaluation/learning,
@@ -414,14 +411,12 @@ If any hard gate fails, production claim is automatically blocked.
 
 # 25. Document Index
 
-Primary architecture:
-- `docs/architecture/AI-Professional-Evolution-Master-Architecture.md`
+The repository keeps **four** Markdown files under `docs/`:
 
-Implementation structure:
-- `docs/architecture/operating-system-folder-structure.md`
-
-Capacity and budget planning math:
-- `docs/architecture/swarm-token-and-system-requirements-math.md`
+- `docs/AI-Professional-Evolution-Master-Architecture.md` — architecture source of truth
+- `docs/UNDERSTANDING-THE-CODE.md` — CLI and `src/` guide
+- `docs/RESEARCH.md` — papers and libraries
+- `docs/architecture/master-architecture-feature-completion.md` — blueprint vs % done
 
 ---
 
