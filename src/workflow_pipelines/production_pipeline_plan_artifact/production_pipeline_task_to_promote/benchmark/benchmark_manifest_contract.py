@@ -1,0 +1,1 @@
+from workflow_pipelines.benchmark_aggregate_manifest.benchmark_manifest_contract import *

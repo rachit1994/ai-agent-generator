@@ -3,7 +3,7 @@ requires = ["hatchling>=1.27.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build]
-dev-mode-dirs = ["src", "src/production_architecture_what_runs_on_the_laptop", "libs"]
+dev-mode-dirs = ["src", "src/production_architecture/local_runtime"]
 
 [project]
 name = "sde"
@@ -20,21 +20,21 @@ agent = "orchestrator.runtime.cli.main:main"
 dev = ["pytest>=8.0.0"]
 
 [tool.pytest.ini_options]
-testpaths = ["src/production_architecture_what_runs_on_the_laptop/orchestrator/tests/unit", "tests"]
+testpaths = ["src/production_architecture/local_runtime/orchestrator/tests/unit", "tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = [
   "src/guardrails_and_safety",
-  "src/production_architecture_what_runs_on_the_laptop/orchestrator",
+  "src/production_architecture/local_runtime/orchestrator",
   "src/workflow_pipelines",
-  "libs/storage",
-  "libs/sde_types",
-  "libs/common",
-  "libs/artifacts",
-  "libs/sde_eval",
-  "libs/model_adapter",
-  "libs/safeguards",
-  "libs/gates_constants",
-  "libs/gates_manifest",
-  "libs/time_and_budget",
+  "src/production_architecture/storage/storage",
+  "src/core_components/orchestrator/sde_types",
+  "src/core_components/orchestrator/common",
+  "src/workflow_pipelines/run_manifest/artifacts",
+  "src/evaluation_framework/offline_evaluation/sde_eval",
+  "src/production_architecture/local_runtime/model_adapter",
+  "src/guardrails_and_safety/review_gating_evaluator_authority/safeguards",
+  "src/guardrails_and_safety/risk_budgets_permission_matrix/gates_constants",
+  "src/guardrails_and_safety/risk_budgets_permission_matrix/gates_manifest",
+  "src/guardrails_and_safety/risk_budgets_permission_matrix/time_and_budget",
 ]

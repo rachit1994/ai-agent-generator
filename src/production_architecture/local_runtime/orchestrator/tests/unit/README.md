@@ -1,0 +1,81 @@
+# Folder: `src/production_architecture/local_runtime/orchestrator/tests/unit`
+
+## Why this folder exists
+This folder groups code and artifacts for `unit` within the repository architecture.
+
+## What is present
+- `README.md` (file): Documents folder behavior and usage context.
+- `test_architecture_test_file_inventory.py` (file): Provides validation coverage for this folder behavior.
+- `test_autonomy_boundaries_expiry.py` (file): Provides validation coverage for this folder behavior.
+- `test_benchmark_aggregate_summary_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_benchmark_checkpoint_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_benchmark_harvest.py` (file): Provides validation coverage for this folder behavior.
+- `test_benchmark_manifest_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_cli.py` (file): Provides validation coverage for this folder behavior.
+- `test_cli_roadmap.py` (file): Provides validation coverage for this folder behavior.
+- `test_context_pack.py` (file): Provides validation coverage for this folder behavior.
+- `test_continuous_run.py` (file): Provides validation coverage for this folder behavior.
+- `test_cross_heading_import_boundaries.py` (file): Provides validation coverage for this folder behavior.
+- `test_cto_gates.py` (file): Provides validation coverage for this folder behavior.
+- `test_dual_control_hs08.py` (file): Provides validation coverage for this folder behavior.
+- `test_eval.py` (file): Provides validation coverage for this folder behavior.
+- `test_event_lineage_replay_manifest.py` (file): Provides validation coverage for this folder behavior.
+- `test_evolution_organization_hard_stops.py` (file): Provides validation coverage for this folder behavior.
+- `test_failure_pipeline_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_guarded_completion_layer.py` (file): Provides validation coverage for this folder behavior.
+- `test_guarded_pipeline_stages.py` (file): Provides validation coverage for this folder behavior.
+- `test_hard_stop_schedule.py` (file): Provides validation coverage for this folder behavior.
+- `test_medium_hard_sde_suite.py` (file): Provides validation coverage for this folder behavior.
+- `test_memory_hard_stops.py` (file): Provides validation coverage for this folder behavior.
+- `test_offline_eval_suite_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_online_eval_shadow_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_orchestration_benchmark_jsonl_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_orchestration_run_end_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_orchestration_run_error_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_orchestration_run_start_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_orchestration_stage_event_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_outputs_base.py` (file): Provides validation coverage for this folder behavior.
+- `test_phased_pipeline.py` (file): Provides validation coverage for this folder behavior.
+- `test_policy_bundle_rollback.py` (file): Provides validation coverage for this folder behavior.
+- `test_production_pipeline_plan_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_aggregate.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_events.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_intake_revise.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_intake_scaffold.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_intake_util.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_lease_ttl.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_meta.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_parallel.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_plan_lock.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_remaining_work.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_stage1_observability_export.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_status.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_stop.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_validate.py` (file): Provides validation coverage for this folder behavior.
+- `test_project_workspace.py` (file): Provides validation coverage for this folder behavior.
+- `test_promotion_eval_package_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_public_export_surface.py` (file): Provides validation coverage for this folder behavior.
+- `test_regression_surface_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_replay.py` (file): Provides validation coverage for this folder behavior.
+- `test_report.py` (file): Provides validation coverage for this folder behavior.
+- `test_retry_pipeline_repeat_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_review_gating_findings.py` (file): Provides validation coverage for this folder behavior.
+- `test_roadmap_review.py` (file): Provides validation coverage for this folder behavior.
+- `test_run_manifest_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_runner_artifacts.py` (file): Provides validation coverage for this folder behavior.
+- `test_safeguards.py` (file): Provides validation coverage for this folder behavior.
+- `test_src_hierarchy_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_stage1_cold_start_demo.py` (file): Provides validation coverage for this folder behavior.
+- `test_stage1_golden_flow.py` (file): Provides validation coverage for this folder behavior.
+- `test_stage1_runbook_consistency.py` (file): Provides validation coverage for this folder behavior.
+- `test_stage1_suite_script.py` (file): Provides validation coverage for this folder behavior.
+- `test_static_gates.py` (file): Provides validation coverage for this folder behavior.
+- `test_strategy_overlay_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_trace_timestamps.py` (file): Provides validation coverage for this folder behavior.
+- `test_traces_jsonl_event_contract.py` (file): Provides validation coverage for this folder behavior.
+- `test_validate_run_api.py` (file): Provides validation coverage for this folder behavior.
+- `test_verify_core_hints.py` (file): Provides validation coverage for this folder behavior.
+
+## Notes
+- Keep this inventory updated when adding/removing files.
+- Prefer placing tests close to the most specific leaf module.

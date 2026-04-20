@@ -1,12 +1,26 @@
-# `workflow_pipelines`
+# Folder: `src/workflow_pipelines`
 
-Completion-doc–aligned packages for SDE task execution (runner, benchmarks, replay, logging).
+## Why this folder exists
+This folder groups code and artifacts for `workflow_pipelines` within the repository architecture.
 
-| Subpackage | Role |
-|------------|------|
-| **`production_pipeline_task_to_promote`** | Config, runner layers, benchmark harness, report/replay paths. |
-| **`execution_modes`** | Baseline, guarded, and phased pipeline strategies (`workflow_pipelines.execution_modes`). |
+## What is present
+- `benchmark_aggregate_manifest` (folder): Implements benchmark/evaluation flows and related contracts.
+- `benchmark_aggregate_summary` (folder): Implements benchmark/evaluation flows and related contracts.
+- `benchmark_checkpoint` (folder): Implements benchmark/evaluation flows and related contracts.
+- `benchmark_orchestration_jsonl` (folder): Implements benchmark/evaluation flows and related contracts.
+- `failure_path_artifacts` (folder): Groups related implementation for this subdomain boundary.
+- `orchestration_run_end` (folder): Defines orchestration event or state contracts for run flow.
+- `orchestration_run_error` (folder): Defines orchestration event or state contracts for run flow.
+- `orchestration_run_start` (folder): Defines orchestration event or state contracts for run flow.
+- `orchestration_stage_event` (folder): Handles event lineage, event contracts, or event persistence logic.
+- `production_pipeline_plan_artifact` (folder): Implements stage/pipeline behavior for task execution lifecycle.
+- `retry_repeat_profile` (folder): Groups related implementation for this subdomain boundary.
+- `run_manifest` (folder): Groups related implementation for this subdomain boundary.
+- `strategy_overlay` (folder): Groups related implementation for this subdomain boundary.
+- `traces_jsonl` (folder): Groups related implementation for this subdomain boundary.
+- `__init__.py` (file): Implements a concrete part of this folder responsibility.
+- `README.md` (file): Documents folder behavior and usage context.
 
-**Related:** shared **`libs/`** packages → [`libs/README.md`](../../libs/README.md); gates and hard-stops → **`guardrails_and_safety`**; CLI and **`orchestrator.api`** → `src/production_architecture_what_runs_on_the_laptop/orchestrator/`. Full tree inventory → [`docs/architecture/repository-layout-from-completion-inventory.md`](../../docs/architecture/repository-layout-from-completion-inventory.md) (Part A).
-
-**Regression:** `orchestrator/tests/unit/test_public_export_surface.py` includes migrated-**`sde_pipeline`** symbol checks for **`config`**, **`replay`**, **`report`**, **`run_logging`**, **`runner/*`** (including layer writers, **`persist_traces`**, **`orchestration_run_end_contract`**, **`orchestration_run_error_contract`**, **`orchestration_run_start_contract`**, **`orchestration_stage_event_contract`**, **`traces_jsonl_event_contract`**, **`artifacts`**), and **`benchmark/*`** (suite, **`benchmark_aggregate_summary_contract`**, **`benchmark_checkpoint_contract`**, **`benchmark_manifest_contract`**, **`failure_pipeline_contract`**, **`offline_eval_contract`**, **`online_eval_shadow_contract`**, **`orchestration_benchmark_jsonl_contract`**, **`production_pipeline_plan_contract`**, **`promotion_eval_contract`**, **`regression_surface_contract`**, **`retry_pipeline_contract`**, **`run_manifest_contract`**, **`strategy_overlay_contract`**, summary, task loop, driver), plus **`execution_modes`** pipeline / **`verify_core`** / **`decompose`** entrypoints vs **`sde_modes`** (see that file’s module docstring). Curated benchmark rows for manual/CI smoke: repo-root **`data/medium-hard-sde-suite.jsonl`** (**`mh-01`–`mh-05`**, pinned by **`test_medium_hard_sde_suite.py`**). **`test_architecture_test_file_inventory.py`** pins **Part A** **`src/`**+**`libs/`** **`.py`/`.md`** path count (**215**) against **`docs/architecture/repository-layout-from-completion-inventory.md`**. **`test_review_gating_findings.py`** covers **`review.json`** **`review_findings`** + **HS15** (§11.A); **`test_hard_stop_schedule.py`** pins **`hard_stop_schedule`** vs **`evaluate_hard_stops`** (§11.B); **`test_autonomy_boundaries_expiry.py`** covers **`token_context`** + **HS06**/**HS30** expiry (§11.C); **`test_dual_control_hs08.py`** covers **`dual_control_ack.json`** + **HS08** (§11.D); **`test_policy_bundle_rollback.py`** covers **`policy_bundle_rollback`** (§11.E); **`test_offline_eval_suite_contract.py`** covers §13 **`offline_eval_contract`** (§13.A); **`test_regression_surface_contract.py`** covers §13 **`regression_surface_contract`** (§13.B); **`test_promotion_eval_package_contract.py`** covers §13 **`promotion_eval_contract`** (§13.C); **`test_online_eval_shadow_contract.py`** covers §13 **`online_eval_shadow_contract`** (§13.D); **`test_strategy_overlay_contract.py`** covers §10 **`strategy_overlay_contract`** (§10.A); **`test_production_pipeline_plan_contract.py`** covers §10 **`production_pipeline_plan_contract`** (§10.B); **`test_retry_pipeline_repeat_contract.py`** covers §10 **`retry_pipeline_contract`** (§10.C); **`test_failure_pipeline_contract.py`** covers §10 **`failure_pipeline_contract`** (§10.D); **`test_run_manifest_contract.py`** covers §10 **`run_manifest_contract`** (§10.E); **`test_orchestration_run_end_contract.py`** covers §10 **`orchestration_run_end_contract`** + **`write_success_artifact_layer`** **`run_end`** (§10.M); **`test_orchestration_run_error_contract.py`** covers §10 **`orchestration_run_error_contract`** + **`single_task`** **`run_error`** lines (§10.L); **`test_orchestration_run_start_contract.py`** covers §10 **`orchestration_run_start_contract`** + **`append_orchestration_run_start`** (§10.I); **`test_orchestration_benchmark_jsonl_contract.py`** covers §10 **`orchestration_benchmark_jsonl_contract`** + **`run_benchmark`** **`orchestration.jsonl`** resume/error lines (§10.J); **`test_orchestration_stage_event_contract.py`** covers §10 **`orchestration_stage_event_contract`** + **`append_orchestration_stage_events`** (§10.K); **`test_traces_jsonl_event_contract.py`** covers §10 **`traces_jsonl_event_contract`** + **`persist_traces`** / **`run_benchmark`** **`traces.jsonl`** (§10.N); **`test_benchmark_manifest_contract.py`** covers §10 **`benchmark_manifest_contract`** (§10.F); **`test_benchmark_checkpoint_contract.py`** covers §10 **`benchmark_checkpoint_contract`** (§10.G); **`test_benchmark_aggregate_summary_contract.py`** covers §10 **`benchmark_aggregate_summary_contract`** (§10.H).
+## Notes
+- Keep this inventory updated when adding/removing files.
+- Prefer placing tests close to the most specific leaf module.
