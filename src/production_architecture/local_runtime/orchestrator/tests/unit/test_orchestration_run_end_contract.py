@@ -41,7 +41,7 @@ def test_validate_run_end_unknown_key() -> None:
         "artifacts": {"k": "/p"},
         "mode": "baseline",
     }
-    assert "orchestration_run_end_unknown_keys" in validate_orchestration_run_end_dict(body)
+    assert "orchestration_run_end_unknown_key:mode" in validate_orchestration_run_end_dict(body)
 
 
 def test_validate_run_end_bad_artifacts_value() -> None:
@@ -71,3 +71,16 @@ def test_validate_run_end_bad_checks() -> None:
         "checks": {},
     }
     assert "orchestration_run_end_checks" in validate_orchestration_run_end_dict(body)
+
+
+def test_validate_run_end_bad_checks_items() -> None:
+    body = {
+        "run_id": "r",
+        "type": "run_end",
+        "artifacts": {"k": "/p"},
+        "checks": [{"name": "", "passed": "yes"}, 1],
+    }
+    errs = validate_orchestration_run_end_dict(body)
+    assert "orchestration_run_end_checks_name:0" in errs
+    assert "orchestration_run_end_checks_passed:0" in errs
+    assert "orchestration_run_end_checks_item:1" in errs

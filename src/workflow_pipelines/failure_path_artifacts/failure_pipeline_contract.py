@@ -10,6 +10,16 @@ REPLAY_MANIFEST_CONTRACT: Final = "sde.replay_manifest.v1"
 FAILURE_PIPELINE_SUMMARY_CONTRACT: Final = "sde.failure_pipeline_summary.v1"
 
 
+def _is_sha256(value: object) -> bool:
+    if not isinstance(value, str) or len(value) != 64:
+        return False
+    lowered = value.lower()
+    for char in lowered:
+        if char not in "0123456789abcdef":
+            return False
+    return True
+
+
 def _errs_replay_core(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     sv = body.get("schema_version", body.get("schemaVersion"))
@@ -47,7 +57,7 @@ def _errs_replay_window_sources(body: dict[str, Any]) -> list[str]:
         h = row.get("sha256")
         if not isinstance(p, str) or not p.strip():
             errs.append(f"replay_manifest_source_path:{idx}")
-        if not isinstance(h, str) or not h.strip():
+        if not _is_sha256(h):
             errs.append(f"replay_manifest_source_sha256:{idx}")
     return errs
 
@@ -55,7 +65,7 @@ def _errs_replay_window_sources(body: dict[str, Any]) -> list[str]:
 def _errs_replay_tail(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     cr = body.get("chain_root", body.get("chainRoot"))
-    if not isinstance(cr, str) or not cr.strip():
+    if not _is_sha256(cr):
         errs.append("replay_manifest_chain_root")
     pv = body.get("projection_version", body.get("projectionVersion"))
     if pv is not None and (not isinstance(pv, str) or not pv.strip()):
@@ -116,7 +126,7 @@ def _errs_failure_summary_error(body: dict[str, Any]) -> list[str]:
         return ["failure_summary_error"]
     if not isinstance(err.get("type"), str) or not str(err.get("type")).strip():
         return ["failure_summary_error_type"]
-    if not isinstance(err.get("message"), str):
+    if not isinstance(err.get("message"), str) or not str(err.get("message")).strip():
         return ["failure_summary_error_message_type"]
     return []
 

@@ -29,7 +29,7 @@ def test_validate_run_error_ok_with_detail() -> None:
         "type": "run_error",
         "mode": "guarded_pipeline",
         "error_type": "JSONDecodeError",
-        "error_message": "",
+        "error_message": "parse failed",
         "detail": "output_parse_failed",
     }
     assert validate_orchestration_run_error_dict(body) == []
@@ -44,7 +44,19 @@ def test_validate_run_error_unknown_key() -> None:
         "error_message": "m",
         "extra": 1,
     }
-    assert "orchestration_run_error_unknown_keys" in validate_orchestration_run_error_dict(body)
+    assert "orchestration_run_error_unknown_key:extra" in validate_orchestration_run_error_dict(body)
+
+
+def test_validate_run_error_empty_message_rejected() -> None:
+    body = {
+        "run_id": "r-1",
+        "type": "run_error",
+        "mode": "guarded_pipeline",
+        "error_type": "JSONDecodeError",
+        "error_message": "",
+        "detail": "output_parse_failed",
+    }
+    assert "orchestration_run_error_error_message" in validate_orchestration_run_error_dict(body)
 
 
 def test_validate_run_error_bad_mode() -> None:

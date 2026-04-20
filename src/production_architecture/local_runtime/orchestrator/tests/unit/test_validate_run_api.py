@@ -97,7 +97,16 @@ def test_validate_run_benchmark_aggregate_ok(tmp_path: Path, monkeypatch: pytest
         encoding="utf-8",
     )
     (run_dir / "summary.json").write_text(
-        json.dumps({"runId": "bench-complete", "verdict": "passed", "mode": "baseline"}),
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary.v1",
+                "runId": "bench-complete",
+                "suitePath": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "verdict": "passed",
+                "perTaskDeltas": [],
+            }
+        ),
         encoding="utf-8",
     )
     (run_dir / "traces.jsonl").write_text("", encoding="utf-8")

@@ -72,3 +72,91 @@ def test_memory_hard_stops_skipped_when_coding_only(tmp_path: Path) -> None:
     _minimal_memory_tree(tmp_path)
     (tmp_path / "summary.json").write_text(json.dumps({"run_class": "coding_only"}), encoding="utf-8")
     assert evaluate_memory_hard_stops(tmp_path) == []
+
+
+def test_hs21_passes_when_matching_provenance_is_on_later_event_line(tmp_path: Path) -> None:
+    _minimal_memory_tree(tmp_path, chunk_provenance_id="evt-r-later", envelope_event_id="evt-r-first")
+    (tmp_path / "event_store" / "run_events.jsonl").write_text(
+        json.dumps(
+            {
+                "event_id": "evt-r-first",
+                "aggregate_id": "r",
+                "causation_id": None,
+                "contract_version": "1.0",
+                "payload": {},
+                "occurred_at": "2026-01-01T00:00:00+00:00",
+            }
+        )
+        + "\n"
+        + json.dumps(
+            {
+                "event_id": "evt-r-later",
+                "aggregate_id": "r",
+                "causation_id": "evt-r-first",
+                "contract_version": "1.0",
+                "payload": {},
+                "occurred_at": "2026-01-01T00:00:01+00:00",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    hs = {h["id"]: h["passed"] for h in evaluate_memory_hard_stops(tmp_path)}
+    assert hs["HS21"] is True
+
+
+def test_hs21_ignores_malformed_event_lines_but_uses_valid_ids(tmp_path: Path) -> None:
+    _minimal_memory_tree(tmp_path, chunk_provenance_id="evt-r-valid", envelope_event_id="evt-r-initial")
+    (tmp_path / "event_store" / "run_events.jsonl").write_text(
+        "{\n"
+        + json.dumps(
+            {
+                "event_id": "evt-r-valid",
+                "aggregate_id": "r",
+                "causation_id": None,
+                "contract_version": "1.0",
+                "payload": {},
+                "occurred_at": "2026-01-01T00:00:02+00:00",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    hs = {h["id"]: h["passed"] for h in evaluate_memory_hard_stops(tmp_path)}
+    assert hs["HS21"] is True
+
+
+def test_hs23_fails_when_skill_nodes_items_are_malformed(tmp_path: Path) -> None:
+    _minimal_memory_tree(tmp_path)
+    (tmp_path / "capability" / "skill_nodes.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "nodes": [
+                    {"skill_id": "python.testing", "score": 0.7},
+                    {"skill_id": "python.refactor"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    hs = {h["id"]: h["passed"] for h in evaluate_memory_hard_stops(tmp_path)}
+    assert hs["HS23"] is False
+
+
+def test_hs23_fails_when_skill_nodes_have_duplicate_skill_ids(tmp_path: Path) -> None:
+    _minimal_memory_tree(tmp_path)
+    (tmp_path / "capability" / "skill_nodes.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "nodes": [
+                    {"skill_id": "python.testing", "score": 0.7},
+                    {"skillId": "python.testing", "score": 0.8},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    hs = {h["id"]: h["passed"] for h in evaluate_memory_hard_stops(tmp_path)}
+    assert hs["HS23"] is False

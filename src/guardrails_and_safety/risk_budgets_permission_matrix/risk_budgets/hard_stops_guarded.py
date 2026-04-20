@@ -36,7 +36,14 @@ def _hs07_question_policy(output_dir: Path) -> bool:
 
 def _doc_review_dual_control_required(doc: dict[str, Any]) -> bool:
     dc = doc.get("dual_control")
-    return isinstance(dc, dict) and dc.get("required") is True
+    if dc is None:
+        return False
+    if not isinstance(dc, dict):
+        return True
+    required = dc.get("required")
+    if not isinstance(required, bool):
+        return True
+    return required
 
 
 def _dual_control_ack_valid(body: dict[str, Any] | None) -> bool:
@@ -51,6 +58,9 @@ def _dual_control_ack_valid(body: dict[str, Any] | None) -> bool:
     as_ = a.strip()
     bs = b.strip()
     if not as_ or not bs or as_ == bs:
+        return False
+    acked_at = body.get("acknowledged_at")
+    if not isinstance(acked_at, str) or not acked_at.strip():
         return False
     return True
 

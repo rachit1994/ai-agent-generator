@@ -54,6 +54,48 @@ def test_validate_strategy_proposal_dict_missing_ref_when_required() -> None:
     assert "strategy_overlay_proposal_ref" in validate_strategy_proposal_dict(body)
 
 
+def test_validate_strategy_proposal_dict_requires_schema_version_value() -> None:
+    body = {
+        "schema_version": "2.0",
+        "actor_id": "a",
+        "requires_promotion_package": False,
+        "applied_autonomy": False,
+    }
+    assert "strategy_overlay_schema_version_value" in validate_strategy_proposal_dict(body)
+
+
+def test_validate_strategy_proposal_dict_no_ref_needed_when_not_required() -> None:
+    body = {
+        "schema_version": "1.0",
+        "actor_id": "a",
+        "requires_promotion_package": False,
+        "applied_autonomy": False,
+    }
+    assert validate_strategy_proposal_dict(body) == []
+
+
+def test_validate_strategy_proposal_dict_accepts_camel_aliases() -> None:
+    body = {
+        "schemaVersion": "1.0",
+        "actorId": "a",
+        "requires_promotion_package": True,
+        "applied_autonomy": False,
+        "proposalRef": "lifecycle/promotion_package.json",
+    }
+    assert validate_strategy_proposal_dict(body) == []
+
+
+def test_validate_strategy_proposal_dict_rejects_bad_proposal_ref_format() -> None:
+    body = {
+        "schema_version": "1.0",
+        "actor_id": "a",
+        "requires_promotion_package": True,
+        "applied_autonomy": False,
+        "proposal_ref": "../bad.txt",
+    }
+    assert "strategy_overlay_proposal_ref_format" in validate_strategy_proposal_dict(body)
+
+
 def test_validate_strategy_proposal_path_missing(tmp_path: Path) -> None:
     assert validate_strategy_proposal_path(tmp_path / "p.json") == ["strategy_overlay_file_missing"]
 

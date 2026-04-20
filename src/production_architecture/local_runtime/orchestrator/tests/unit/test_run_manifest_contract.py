@@ -79,6 +79,28 @@ def test_validate_run_manifest_project_step_id_present_but_blank() -> None:
     assert "run_manifest_project_step_id" in validate_run_manifest_dict(body)
 
 
+def test_validate_run_manifest_project_linkage_requires_both_fields() -> None:
+    body = {
+        "schema": RUN_MANIFEST_CONTRACT,
+        "run_id": "r",
+        "mode": "baseline",
+        "task": "t",
+        "project_step_id": "s1",
+    }
+    assert "run_manifest_project_linkage" in validate_run_manifest_dict(body)
+
+
+def test_validate_run_manifest_rejects_unknown_keys() -> None:
+    body = {
+        "schema": RUN_MANIFEST_CONTRACT,
+        "run_id": "r",
+        "mode": "baseline",
+        "task": "t",
+        "extra": 1,
+    }
+    assert "run_manifest_unknown_key:extra" in validate_run_manifest_dict(body)
+
+
 def test_validate_run_manifest_path_ok(tmp_path: Path) -> None:
     p = tmp_path / "run-manifest.json"
     p.write_text(
@@ -93,3 +115,16 @@ def test_validate_run_manifest_path_ok(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert validate_run_manifest_path(p) == []
+
+
+def test_validate_run_manifest_path_missing_and_bad_json(tmp_path: Path) -> None:
+    assert validate_run_manifest_path(tmp_path / "missing.json") == ["run_manifest_file_missing"]
+    bad = tmp_path / "bad.json"
+    bad.write_text("{", encoding="utf-8")
+    assert validate_run_manifest_path(bad) == ["run_manifest_json"]
+
+
+def test_validate_run_manifest_path_non_object_json(tmp_path: Path) -> None:
+    p = tmp_path / "manifest.json"
+    p.write_text("[]", encoding="utf-8")
+    assert validate_run_manifest_path(p) == ["run_manifest_not_object"]

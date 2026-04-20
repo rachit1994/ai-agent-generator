@@ -17,6 +17,10 @@ def _is_str_list(x: Any) -> bool:
     return isinstance(x, list) and all(isinstance(i, str) for i in x)
 
 
+def _is_optional_non_empty_str(value: Any) -> bool:
+    return value is None or (isinstance(value, str) and bool(value.strip()))
+
+
 def validate_project_plan(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     if body.get("schema_version") != PLAN_SCHEMA_VERSION:
@@ -63,8 +67,15 @@ def validate_project_plan(body: dict[str, Any]) -> list[str]:
                         errs.append(f"project_plan_verification_commands_bad:{sid}")
                     else:
                         for j, c in enumerate(cmds):
-                            if not isinstance(c, dict) or not isinstance(c.get("cmd"), str):
+                            if not isinstance(c, dict):
                                 errs.append(f"project_plan_verification_cmd_bad:{sid}:{j}")
+                                continue
+                            cmd = c.get("cmd")
+                            if not isinstance(cmd, str) or not cmd.strip():
+                                errs.append(f"project_plan_verification_cmd_bad:{sid}:{j}")
+                            args = c.get("args")
+                            if args is not None and not _is_str_list(args):
+                                errs.append(f"project_plan_verification_args_bad:{sid}:{j}")
     ws = body.get("workspace")
     if ws is not None and not isinstance(ws, dict):
         errs.append("project_plan_workspace_not_object")
@@ -103,12 +114,22 @@ def validate_progress(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     if body.get("schema_version") != PROGRESS_SCHEMA_VERSION:
         errs.append("progress_bad_schema_version")
+    if not isinstance(body.get("session_id"), str) or not str(body.get("session_id")).strip():
+        errs.append("progress_session_id_bad")
     for key in ("completed_step_ids", "pending_step_ids"):
         if not _is_str_list(body.get(key, [])):
             errs.append(f"progress_{key}_bad")
     ill = body.get("intake_loaded_last")
     if ill is not None and not isinstance(ill, bool):
         errs.append("progress_intake_loaded_last_bad")
+    if not _is_optional_non_empty_str(body.get("failed_step_id")):
+        errs.append("progress_failed_step_id_bad")
+    if not _is_optional_non_empty_str(body.get("blocked_reason")):
+        errs.append("progress_blocked_reason_bad")
+    if not _is_optional_non_empty_str(body.get("last_run_id")):
+        errs.append("progress_last_run_id_bad")
+    if not _is_optional_non_empty_str(body.get("last_output_dir")):
+        errs.append("progress_last_output_dir_bad")
     return errs
 
 

@@ -7,12 +7,15 @@ from pathlib import Path
 from typing import Any, Final
 
 STRATEGY_OVERLAY_CONTRACT: Final = "sde.strategy_overlay_proposal.v1"
+STRATEGY_OVERLAY_SCHEMA_VERSION: Final = "1.0"
 
 
 def _errs_schema_actor(body: dict[str, Any]) -> list[str]:
     sv = body.get("schema_version", body.get("schemaVersion"))
     if not isinstance(sv, str) or not sv.strip():
         return ["strategy_overlay_schema_version"]
+    if sv != STRATEGY_OVERLAY_SCHEMA_VERSION:
+        return ["strategy_overlay_schema_version_value"]
     aid = body.get("actor_id", body.get("actorId"))
     if not isinstance(aid, str) or not aid.strip():
         return ["strategy_overlay_actor_id"]
@@ -45,6 +48,10 @@ def _errs_proposal_ref(body: dict[str, Any]) -> list[str]:
     ref = body.get("proposal_ref", body.get("proposalRef"))
     if not isinstance(ref, str) or not ref.strip():
         return ["strategy_overlay_proposal_ref"]
+    if ref.startswith("/") or ".." in ref.split("/"):
+        return ["strategy_overlay_proposal_ref_format"]
+    if not ref.endswith(".json"):
+        return ["strategy_overlay_proposal_ref_format"]
     return []
 
 

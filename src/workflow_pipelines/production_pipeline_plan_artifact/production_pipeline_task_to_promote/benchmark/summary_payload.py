@@ -44,6 +44,12 @@ def build_summary(
     for task in tasks:
         b = next((e for e in baseline_events if e["task_id"] == task["taskId"] and e["stage"] == "finalize"), None)
         g = next((e for e in guarded_events if e["task_id"] == task["taskId"] and e["stage"] == "finalize"), None)
+        if b is None or g is None:
+            pass_delta = None
+            latency_delta_ms = None
+        else:
+            pass_delta = (1 if g["score"]["passed"] else 0) - (1 if b["score"]["passed"] else 0)
+            latency_delta_ms = g["latency_ms"] - b["latency_ms"]
         per_task.append(
             {
                 "taskId": task["taskId"],
@@ -51,8 +57,8 @@ def build_summary(
                 "guardedPassed": None if g is None else g["score"]["passed"],
                 "baselineLatencyMs": None if b is None else b["latency_ms"],
                 "guardedLatencyMs": None if g is None else g["latency_ms"],
-                "passDelta": (1 if g and g["score"]["passed"] else 0) - (1 if b and b["score"]["passed"] else 0),
-                "latencyDeltaMs": (g["latency_ms"] if g else 0) - (b["latency_ms"] if b else 0),
+                "passDelta": pass_delta,
+                "latencyDeltaMs": latency_delta_ms,
             }
         )
     decision = None

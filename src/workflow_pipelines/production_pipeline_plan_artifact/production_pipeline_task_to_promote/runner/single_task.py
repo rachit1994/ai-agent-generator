@@ -25,6 +25,7 @@ from core_components.orchestrator.common.utils import create_run_id, outputs_bas
 from guardrails_and_safety import validate_execution_run_directory
 
 from workflow_pipelines.retry_repeat_profile.retry_pipeline_contract import (
+    RETRY_PIPELINE_REPEAT_CONTRACT,
     validate_repeat_profile_result,
 )
 from workflow_pipelines.run_manifest.run_manifest_contract import (
@@ -247,6 +248,7 @@ def execute_single_task(
         verdict = validate_execution_run_directory(Path(out_dir), mode=mode)
         gates_ok.append(bool(verdict.get("ok") and verdict.get("validation_ready")))
     result = {
+        "schema": RETRY_PIPELINE_REPEAT_CONTRACT,
         "repeat": repeat,
         "task": task,
         "mode": mode,

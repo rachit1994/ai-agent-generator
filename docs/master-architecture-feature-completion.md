@@ -102,14 +102,14 @@
 | Orchestrator | **54** | Significant local orchestrator behavior exists; component layer remains partially scaffolded. |
 | Evaluation service | **61** | Strong contract/test coverage; no dedicated hosted evaluation service layer. |
 | Observability | **48** | Contracted artifacts are strong; no full observability platform stack. |
-| Role agents | **18** | Mostly scaffolded surfaces rather than first-class runtime agent services. |
-| Memory system | **30** | Artifact/gate coverage exists; no durable typed memory service implementation. |
+| Role agents | **30** | Surface contract hardening and focused tests are in place; still no first-class runtime role-agent service mesh. |
+| Memory system | **36** | Surface contract hardening and focused tests are in place; durable typed memory services remain out of scope. |
 | Event store component | **35** | Event evidence exists; componentized durable event store service is missing. |
-| Learning service | **29** | Learning artifacts and gates exist; no robust standalone learning service. |
-| Identity/authz plane | **26** | Partial controls exist; no dedicated identity plane service. |
-| Objective policy engine | **20** | Fragmented logic exists; no standalone arbitration engine service. |
-| Practice engine | **16** | Practice artifacts exist; no dedicated protected practice system. |
-| Career strategy layer | **5** | Mostly conceptual/scaffolded. |
+| Learning service | **35** | Surface contract hardening and focused tests are in place; no robust standalone learning service runtime. |
+| Identity/authz plane | **32** | Surface contract hardening and focused tests are in place; no dedicated identity plane service. |
+| Objective policy engine | **28** | Surface contract hardening and focused tests are in place; no standalone policy arbitration engine. |
+| Practice engine | **24** | Surface contract hardening and focused tests are in place; no dedicated protected practice runtime. |
+| Career strategy layer | **18** | Aggregate strategy surface and tests now exist; broader strategy operations remain conceptual/scaffold-level. |
 
 ---
 
@@ -117,10 +117,10 @@
 
 | Feature | % done | Notes |
 |---------|--------|-------|
-| Reviewer / evaluator agents | **13** | Some review/evaluator behavior exists, but mostly scaffold-level organization modules. |
-| Agent lifecycle | **11** | Promotion/autonomy links are partial; lifecycle engine remains mostly scaffolded. |
-| Capability model | **8** | Capability graph/scoring/transfer systems are mostly scaffold placeholders. |
-| Human professional evolution model | **12** | Conceptual mapping exists; operational services for mentorship/performance/career are limited. |
+| Reviewer / evaluator agents | **24** | Aggregate surface contract hardening and focused tests now anchor this area; operational multi-agent runtime remains limited. |
+| Agent lifecycle | **22** | Aggregate lifecycle surface and tests now exist; lifecycle execution engine remains mostly scaffolded. |
+| Capability model | **20** | Aggregate capability-model surface and tests now exist; scoring and transfer systems remain scaffold-first. |
+| Human professional evolution model | **24** | Aggregate evolution-model surface and tests now exist; mentorship/performance/career operations are still limited. |
 
 ---
 
@@ -150,3 +150,4 @@
 
 - **2026-04-20:** Rewritten to a minimal format with only (1) percentage scoring guide, (2) 10 primary headings with `Feature / % done / Notes` tables, and (3) changelog.
 - **2026-04-20:** Percentages reflect the latest 10-agent re-evaluation pass after `src/` structure alignment.
+- **2026-04-20:** Updated percentages and notes after completing all `docs/features/**/TODO.md` checklists and adding aggregate surface contracts/tests across remaining scaffold-heavy features.

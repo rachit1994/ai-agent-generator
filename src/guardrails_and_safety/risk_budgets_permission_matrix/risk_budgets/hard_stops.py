@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from guardrails_and_safety.risk_budgets_permission_matrix.gates_constants.constants import REQUIRED_REVIEW_KEYS, TOKEN_CONTEXT_SCHEMA
+from guardrails_and_safety.review_gating_evaluator_authority.review_gating.review import validate_review_payload
 from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_util import parse_iso_utc
 from .hard_stops_events import evaluate_event_lineage_hard_stops
 from .hard_stops_guarded import evaluate_guarded_hard_stops
@@ -22,7 +23,11 @@ def _hs01_review(output_dir: Path) -> bool:
         return False
     try:
         body = json.loads(review_path.read_text(encoding="utf-8"))
-        return REQUIRED_REVIEW_KEYS.issubset(body.keys())
+        if not isinstance(body, dict):
+            return False
+        if not REQUIRED_REVIEW_KEYS.issubset(body.keys()):
+            return False
+        return len(validate_review_payload(body)) == 0
     except json.JSONDecodeError:
         return False
 
@@ -34,11 +39,42 @@ def _hs03_truncation_ok(token_context: dict[str, Any]) -> bool:
         return True
     if len(reds) == 0:
         return False
-    return all(
-        any(r.get("provenance_id") == t.get("provenance_id") for r in reds)
-        for t in trunc
-        if isinstance(t, dict)
-    )
+    normalized_reductions: set[str] = set()
+    for row in reds:
+        if not isinstance(row, dict):
+            return False
+        provenance_id = row.get("provenance_id")
+        if not isinstance(provenance_id, str) or not provenance_id.strip():
+            return False
+        normalized_reductions.add(provenance_id.strip())
+    for row in trunc:
+        if not isinstance(row, dict):
+            return False
+        provenance_id = row.get("provenance_id")
+        if not isinstance(provenance_id, str) or not provenance_id.strip():
+            return False
+        if provenance_id.strip() not in normalized_reductions:
+            return False
+    return True
+
+
+def _safe_int(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        raw = value.strip()
+        if raw.startswith(("+", "-")):
+            sign = raw[0]
+            digits = raw[1:]
+            if digits.isdigit():
+                return int(sign + digits)
+            return None
+        if raw.isdigit():
+            return int(raw)
+        return None
+    return None
 
 
 def _hs04_safety(output_dir: Path, events: list[dict[str, Any]]) -> bool:
@@ -56,7 +92,10 @@ def _hs04_safety(output_dir: Path, events: list[dict[str, Any]]) -> bool:
         return False
     if sg.get("schema_version") != "1.0":
         return True
-    return bool(sg.get("passed_all"))
+    passed_all = sg.get("passed_all")
+    if not isinstance(passed_all, bool):
+        return False
+    return passed_all
 
 
 def _hs05_lineage(output_dir: Path, events: list[dict[str, Any]], run_status: str) -> bool:
@@ -81,12 +120,18 @@ def _token_context_window_unexpired(token_context: dict[str, Any]) -> bool:
 def _hs06_token_budgets(token_context: dict[str, Any]) -> bool:
     for st in token_context.get("stages") or []:
         if not isinstance(st, dict):
-            continue
+            return False
         if st.get("budget_status") == "fail_closed":
             return False
-        if int(st.get("actual_input_tokens", 0)) > int(st.get("input_token_budget", 0)):
+        actual_input = _safe_int(st.get("actual_input_tokens", 0))
+        input_budget = _safe_int(st.get("input_token_budget", 0))
+        actual_output = _safe_int(st.get("actual_output_tokens", 0))
+        output_budget = _safe_int(st.get("output_token_budget", 0))
+        if None in (actual_input, input_budget, actual_output, output_budget):
             return False
-        if int(st.get("actual_output_tokens", 0)) > int(st.get("output_token_budget", 0)):
+        if actual_input > input_budget:
+            return False
+        if actual_output > output_budget:
             return False
     return _token_context_window_unexpired(token_context)
 

@@ -36,6 +36,12 @@ def write_stop_report(
     extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Append-only contract for automation: one ``stop_report.json`` overwritten per terminal outcome."""
+    if not isinstance(exit_code, int) or isinstance(exit_code, bool):
+        raise ValueError("exit_code must be an int")
+    if not isinstance(max_steps, int) or isinstance(max_steps, bool) or max_steps < 0:
+        raise ValueError("max_steps must be a non-negative int")
+    if not isinstance(steps_used, int) or isinstance(steps_used, bool) or steps_used < 0:
+        raise ValueError("steps_used must be a non-negative int")
     body: dict[str, Any] = {
         "schema_version": "1.0",
         "captured_at": iso_now(),

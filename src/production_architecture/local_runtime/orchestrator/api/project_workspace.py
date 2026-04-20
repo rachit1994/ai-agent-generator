@@ -76,10 +76,7 @@ def _prefix_dir_to_key(dir_prefix: str) -> str:
 
 def path_scope_pattern_allowed(pattern: str, allowed_prefixes: list[str]) -> bool:
     """
-    True if the pattern's directory prefix **overlaps** an allowed prefix on the repo tree.
-
-    Allows either ``scope ⊆ allowed`` or ``allowed ⊆ scope`` (e.g. ``src/**`` with allowed
-    ``src/production_architecture_what_runs_on_the_laptop/orchestrator/``).
+    True if the pattern's directory prefix is contained by an allowed repo prefix.
     """
     root = _path_scope_to_prefix_dir(pattern)
     if root is None:
@@ -92,9 +89,33 @@ def path_scope_pattern_allowed(pattern: str, allowed_prefixes: list[str]) -> boo
         allow_key = _prefix_dir_to_key(a.rstrip("*"))
         if not allow_key:
             continue
-        if scope_key.startswith(allow_key) or allow_key.startswith(scope_key):
+        if scope_key.startswith(allow_key):
             return True
     return False
+
+
+def _normalized_allowed_prefixes(workspace: dict[str, Any]) -> list[str]:
+    raw_prefs = workspace.get("allowed_path_prefixes")
+    if not isinstance(raw_prefs, list):
+        return []
+    return [str(p) for p in raw_prefs if isinstance(p, str) and p.strip()]
+
+
+def _path_scope_errors_for_step(step_row: dict[str, Any], allowed_prefixes: list[str]) -> list[str]:
+    sid = step_row.get("step_id")
+    if not isinstance(sid, str):
+        return []
+    scopes = step_row.get("path_scope") or []
+    if not isinstance(scopes, list) or not scopes:
+        return [f"project_plan_workspace_path_scope_required:{sid}"]
+    errs: list[str] = []
+    for pat in scopes:
+        if not isinstance(pat, str) or not pat.strip():
+            errs.append(f"project_plan_workspace_path_scope_bad_pattern:{sid}")
+            continue
+        if not path_scope_pattern_allowed(pat, allowed_prefixes):
+            errs.append(f"project_plan_workspace_path_scope_outside_prefixes:{sid}:{pat}")
+    return errs
 
 
 def plan_workspace_path_errors(plan: dict[str, Any]) -> list[str]:
@@ -105,32 +126,16 @@ def plan_workspace_path_errors(plan: dict[str, Any]) -> list[str]:
     ws = plan.get("workspace")
     if not isinstance(ws, dict):
         return []
-    raw_prefs = ws.get("allowed_path_prefixes")
-    if raw_prefs is None:
+    if ws.get("allowed_path_prefixes") is None:
         return []
-    if not isinstance(raw_prefs, list):
-        return []
-    prefs = [str(p) for p in raw_prefs if isinstance(p, str) and p.strip()]
+    prefs = _normalized_allowed_prefixes(ws)
     if not prefs:
         return []
-    errs: list[str] = []
+    errors: list[str] = []
     for row in plan.get("steps") or []:
-        if not isinstance(row, dict):
-            continue
-        sid = row.get("step_id")
-        if not isinstance(sid, str):
-            continue
-        scopes = row.get("path_scope") or []
-        if not isinstance(scopes, list) or not scopes:
-            errs.append(f"project_plan_workspace_path_scope_required:{sid}")
-            continue
-        for pat in scopes:
-            if not isinstance(pat, str) or not pat.strip():
-                errs.append(f"project_plan_workspace_path_scope_bad_pattern:{sid}")
-                continue
-            if not path_scope_pattern_allowed(pat, prefs):
-                errs.append(f"project_plan_workspace_path_scope_outside_prefixes:{sid}:{pat}")
-    return errs
+        if isinstance(row, dict):
+            errors.extend(_path_scope_errors_for_step(row, prefs))
+    return errors
 
 
 def evaluate_workspace_repo_gates(plan: dict[str, Any], repo_root: Path) -> str | None:

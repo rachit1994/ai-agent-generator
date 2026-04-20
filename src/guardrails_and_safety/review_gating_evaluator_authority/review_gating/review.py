@@ -17,6 +17,7 @@ from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_u
 _STATIC_GATES_REPORT = "static_gates_report.json"
 _REVIEW_FINDING_REQUIRED_KEYS = ("severity", "code", "message", "evidence_ref")
 _REVIEW_FINDING_SEVERITIES = frozenset({"blocker", "warn", "info"})
+_REVIEW_STATUSES = frozenset({"completed_review_pass", "completed_review_fail", "incomplete"})
 
 
 def _normalize_review_severity(raw: str | None) -> str:
@@ -146,6 +147,18 @@ def validate_review_payload(review: dict[str, Any]) -> list[str]:
             errors.append(f"missing_review_key:{key}")
     if review.get("schema_version") != REVIEW_SCHEMA:
         errors.append("invalid_review_schema_version")
+    status = review.get("status")
+    if not isinstance(status, str) or status not in _REVIEW_STATUSES:
+        errors.append("invalid_review_status")
+    reasons = review.get("reasons")
+    if not isinstance(reasons, list) or any(not isinstance(item, str) for item in reasons):
+        errors.append("invalid_review_reasons")
+    required_fixes = review.get("required_fixes")
+    if not isinstance(required_fixes, list) or any(not isinstance(item, str) for item in required_fixes):
+        errors.append("invalid_required_fixes")
+    completed_at = review.get("completed_at")
+    if not isinstance(completed_at, str) or not completed_at.strip():
+        errors.append("invalid_completed_at")
     findings = review.get("review_findings")
     if not isinstance(findings, list):
         errors.append("review_findings_not_list")

@@ -182,3 +182,152 @@ def test_hs20_passes_when_command_id_repeated_without_committed_mutation(tmp_pat
     (tmp_path / "summary.json").write_text(json.dumps({"run_class": "full"}), encoding="utf-8")
     by_id = {h["id"]: h["passed"] for h in evaluate_event_lineage_hard_stops(tmp_path, [])}
     assert by_id["HS20"] is True
+
+
+def test_hs17_fails_when_later_event_line_is_malformed(tmp_path: Path) -> None:
+    run_id = "r-hs17-bad-line"
+    traces = tmp_path / "traces.jsonl"
+    traces.write_text("{}\n", encoding="utf-8")
+    digest = __import__("hashlib").sha256(traces.read_bytes()).hexdigest()
+    (tmp_path / "replay_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "run_id": run_id,
+                "contract_version": "sde.replay_manifest.v1",
+                "sources": [{"path": "traces.jsonl", "sha256": digest}],
+                "chain_root": digest,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "event_store").mkdir()
+    good_event = {
+        "event_id": "e1",
+        "aggregate_id": run_id,
+        "contract_version": "1.0",
+        "payload": {},
+        "occurred_at": "2026-01-01T00:00:00+00:00",
+    }
+    (tmp_path / "event_store" / "run_events.jsonl").write_text(
+        json.dumps(good_event) + "\n" + "not-json\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "kill_switch_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "latched": False,
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "last_event_id": "e1",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "summary.json").write_text(json.dumps({"run_class": "full"}), encoding="utf-8")
+    by_id = {h["id"]: h["passed"] for h in evaluate_event_lineage_hard_stops(tmp_path, [])}
+    assert by_id["HS17"] is False
+
+
+def test_hs17_fails_when_later_event_line_missing_required_field(tmp_path: Path) -> None:
+    run_id = "r-hs17-missing-field"
+    traces = tmp_path / "traces.jsonl"
+    traces.write_text("{}\n", encoding="utf-8")
+    digest = __import__("hashlib").sha256(traces.read_bytes()).hexdigest()
+    (tmp_path / "replay_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "run_id": run_id,
+                "contract_version": "sde.replay_manifest.v1",
+                "sources": [{"path": "traces.jsonl", "sha256": digest}],
+                "chain_root": digest,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "event_store").mkdir()
+    good_event = {
+        "event_id": "e1",
+        "aggregate_id": run_id,
+        "contract_version": "1.0",
+        "payload": {},
+        "occurred_at": "2026-01-01T00:00:00+00:00",
+    }
+    bad_event = {
+        "event_id": "e2",
+        "aggregate_id": run_id,
+        "contract_version": "1.0",
+        "payload": {},
+    }
+    (tmp_path / "event_store" / "run_events.jsonl").write_text(
+        json.dumps(good_event) + "\n" + json.dumps(bad_event) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "kill_switch_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "latched": False,
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "last_event_id": "e2",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "summary.json").write_text(json.dumps({"run_class": "full"}), encoding="utf-8")
+    by_id = {h["id"]: h["passed"] for h in evaluate_event_lineage_hard_stops(tmp_path, [])}
+    assert by_id["HS17"] is False
+
+
+def test_hs17_fails_when_duplicate_event_id_seen(tmp_path: Path) -> None:
+    run_id = "r-hs17-dup-id"
+    traces = tmp_path / "traces.jsonl"
+    traces.write_text("{}\n", encoding="utf-8")
+    digest = __import__("hashlib").sha256(traces.read_bytes()).hexdigest()
+    (tmp_path / "replay_manifest.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "run_id": run_id,
+                "contract_version": "sde.replay_manifest.v1",
+                "sources": [{"path": "traces.jsonl", "sha256": digest}],
+                "chain_root": digest,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "event_store").mkdir()
+    shared_id = "evt-duplicate"
+    ev1 = {
+        "event_id": shared_id,
+        "aggregate_id": run_id,
+        "contract_version": "1.0",
+        "payload": {},
+        "occurred_at": "2026-01-01T00:00:00+00:00",
+    }
+    ev2 = {
+        "event_id": shared_id,
+        "aggregate_id": run_id,
+        "contract_version": "1.0",
+        "payload": {},
+        "occurred_at": "2026-01-01T00:00:01+00:00",
+    }
+    (tmp_path / "event_store" / "run_events.jsonl").write_text(
+        json.dumps(ev1) + "\n" + json.dumps(ev2) + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "kill_switch_state.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "latched": False,
+                "updated_at": "2026-01-01T00:00:00+00:00",
+                "last_event_id": shared_id,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "summary.json").write_text(json.dumps({"run_class": "full"}), encoding="utf-8")
+    by_id = {h["id"]: h["passed"] for h in evaluate_event_lineage_hard_stops(tmp_path, [])}
+    assert by_id["HS17"] is False

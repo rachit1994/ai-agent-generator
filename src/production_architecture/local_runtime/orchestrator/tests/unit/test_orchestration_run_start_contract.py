@@ -51,6 +51,18 @@ def test_validate_orchestration_run_start_bad_type() -> None:
     assert "orchestration_run_start_type" in validate_orchestration_run_start_dict(body)
 
 
+def test_validate_orchestration_run_start_rejects_unknown_keys() -> None:
+    body = {
+        "run_id": "r-1",
+        "type": "run_start",
+        "mode": "baseline",
+        "provider": "ollama",
+        "model": "qwen3:14b",
+        "extra": True,
+    }
+    assert "orchestration_run_start_unknown_key:extra" in validate_orchestration_run_start_dict(body)
+
+
 def test_append_orchestration_run_start_writes_valid_line() -> None:
     with TemporaryDirectory() as td:
         path = Path(td) / "orchestration.jsonl"

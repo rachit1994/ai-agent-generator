@@ -18,6 +18,7 @@ _REVIEWED_AT_SKEW_MAX_SEC = 300
 _REVIEWER_IDENTITY_FILENAME = "reviewer_identity.json"
 _ALLOWED_ATTESTATION_TYPES = {"local_stub", "agent_signature", "service_token"}
 _LOCAL_STUB_ATTESTATION_TYPE = "local_stub"
+_LINEAGE_MANIFEST_FILENAME = "lineage_manifest.json"
 
 
 def _jsonl_has_object_rows(path: Path) -> bool:
@@ -217,6 +218,12 @@ def write_intake_lineage_manifest(
     require_revise_state: bool = True,
 ) -> dict[str, Any]:
     """Write ``intake/lineage_manifest.json`` for Stage 1 artifact hash lineage."""
+    if not isinstance(require_revise_state, bool):
+        return {
+            "ok": False,
+            "error": "require_revise_state_not_bool",
+            "session_dir": str(session_dir),
+        }
     session_dir = session_dir.resolve()
     if not session_dir.is_dir():
         return {"ok": False, "error": "session_dir_not_a_directory", "session_dir": str(session_dir)}
@@ -240,7 +247,7 @@ def write_intake_lineage_manifest(
         "require_revise_state": require_revise_state,
         "artifacts": hashes,
     }
-    path = intake_dir / "lineage_manifest.json"
+    path = intake_dir / _LINEAGE_MANIFEST_FILENAME
     path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     return {"ok": True, "manifest_path": str(path), "artifact_count": len(hashes), "session_dir": str(session_dir)}
 
@@ -252,7 +259,7 @@ def lineage_manifest_session_event_snapshot(session_dir: Path) -> dict[str, Any]
     schema metadata, artifact count, and the manifest file's own sha256 so audit
     trails can correlate session events with the hashed intake snapshot.
     """
-    path = session_dir / "intake" / "lineage_manifest.json"
+    path = session_dir / "intake" / _LINEAGE_MANIFEST_FILENAME
     if not path.is_file():
         return {"intake_lineage_manifest_present": False}
     try:
@@ -281,7 +288,7 @@ def lineage_manifest_session_event_snapshot(session_dir: Path) -> dict[str, Any]
 def _lineage_manifest_errors(session_dir: Path, *, require_revise_state: bool) -> list[str]:
     intake_dir = session_dir / "intake"
     try:
-        man = read_json_dict(intake_dir / "lineage_manifest.json")
+        man = read_json_dict(intake_dir / _LINEAGE_MANIFEST_FILENAME)
     except (OSError, ValueError, TypeError):
         return ["lineage_manifest_missing_or_unreadable"]
     artifacts = man.get("artifacts")
@@ -309,6 +316,20 @@ def evaluate_project_plan_lock_readiness(
     allow_local_stub_attestation: bool = True,
 ) -> dict[str, Any]:
     """Evaluate whether Stage 1 intake + plan metadata are ready for lock."""
+    if not isinstance(require_revise_state, bool):
+        return {
+            "ok": False,
+            "ready": False,
+            "error": "require_revise_state_not_bool",
+            "session_dir": str(session_dir),
+        }
+    if not isinstance(allow_local_stub_attestation, bool):
+        return {
+            "ok": False,
+            "ready": False,
+            "error": "allow_local_stub_attestation_not_bool",
+            "session_dir": str(session_dir),
+        }
     session_dir = session_dir.resolve()
     if not session_dir.is_dir():
         return {
@@ -423,6 +444,18 @@ def write_project_plan_lock(
     allow_local_stub_attestation: bool = True,
 ) -> dict[str, Any]:
     """Write ``project_plan_lock.json`` with the readiness verdict; lock when ready."""
+    if not isinstance(require_revise_state, bool):
+        return {
+            "ok": False,
+            "error": "require_revise_state_not_bool",
+            "session_dir": str(session_dir),
+        }
+    if not isinstance(allow_local_stub_attestation, bool):
+        return {
+            "ok": False,
+            "error": "allow_local_stub_attestation_not_bool",
+            "session_dir": str(session_dir),
+        }
     lineage = write_intake_lineage_manifest(
         session_dir,
         require_revise_state=require_revise_state,

@@ -13,6 +13,8 @@ _SUMMARY_MODES: Final = frozenset({"baseline", "guarded_pipeline", "both"})
 
 def _errs_aggregate_summary_common(b: dict[str, Any]) -> list[str]:
     errs: list[str] = []
+    if b.get("schema") != BENCHMARK_AGGREGATE_SUMMARY_CONTRACT:
+        errs.append("benchmark_aggregate_summary_schema")
     rid = b.get("runId", b.get("run_id"))
     if not isinstance(rid, str) or not rid.strip():
         errs.append("benchmark_aggregate_summary_run_id")
@@ -33,7 +35,7 @@ def _errs_aggregate_summary_failed(b: dict[str, Any]) -> list[str]:
         return errs
     if not isinstance(err.get("type"), str) or not str(err.get("type")).strip():
         errs.append("benchmark_aggregate_summary_error_type")
-    if not isinstance(err.get("message"), str):
+    if not isinstance(err.get("message"), str) or not str(err.get("message")).strip():
         errs.append("benchmark_aggregate_summary_error_message_type")
     return errs
 
@@ -59,6 +61,9 @@ def validate_benchmark_aggregate_summary_dict(body: Any) -> list[str]:
     if errs:
         return errs
     rs = b.get("runStatus", b.get("run_status"))
+    if rs is not None and rs != "failed":
+        errs.append("benchmark_aggregate_summary_run_status_value")
+        return errs
     if rs == "failed":
         errs.extend(_errs_aggregate_summary_failed(b))
     else:

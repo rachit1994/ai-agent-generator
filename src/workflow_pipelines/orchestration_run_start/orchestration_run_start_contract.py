@@ -7,6 +7,7 @@ from typing import Any, Final
 ORCHESTRATION_RUN_START_CONTRACT: Final = "sde.orchestration_run_start.v1"
 
 _ALLOWED_MODES: Final = frozenset({"baseline", "guarded_pipeline", "phased_pipeline"})
+_ALLOWED_KEYS: Final = frozenset({"run_id", "type", "mode", "provider", "model"})
 
 
 def _errs_run_id(body: dict[str, Any]) -> list[str]:
@@ -50,4 +51,7 @@ def validate_orchestration_run_start_dict(body: Any) -> list[str]:
     errs.extend(_errs_type(b))
     errs.extend(_errs_mode(b))
     errs.extend(_errs_provider_model(b))
+    for key in b:
+        if key not in _ALLOWED_KEYS:
+            errs.append(f"orchestration_run_start_unknown_key:{key}")
     return errs

@@ -61,6 +61,38 @@ def test_validate_benchmark_checkpoint_blank_completed_id() -> None:
     assert "benchmark_checkpoint_completed_task_id:1" in validate_benchmark_checkpoint_dict(body)
 
 
+def test_validate_benchmark_checkpoint_rejects_duplicate_completed_ids() -> None:
+    body = {
+        "schema": BENCHMARK_CHECKPOINT_CONTRACT,
+        "run_id": "r",
+        "suite_path": "/s",
+        "mode": "baseline",
+        "max_tasks": None,
+        "continue_on_error": False,
+        "completed_task_ids": ["a", "a"],
+        "finished": False,
+        "updated_at_ms": 1,
+    }
+    assert "benchmark_checkpoint_completed_task_ids_duplicate" in validate_benchmark_checkpoint_dict(body)
+
+
+def test_validate_benchmark_checkpoint_rejects_bool_for_numeric_fields() -> None:
+    body = {
+        "schema": BENCHMARK_CHECKPOINT_CONTRACT,
+        "run_id": "r",
+        "suite_path": "/s",
+        "mode": "both",
+        "max_tasks": True,
+        "continue_on_error": False,
+        "completed_task_ids": [],
+        "finished": False,
+        "updated_at_ms": False,
+    }
+    errs = validate_benchmark_checkpoint_dict(body)
+    assert "benchmark_checkpoint_max_tasks" in errs
+    assert "benchmark_checkpoint_updated_at_ms" in errs
+
+
 def test_validate_benchmark_checkpoint_path_ok(tmp_path: Path) -> None:
     p = tmp_path / "benchmark-checkpoint.json"
     p.write_text(
@@ -79,3 +111,13 @@ def test_validate_benchmark_checkpoint_path_ok(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert validate_benchmark_checkpoint_path(p) == []
+
+
+def test_validate_benchmark_checkpoint_path_missing_bad_and_non_object(tmp_path: Path) -> None:
+    assert validate_benchmark_checkpoint_path(tmp_path / "missing.json") == ["benchmark_checkpoint_file_missing"]
+    bad = tmp_path / "bad.json"
+    bad.write_text("{", encoding="utf-8")
+    assert validate_benchmark_checkpoint_path(bad) == ["benchmark_checkpoint_json"]
+    non_obj = tmp_path / "arr.json"
+    non_obj.write_text("[]", encoding="utf-8")
+    assert validate_benchmark_checkpoint_path(non_obj) == ["benchmark_checkpoint_not_object"]

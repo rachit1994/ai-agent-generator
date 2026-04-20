@@ -64,11 +64,13 @@ def resolve_lease_ttl_sec(plan: dict[str, Any], override: int | None) -> int:
     ``override`` from CLI: ``None`` → plan or ``DEFAULT_LEASE_TTL_SEC``; ``0`` → disable pruning.
     """
     if override is not None:
+        if isinstance(override, bool):
+            return DEFAULT_LEASE_TTL_SEC
         return max(0, int(override))
     ws = plan.get("workspace")
     if isinstance(ws, dict):
         v = ws.get("lease_ttl_sec")
-        if isinstance(v, int) and v > 0:
+        if isinstance(v, int) and not isinstance(v, bool) and v > 0:
             return v
     return DEFAULT_LEASE_TTL_SEC
 

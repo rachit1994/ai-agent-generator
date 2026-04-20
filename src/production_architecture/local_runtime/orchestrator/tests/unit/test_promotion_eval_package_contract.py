@@ -46,6 +46,63 @@ def test_validate_promotion_package_dict_empty_signals() -> None:
     assert "promotion_package_evaluator_signals" in validate_promotion_package_dict(body)
 
 
+def test_validate_promotion_package_dict_schema_version_value() -> None:
+    body = {
+        "schema_version": "2.0",
+        "aggregate_id": "run-1",
+        "current_stage": "junior",
+        "proposed_stage": "junior",
+        "independent_evaluator_signal_ids": ["eval-1"],
+        "evidence_window": ["run-1"],
+    }
+    assert "promotion_package_schema_version_value" in validate_promotion_package_dict(body)
+
+
+def test_validate_promotion_package_dict_unknown_key() -> None:
+    body = {
+        "schema_version": "1.0",
+        "aggregate_id": "run-1",
+        "current_stage": "junior",
+        "proposed_stage": "junior",
+        "independent_evaluator_signal_ids": ["eval-1"],
+        "evidence_window": ["run-1"],
+        "extra_key": "x",
+    }
+    assert "promotion_package_unknown_key_extra_key" in validate_promotion_package_dict(body)
+
+
+def test_validate_promotion_package_dict_requires_aggregate_in_evidence_window() -> None:
+    body = {
+        "schema_version": "1.0",
+        "aggregate_id": "run-1",
+        "current_stage": "junior",
+        "proposed_stage": "junior",
+        "independent_evaluator_signal_ids": ["eval-1"],
+        "evidence_window": ["run-2"],
+    }
+    assert "promotion_package_evidence_window_missing_aggregate" in validate_promotion_package_dict(body)
+
+
+def test_validate_promotion_package_dict_rejects_duplicate_lists() -> None:
+    body = {
+        "schema_version": "1.0",
+        "aggregate_id": "run-1",
+        "current_stage": "junior",
+        "proposed_stage": "junior",
+        "independent_evaluator_signal_ids": ["eval-1", "eval-1"],
+        "evidence_window": ["run-1", "run-1"],
+    }
+    errs = validate_promotion_package_dict(body)
+    assert "promotion_package_evaluator_signals_duplicate" in errs
+    assert "promotion_package_evidence_window_duplicate" in errs
+
+
+def test_validate_promotion_package_path_non_object_json(tmp_path: Path) -> None:
+    p = tmp_path / "x.json"
+    p.write_text("[]", encoding="utf-8")
+    assert validate_promotion_package_path(p) == ["promotion_package_not_object"]
+
+
 def test_validate_promotion_package_path_missing(tmp_path: Path) -> None:
     assert validate_promotion_package_path(tmp_path / "missing.json") == ["promotion_package_file_missing"]
 

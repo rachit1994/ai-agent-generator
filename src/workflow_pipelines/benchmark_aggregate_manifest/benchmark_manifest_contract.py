@@ -9,6 +9,9 @@ from typing import Any, Final
 BENCHMARK_MANIFEST_CONTRACT: Final = "sde.benchmark_manifest.v1"
 
 _BENCHMARK_MODES: Final = frozenset({"baseline", "guarded_pipeline", "both"})
+_ALLOWED_KEYS: Final = frozenset(
+    {"schema", "run_id", "suite_path", "mode", "tasks", "max_tasks", "continue_on_error"}
+)
 
 
 def _errs_benchmark_core(b: dict[str, Any]) -> list[str]:
@@ -31,6 +34,7 @@ def _errs_benchmark_tasks_list(tasks: Any) -> list[str]:
     if not isinstance(tasks, list):
         return ["benchmark_manifest_tasks"]
     errs: list[str] = []
+    ids: list[str] = []
     for idx, row in enumerate(tasks):
         if not isinstance(row, dict):
             errs.append(f"benchmark_manifest_task_not_object:{idx}")
@@ -38,9 +42,13 @@ def _errs_benchmark_tasks_list(tasks: Any) -> list[str]:
         tid = row.get("taskId", row.get("task_id"))
         if not isinstance(tid, str) or not tid.strip():
             errs.append(f"benchmark_manifest_task_id:{idx}")
+        else:
+            ids.append(tid.strip())
         pr = row.get("prompt")
-        if not isinstance(pr, str):
+        if not isinstance(pr, str) or not pr.strip():
             errs.append(f"benchmark_manifest_task_prompt:{idx}")
+    if len(set(ids)) != len(ids):
+        errs.append("benchmark_manifest_task_id_duplicate")
     return errs
 
 
@@ -64,6 +72,9 @@ def validate_benchmark_manifest_dict(body: Any) -> list[str]:
     errs.extend(_errs_benchmark_core(b))
     errs.extend(_errs_benchmark_tasks_list(b.get("tasks")))
     errs.extend(_errs_benchmark_tail(b))
+    for key in b:
+        if key not in _ALLOWED_KEYS:
+            errs.append(f"benchmark_manifest_unknown_key:{key}")
     return errs
 
 

@@ -27,6 +27,12 @@ def test_path_scope_pattern_allowed_overlap() -> None:
     assert path_scope_pattern_allowed("../src/**", prefs) is False
 
 
+def test_path_scope_pattern_allowed_rejects_broader_scope_than_allowed_prefix() -> None:
+    prefs = ["src/production_architecture/local_runtime/orchestrator/"]
+    assert path_scope_pattern_allowed("src/production_architecture/local_runtime/orchestrator/api/**", prefs) is True
+    assert path_scope_pattern_allowed("src/**", prefs) is False
+
+
 def test_validate_project_plan_workspace_path_violation() -> None:
     plan = {
         "schema_version": "1.0",

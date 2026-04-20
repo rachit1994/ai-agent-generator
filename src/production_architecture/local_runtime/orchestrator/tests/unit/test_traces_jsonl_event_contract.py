@@ -64,6 +64,23 @@ def test_validate_traces_jsonl_event_errors_item_not_str() -> None:
     assert "traces_jsonl_event_errors_item:0" in validate_traces_jsonl_event_dict(body)
 
 
+def test_validate_traces_jsonl_event_rejects_bool_numeric_fields() -> None:
+    body = dict(_valid_trace_dict())
+    body["latency_ms"] = True
+    body["token_input"] = False
+    body["token_output"] = True
+    body["estimated_cost_usd"] = False
+    body["retry_count"] = True
+    body["score"] = {"passed": True, "reliability": True, "validity": False}
+    errs = validate_traces_jsonl_event_dict(body)
+    assert "traces_jsonl_event_latency_ms" in errs
+    assert "traces_jsonl_event_token_input" in errs
+    assert "traces_jsonl_event_token_output" in errs
+    assert "traces_jsonl_event_estimated_cost_usd" in errs
+    assert "traces_jsonl_event_retry_count" in errs
+    assert "traces_jsonl_event_score_metrics" in errs
+
+
 def test_persist_traces_raises_on_invalid_event() -> None:
     bad = {"run_id": ""}
     log = logging.getLogger("test_traces_jsonl_event_contract")

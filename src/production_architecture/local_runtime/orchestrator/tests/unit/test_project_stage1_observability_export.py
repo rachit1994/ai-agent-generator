@@ -71,6 +71,19 @@ def test_stage1_observability_export_schema_errors_detect_invalid(tmp_path: Path
     )
 
 
+def test_stage1_observability_export_schema_errors_reject_unknown_key(tmp_path: Path) -> None:
+    body = {
+        "schema_version": STAGE1_OBSERVABILITY_EXPORT_SCHEMA_VERSION,
+        "kind": STAGE1_OBSERVABILITY_EXPORT_KIND,
+        "captured_at": "2035-01-01T00:00:00+00:00",
+        "session_dir": str(tmp_path),
+        "revise_metrics": {},
+        "status_at_a_glance": {},
+        "extra": True,
+    }
+    assert "unknown_key:extra" in stage1_observability_export_schema_errors(body)
+
+
 def test_write_project_stage1_observability_export_roundtrip(tmp_path: Path) -> None:
     sess = tmp_path / "s"
     sess.mkdir()
@@ -124,3 +137,30 @@ def test_cli_export_stage1_observability_main_writes_file(tmp_path: Path, monkey
     assert ei.value.code == 0
     body = json.loads(out_file.read_text(encoding="utf-8"))
     assert stage1_observability_export_schema_errors(body) == []
+
+
+def test_build_stage1_observability_export_rejects_invalid_numeric_knobs(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    (sess / "project_plan.json").write_text("{}", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="max_concurrent_agents must be an int >= 1"):
+        build_project_stage1_observability_export(
+            sess,
+            repo_root=tmp_path,
+            max_concurrent_agents=True,  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(ValueError, match="max_status_json_bytes must be an int >= 1"):
+        build_project_stage1_observability_export(
+            sess,
+            repo_root=tmp_path,
+            max_status_json_bytes=0,
+        )
+
+    with pytest.raises(ValueError, match="max_status_listed_step_ids must be an int >= 1"):
+        build_project_stage1_observability_export(
+            sess,
+            repo_root=tmp_path,
+            max_status_listed_step_ids=-1,
+        )

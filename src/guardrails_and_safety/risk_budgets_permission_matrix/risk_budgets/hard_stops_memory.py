@@ -14,15 +14,21 @@ def _provenance_ids_in_event_store(output_dir: Path) -> set[str]:
     path = output_dir / "event_store" / "run_events.jsonl"
     if not path.is_file():
         return set()
-    line = path.read_text(encoding="utf-8").splitlines()
-    if not line or not line[0].strip():
-        return set()
-    try:
-        env = json.loads(line[0])
-    except json.JSONDecodeError:
-        return set()
-    eid = env.get("event_id")
-    return {str(eid)} if eid else set()
+    ids: set[str] = set()
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        try:
+            env = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(env, dict):
+            continue
+        eid = env.get("event_id")
+        if isinstance(eid, str) and eid.strip():
+            ids.add(eid)
+    return ids
 
 
 def _hs21_retrieval_provenance(output_dir: Path) -> bool:
@@ -72,7 +78,25 @@ def _hs23_skill_surface(output_dir: Path) -> bool:
         body = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
-    return body.get("schema_version") == "1.0" and isinstance(body.get("nodes"), list)
+    if body.get("schema_version") != "1.0":
+        return False
+    nodes = body.get("nodes")
+    if not isinstance(nodes, list):
+        return False
+    seen_skill_ids: set[str] = set()
+    for node in nodes:
+        if not isinstance(node, dict):
+            return False
+        skill_id = node.get("skill_id", node.get("skillId"))
+        if not isinstance(skill_id, str) or not skill_id.strip():
+            return False
+        if skill_id in seen_skill_ids:
+            return False
+        seen_skill_ids.add(skill_id)
+        score = node.get("score")
+        if not isinstance(score, (int, float)) or isinstance(score, bool):
+            return False
+    return True
 
 
 def _hs24_quality_metrics(output_dir: Path) -> bool:

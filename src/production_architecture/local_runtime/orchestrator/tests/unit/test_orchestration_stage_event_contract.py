@@ -65,6 +65,39 @@ def test_validate_stage_event_line_bad_latency() -> None:
     assert "orchestration_stage_event_latency_ms" in validate_orchestration_stage_event_line_dict(body)
 
 
+def test_validate_stage_event_line_rejects_bool_numeric_fields() -> None:
+    body = {
+        "run_id": "r",
+        "type": "stage_event",
+        "stage": "x",
+        "retry_count": True,
+        "errors": [],
+        "attempt": False,
+        "started_at": "a",
+        "ended_at": "b",
+        "latency_ms": True,
+    }
+    errs = validate_orchestration_stage_event_line_dict(body)
+    assert "orchestration_stage_event_retry_count" in errs
+    assert "orchestration_stage_event_attempt" in errs
+    assert "orchestration_stage_event_latency_ms" in errs
+
+
+def test_validate_stage_event_line_rejects_unknown_keys() -> None:
+    body = {
+        "run_id": "r",
+        "type": "stage_event",
+        "stage": "x",
+        "retry_count": 0,
+        "errors": [],
+        "started_at": "a",
+        "ended_at": "b",
+        "latency_ms": 0,
+        "extra": 1,
+    }
+    assert "orchestration_stage_event_unknown_key:extra" in validate_orchestration_stage_event_line_dict(body)
+
+
 def test_append_orchestration_stage_events_writes_lines() -> None:
     trace = {
         "stage": "finalize",

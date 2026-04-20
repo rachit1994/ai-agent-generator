@@ -10,10 +10,11 @@ _ALLOWED_KEYS: Final = frozenset({"run_id", "type", "artifacts", "output_refusal
 
 
 def _errs_run_end_unknown_keys(body: dict[str, Any]) -> list[str]:
-    extra = set(body.keys()) - _ALLOWED_KEYS
-    if extra:
-        return ["orchestration_run_end_unknown_keys"]
-    return []
+    errs: list[str] = []
+    for key in body:
+        if key not in _ALLOWED_KEYS:
+            errs.append(f"orchestration_run_end_unknown_key:{key}")
+    return errs
 
 
 def _errs_run_end_run_id_type(body: dict[str, Any]) -> list[str]:
@@ -48,6 +49,17 @@ def _errs_run_end_optional_refs(body: dict[str, Any]) -> list[str]:
     ch = body.get("checks")
     if ch is not None and not isinstance(ch, list):
         errs.append("orchestration_run_end_checks")
+    elif isinstance(ch, list):
+        for idx, item in enumerate(ch):
+            if not isinstance(item, dict):
+                errs.append(f"orchestration_run_end_checks_item:{idx}")
+                continue
+            name = item.get("name")
+            if not isinstance(name, str) or not name.strip():
+                errs.append(f"orchestration_run_end_checks_name:{idx}")
+            passed = item.get("passed")
+            if not isinstance(passed, bool):
+                errs.append(f"orchestration_run_end_checks_passed:{idx}")
     return errs
 
 

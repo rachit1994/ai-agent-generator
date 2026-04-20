@@ -221,11 +221,31 @@ def test_validate_progress_bad() -> None:
 def test_validate_progress_intake_loaded_last_must_be_bool() -> None:
     body = {
         "schema_version": "1.0",
+        "session_id": "s",
         "completed_step_ids": [],
         "pending_step_ids": [],
         "intake_loaded_last": "yes",
     }
     assert validate_progress(body) == ["progress_intake_loaded_last_bad"]
+
+
+def test_validate_progress_rejects_bad_optional_identity_fields() -> None:
+    body = {
+        "schema_version": "1.0",
+        "session_id": "   ",
+        "completed_step_ids": [],
+        "pending_step_ids": [],
+        "failed_step_id": "",
+        "blocked_reason": "   ",
+        "last_run_id": "",
+        "last_output_dir": "",
+    }
+    errs = validate_progress(body)
+    assert "progress_session_id_bad" in errs
+    assert "progress_failed_step_id_bad" in errs
+    assert "progress_blocked_reason_bad" in errs
+    assert "progress_last_run_id_bad" in errs
+    assert "progress_last_output_dir_bad" in errs
 
 
 def test_cli_project_run_parse() -> None:
@@ -319,6 +339,44 @@ def test_validate_project_plan_workspace_lease_ttl_bad() -> None:
         ],
     }
     assert "project_plan_workspace_lease_ttl_sec_bad" in validate_project_plan(plan)
+
+
+def test_validate_project_plan_rejects_blank_verification_command() -> None:
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+                "verification": {"commands": [{"cmd": "   ", "args": []}]},
+            },
+        ],
+    }
+    errs = validate_project_plan(plan)
+    assert "project_plan_verification_cmd_bad:a:0" in errs
+
+
+def test_validate_project_plan_rejects_non_string_verification_args() -> None:
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+                "verification": {"commands": [{"cmd": "pytest", "args": ["-q", 1]}]},
+            },
+        ],
+    }
+    errs = validate_project_plan(plan)
+    assert "project_plan_verification_args_bad:a:0" in errs
 
 
 def test_cli_parallel_worktrees_flags() -> None:

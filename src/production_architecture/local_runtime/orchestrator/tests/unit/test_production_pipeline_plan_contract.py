@@ -37,6 +37,55 @@ def test_validate_harness_project_plan_dict_empty_steps() -> None:
     assert "harness_project_plan_steps" in validate_harness_project_plan_dict(body)
 
 
+def test_validate_harness_project_plan_dict_requires_plan_version_value() -> None:
+    body = {
+        "plan_version": "2.0",
+        "steps": [{"step_id": "step_planner", "depends_on": [], "phase": "planning"}],
+    }
+    assert "harness_project_plan_plan_version_value" in validate_harness_project_plan_dict(body)
+
+
+def test_validate_harness_project_plan_dict_accepts_aliases() -> None:
+    body = {
+        "planVersion": "1.0",
+        "steps": [{"stepId": "step_planner", "dependsOn": [], "phase": "planning"}],
+    }
+    assert validate_harness_project_plan_dict(body) == []
+
+
+def test_validate_harness_project_plan_dict_rejects_invalid_phase_and_depends_on() -> None:
+    body = {
+        "plan_version": "1.0",
+        "steps": [{"step_id": "step_planner", "depends_on": [""], "phase": "plan"}],
+    }
+    errs = validate_harness_project_plan_dict(body)
+    assert "harness_project_plan_depends_on:0" in errs
+
+
+def test_validate_harness_project_plan_dict_rejects_duplicate_step_id() -> None:
+    body = {
+        "plan_version": "1.0",
+        "steps": [
+            {"step_id": "step_planner", "depends_on": [], "phase": "planning"},
+            {"step_id": "step_planner", "depends_on": [], "phase": "implementation"},
+        ],
+    }
+    assert "harness_project_plan_step_id_duplicate" in validate_harness_project_plan_dict(body)
+
+
+def test_validate_harness_project_plan_dict_rejects_unknown_and_self_dependency() -> None:
+    body = {
+        "plan_version": "1.0",
+        "steps": [
+            {"step_id": "step_planner", "depends_on": ["step_planner"], "phase": "planning"},
+            {"step_id": "step_implement", "depends_on": ["missing"], "phase": "implementation"},
+        ],
+    }
+    errs = validate_harness_project_plan_dict(body)
+    assert "harness_project_plan_depends_on_self:0" in errs
+    assert "harness_project_plan_depends_on_unknown:1" in errs
+
+
 def test_validate_harness_project_plan_path_missing(tmp_path: Path) -> None:
     assert validate_harness_project_plan_path(tmp_path / "x.json") == ["harness_project_plan_file_missing"]
 

@@ -60,6 +60,19 @@ def test_validate_replay_manifest_wrong_contract() -> None:
     assert "replay_manifest_contract_version" in validate_replay_manifest_dict(body)
 
 
+def test_validate_replay_manifest_rejects_non_sha_hashes() -> None:
+    body = {
+        "schema_version": "1.0",
+        "run_id": "r1",
+        "contract_version": REPLAY_MANIFEST_CONTRACT,
+        "sources": [{"path": "traces.jsonl", "sha256": "bad"}],
+        "chain_root": "not-a-sha",
+    }
+    errs = validate_replay_manifest_dict(body)
+    assert "replay_manifest_source_sha256:0" in errs
+    assert "replay_manifest_chain_root" in errs
+
+
 def test_validate_replay_manifest_bad_passed_type_when_present() -> None:
     body = {
         "schema_version": "1.0",
@@ -117,6 +130,19 @@ def test_validate_failure_summary_not_failed() -> None:
         "model": "m",
     }
     assert "failure_summary_run_status" in validate_failure_summary_dict(body)
+
+
+def test_validate_failure_summary_rejects_blank_message() -> None:
+    body = {
+        "runId": "r1",
+        "mode": "baseline",
+        "runStatus": "failed",
+        "partial": False,
+        "error": {"type": "RuntimeError", "message": " "},
+        "provider": "p",
+        "model": "m",
+    }
+    assert "failure_summary_error_message_type" in validate_failure_summary_dict(body)
 
 
 def test_validate_failure_summary_path_ok(tmp_path: Path) -> None:

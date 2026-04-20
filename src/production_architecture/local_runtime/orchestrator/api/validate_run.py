@@ -8,6 +8,15 @@ from typing import Any
 
 from core_components.orchestrator.common.utils import outputs_base
 from guardrails_and_safety import validate_execution_run_directory
+from workflow_pipelines.benchmark_aggregate_summary.benchmark_aggregate_summary_contract import (
+    validate_benchmark_aggregate_summary_path,
+)
+from workflow_pipelines.benchmark_aggregate_manifest.benchmark_manifest_contract import (
+    validate_benchmark_manifest_path,
+)
+from workflow_pipelines.benchmark_checkpoint.benchmark_checkpoint_contract import (
+    validate_benchmark_checkpoint_path,
+)
 
 _BENCHMARK_MANIFEST = "benchmark-manifest.json"
 _BENCHMARK_CHECKPOINT = "benchmark-checkpoint.json"
@@ -45,45 +54,45 @@ def _json_errors(path: Path, *, missing: str, bad_json: str) -> tuple[list[str],
 
 
 def _benchmark_manifest_errors(output_dir: Path) -> list[str]:
-    errs, manifest = _json_errors(
-        output_dir / _BENCHMARK_MANIFEST,
-        missing="missing_benchmark_manifest_json",
-        bad_json="benchmark_manifest_invalid_json",
-    )
-    if errs:
-        return errs
+    errs = validate_benchmark_manifest_path(output_dir / _BENCHMARK_MANIFEST)
     out: list[str] = []
-    if manifest.get("schema") != "sde.benchmark_manifest.v1":
-        out.append("benchmark_manifest_unexpected_schema")
-    if not manifest.get("run_id"):
-        out.append("benchmark_manifest_missing_run_id")
+    for err in errs:
+        if err == "benchmark_manifest_file_missing":
+            out.append("missing_benchmark_manifest_json")
+            continue
+        if err == "benchmark_manifest_json":
+            out.append("benchmark_manifest_invalid_json")
+            continue
+        out.append(f"benchmark_manifest_contract:{err}")
     return out
 
 
 def _benchmark_checkpoint_errors(output_dir: Path) -> list[str]:
-    errs, ck = _json_errors(
-        output_dir / _BENCHMARK_CHECKPOINT,
-        missing="missing_benchmark_checkpoint_json",
-        bad_json="benchmark_checkpoint_invalid_json",
-    )
-    if errs:
-        return errs
-    if not ck.get("finished"):
-        return ["benchmark_checkpoint_not_finished"]
-    return []
+    errs = validate_benchmark_checkpoint_path(output_dir / _BENCHMARK_CHECKPOINT)
+    out: list[str] = []
+    for err in errs:
+        if err == "benchmark_checkpoint_file_missing":
+            out.append("missing_benchmark_checkpoint_json")
+            continue
+        if err == "benchmark_checkpoint_json":
+            out.append("benchmark_checkpoint_invalid_json")
+            continue
+        out.append(f"benchmark_checkpoint_contract:{err}")
+    return out
 
 
 def _benchmark_summary_errors(output_dir: Path) -> list[str]:
-    errs, summary = _json_errors(
-        output_dir / "summary.json",
-        missing="missing_summary_json",
-        bad_json="summary_invalid_json",
-    )
-    if errs:
-        return errs
-    if "verdict" not in summary:
-        return ["summary_missing_verdict"]
-    return []
+    errs = validate_benchmark_aggregate_summary_path(output_dir / "summary.json")
+    out: list[str] = []
+    for err in errs:
+        if err == "benchmark_aggregate_summary_file_missing":
+            out.append("missing_summary_json")
+            continue
+        if err == "benchmark_aggregate_summary_json":
+            out.append("summary_invalid_json")
+            continue
+        out.append(f"benchmark_summary_contract:{err}")
+    return out
 
 
 def _validate_benchmark_aggregate(output_dir: Path) -> dict[str, Any]:

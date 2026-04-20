@@ -7,12 +7,15 @@ from pathlib import Path
 from typing import Any, Final
 
 ONLINE_EVAL_SHADOW_CONTRACT: Final = "sde.online_eval_shadow.v1"
+ONLINE_EVAL_SHADOW_SCHEMA_VERSION: Final = "1.0"
 
 
 def _errs_schema_version(body: dict[str, Any]) -> list[str]:
     sv = body.get("schema_version", body.get("schemaVersion"))
     if not isinstance(sv, str) or not sv.strip():
         return ["online_eval_shadow_schema_version"]
+    if sv != ONLINE_EVAL_SHADOW_SCHEMA_VERSION:
+        return ["online_eval_shadow_schema_version_value"]
     return []
 
 
@@ -20,6 +23,13 @@ def _errs_shadow_metrics(body: dict[str, Any]) -> list[str]:
     sm = body.get("shadow_metrics", body.get("shadowMetrics"))
     if not isinstance(sm, dict):
         return ["online_eval_shadow_metrics"]
+    if "latency_p95_ms" not in sm:
+        return ["online_eval_shadow_metrics_latency_p95_missing"]
+    latency = sm.get("latency_p95_ms")
+    if isinstance(latency, bool) or not isinstance(latency, (int, float)):
+        return ["online_eval_shadow_metrics_latency_p95_type"]
+    if latency < 0:
+        return ["online_eval_shadow_metrics_latency_p95_range"]
     return []
 
 

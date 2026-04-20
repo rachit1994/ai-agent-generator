@@ -11,10 +11,11 @@ _ALLOWED_MODES: Final = frozenset({"baseline", "guarded_pipeline", "phased_pipel
 
 
 def _errs_run_error_unknown_keys(body: dict[str, Any]) -> list[str]:
-    extra = set(body.keys()) - _ALLOWED_KEYS
-    if extra:
-        return ["orchestration_run_error_unknown_keys"]
-    return []
+    errs: list[str] = []
+    for key in body:
+        if key not in _ALLOWED_KEYS:
+            errs.append(f"orchestration_run_error_unknown_key:{key}")
+    return errs
 
 
 def _errs_run_error_run_id(body: dict[str, Any]) -> list[str]:
@@ -43,7 +44,7 @@ def _errs_run_error_message_fields(body: dict[str, Any]) -> list[str]:
     if not isinstance(et, str) or not et.strip():
         errs.append("orchestration_run_error_error_type")
     em = body.get("error_message")
-    if not isinstance(em, str):
+    if not isinstance(em, str) or not em.strip():
         errs.append("orchestration_run_error_error_message")
     det = body.get("detail")
     if det is not None and (not isinstance(det, str) or not det.strip()):

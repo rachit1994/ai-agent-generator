@@ -31,7 +31,7 @@ def _errs_checkpoint_max_tasks(b: dict[str, Any]) -> list[str]:
     if "max_tasks" not in b:
         return []
     mt = b.get("max_tasks")
-    if mt is not None and (not isinstance(mt, int) or mt < 0):
+    if mt is not None and (not isinstance(mt, int) or isinstance(mt, bool) or mt < 0):
         return ["benchmark_checkpoint_max_tasks"]
     return []
 
@@ -44,13 +44,19 @@ def _errs_checkpoint_ids_and_flags(b: dict[str, Any]) -> list[str]:
     if not isinstance(cids, list):
         errs.append("benchmark_checkpoint_completed_task_ids")
     else:
+        seen: set[str] = set()
         for idx, item in enumerate(cids):
             if not isinstance(item, str) or not item.strip():
                 errs.append(f"benchmark_checkpoint_completed_task_id:{idx}")
+                continue
+            normalized = item.strip()
+            if normalized in seen:
+                errs.append("benchmark_checkpoint_completed_task_ids_duplicate")
+            seen.add(normalized)
     if "finished" not in b or not isinstance(b.get("finished"), bool):
         errs.append("benchmark_checkpoint_finished_type")
     ts = b.get("updated_at_ms")
-    if not isinstance(ts, int) or ts < 0:
+    if not isinstance(ts, int) or isinstance(ts, bool) or ts < 0:
         errs.append("benchmark_checkpoint_updated_at_ms")
     return errs
 

@@ -9,6 +9,9 @@ from typing import Any, Final
 RUN_MANIFEST_CONTRACT: Final = "sde.run_manifest.v1"
 
 _ALLOWED_MODES: Final = frozenset({"baseline", "guarded_pipeline", "phased_pipeline"})
+_ALLOWED_KEYS: Final = frozenset(
+    {"schema", "run_id", "mode", "task", "project_step_id", "project_session_dir"}
+)
 
 
 def validate_run_manifest_dict(body: Any) -> list[str]:
@@ -37,6 +40,13 @@ def validate_run_manifest_dict(body: Any) -> list[str]:
         pd = b.get("project_session_dir")
         if not isinstance(pd, str) or not pd.strip():
             errs.append("run_manifest_project_session_dir")
+    has_step = "project_step_id" in b
+    has_session = "project_session_dir" in b
+    if has_step != has_session:
+        errs.append("run_manifest_project_linkage")
+    for key in b:
+        if key not in _ALLOWED_KEYS:
+            errs.append(f"run_manifest_unknown_key:{key}")
     return errs
 
 

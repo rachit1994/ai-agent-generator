@@ -42,9 +42,55 @@ def test_validate_review_payload_rejects_invalid_severity() -> None:
     assert any(err.startswith("review_finding_invalid_severity:") for err in errors)
 
 
+def test_validate_review_payload_rejects_invalid_status() -> None:
+    review = _base_review()
+    review["status"] = "unknown"
+    errors = validate_review_payload(review)
+    assert "invalid_review_status" in errors
+
+
+def test_validate_review_payload_rejects_non_list_findings() -> None:
+    review = _base_review()
+    review["review_findings"] = {"severity": "warn"}
+    errors = validate_review_payload(review)
+    assert "review_findings_not_list" in errors
+
+
+def test_validate_review_payload_rejects_non_object_finding() -> None:
+    review = _base_review()
+    review["review_findings"] = ["bad"]
+    errors = validate_review_payload(review)
+    assert any(err.startswith("review_finding_not_object:") for err in errors)
+
+
+def test_validate_review_payload_rejects_missing_finding_key() -> None:
+    review = _base_review()
+    review["review_findings"] = [{"severity": "warn", "code": "x", "message": "m"}]
+    errors = validate_review_payload(review)
+    assert any(err.startswith("review_finding_missing_key:") for err in errors)
+
+
 def test_is_evaluator_pass_eligible_false_when_blocker_present() -> None:
     review = _base_review()
     review["review_findings"] = [{"severity": "blocker", "code": "x", "message": "m", "evidence_ref": "e"}]
+    assert is_evaluator_pass_eligible(review) is False
+
+
+def test_is_evaluator_pass_eligible_false_when_status_not_pass() -> None:
+    review = _base_review()
+    review["status"] = "completed_review_fail"
+    assert is_evaluator_pass_eligible(review) is False
+
+
+def test_is_evaluator_pass_eligible_false_when_findings_not_list() -> None:
+    review = _base_review()
+    review["review_findings"] = {"severity": "warn"}
+    assert is_evaluator_pass_eligible(review) is False
+
+
+def test_is_evaluator_pass_eligible_false_when_finding_is_not_object() -> None:
+    review = _base_review()
+    review["review_findings"] = ["bad"]
     assert is_evaluator_pass_eligible(review) is False
 
 
@@ -73,3 +119,17 @@ def test_validate_execution_run_directory_flags_review_pass_not_eligible(
 
     result = validate_execution_run_directory(out, mode="baseline")
     assert "review_pass_not_evaluator_eligible" in result["errors"]
+
+
+def test_validate_execution_run_directory_flags_malformed_review_json(tmp_path: Path) -> None:
+    out = tmp_path / "bad-review"
+    (out / "outputs").mkdir(parents=True)
+    (out / "outputs" / "a.txt").write_text("a", encoding="utf-8")
+    (out / "outputs" / "b.txt").write_text("b", encoding="utf-8")
+    (out / "summary.json").write_text(json.dumps({"runStatus": "ok", "balanced_gates": {}}), encoding="utf-8")
+    (out / "token_context.json").write_text(json.dumps({"schema_version": "1.0"}), encoding="utf-8")
+    (out / "review.json").write_text("{", encoding="utf-8")
+    (out / "traces.jsonl").write_text("", encoding="utf-8")
+
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "invalid_json:review.json" in result["errors"]

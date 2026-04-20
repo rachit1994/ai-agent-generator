@@ -16,6 +16,29 @@ EXIT_VALIDATE_WORKSPACE = 1
 EXIT_VALIDATE_INVALID = 2
 
 
+def _progress_preflight_or_error(progress_path: Path) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if not progress_path.is_file():
+        return None, None
+    try:
+        progress_body = read_json_dict(progress_path)
+    except (OSError, ValueError, TypeError) as exc:
+        return None, {
+            "exit_code": EXIT_VALIDATE_INVALID,
+            "ok": False,
+            "error": "progress_read_failed",
+            "detail": str(exc),
+        }
+    prog_errs = validate_progress(progress_body)
+    if prog_errs:
+        return None, {
+            "exit_code": EXIT_VALIDATE_INVALID,
+            "ok": False,
+            "error": "invalid_progress_json",
+            "details": prog_errs,
+        }
+    return progress_body, None
+
+
 def validate_project_session(
     session_dir: Path,
     *,
@@ -97,16 +120,10 @@ def validate_project_session(
             return out
 
     progress_path = progress_file.resolve() if progress_file is not None else session_dir / "progress.json"
-    progress_warnings: list[str] = []
-    progress_body: dict[str, Any] | None = None
-    if progress_path.is_file():
-        try:
-            progress_body = read_json_dict(progress_path)
-            prog_errs = validate_progress(progress_body)
-            if prog_errs:
-                progress_warnings.append(f"progress_nonconforming:{prog_errs}")
-        except (OSError, ValueError, TypeError) as exc:
-            progress_warnings.append(f"progress_read_failed:{exc}")
+    progress_body, progress_error = _progress_preflight_or_error(progress_path)
+    if progress_error is not None:
+        out.update(progress_error)
+        return out
 
     out["exit_code"] = EXIT_VALIDATE_OK
     out["ok"] = True
@@ -128,6 +145,4 @@ def validate_project_session(
         "merge_anchor_present": intake_merge_anchor_present(session_dir),
         "progress_intake_loaded_last": ill,
     }
-    if progress_warnings:
-        out["progress_warnings"] = progress_warnings
     return out

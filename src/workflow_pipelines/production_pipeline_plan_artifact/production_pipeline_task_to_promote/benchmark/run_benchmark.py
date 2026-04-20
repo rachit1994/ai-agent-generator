@@ -24,7 +24,10 @@ from workflow_pipelines.traces_jsonl.traces_jsonl_event_contract import (
     validate_traces_jsonl_event_dict,
 )
 
-from .benchmark_aggregate_summary_contract import validate_benchmark_aggregate_summary_dict
+from .benchmark_aggregate_summary_contract import (
+    BENCHMARK_AGGREGATE_SUMMARY_CONTRACT,
+    validate_benchmark_aggregate_summary_dict,
+)
 from .benchmark_checkpoint_contract import (
     BENCHMARK_CHECKPOINT_CONTRACT,
     validate_benchmark_checkpoint_dict,
@@ -325,6 +328,7 @@ def run_benchmark(
             _write_benchmark_summary(
                 out,
                 {
+                    "schema": BENCHMARK_AGGREGATE_SUMMARY_CONTRACT,
                     "runId": run_id,
                     "suitePath": suite_path,
                     "mode": mode,
@@ -355,6 +359,7 @@ def run_benchmark(
         summary["taskCount"] = len(full_tasks)
         summary["continueOnError"] = continue_on_error
         summary["resumed"] = bool(resume)
+        summary["schema"] = BENCHMARK_AGGREGATE_SUMMARY_CONTRACT
         verdict = summary["verdict"]
         write_json(out / "config-snapshot.json", config_snapshot())
         _write_benchmark_summary(out, summary)

@@ -8,6 +8,51 @@ from .project_lease import scopes_conflict
 from .project_plan import runnable_step_ids
 
 
+def _normalize_scopes(step_row: dict[str, Any]) -> tuple[list[str], bool]:
+    raw_scopes = step_row.get("path_scope")
+    if raw_scopes is None:
+        return [], False
+    if not isinstance(raw_scopes, list):
+        return [], True
+    out: list[str] = []
+    for item in raw_scopes:
+        if not isinstance(item, str):
+            return [], True
+        scope = item.strip()
+        if not scope:
+            return [], True
+        out.append(scope)
+    return out, False
+
+
+def _by_step_id(plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for row in plan.get("steps") or []:
+        if isinstance(row, dict) and isinstance(row.get("step_id"), str):
+            out[row["step_id"]] = row
+    return out
+
+
+def _conflicts_with_chosen(
+    *,
+    sid: str,
+    by_id: dict[str, dict[str, Any]],
+    chosen: list[str],
+) -> bool:
+    row = by_id.get(sid) or {}
+    scopes_str, malformed = _normalize_scopes(row)
+    if malformed and chosen:
+        return True
+    for prev in chosen:
+        prow = by_id.get(prev) or {}
+        prev_scopes, prev_malformed = _normalize_scopes(prow)
+        if malformed or prev_malformed:
+            return True
+        if scopes_conflict(scopes_str, prev_scopes):
+            return True
+    return False
+
+
 def select_steps_for_tick(
     plan: dict[str, Any],
     completed: set[str],
@@ -20,32 +65,16 @@ def select_steps_for_tick(
     When scopes overlap, only the first runnable step (plan order) is returned so the driver stays safe on one worktree.
     """
     ready = runnable_step_ids(plan, completed)
+    if not isinstance(max_concurrent_agents, int) or isinstance(max_concurrent_agents, bool):
+        return []
     if not ready or max_concurrent_agents < 1:
         return []
-    by_id: dict[str, dict[str, Any]] = {}
-    for row in plan.get("steps") or []:
-        if isinstance(row, dict) and isinstance(row.get("step_id"), str):
-            by_id[row["step_id"]] = row
+    by_id = _by_step_id(plan)
 
     chosen: list[str] = []
     for sid in ready:
         if len(chosen) >= max_concurrent_agents:
             break
-        row = by_id.get(sid) or {}
-        scopes = row.get("path_scope") or []
-        if not isinstance(scopes, list):
-            scopes = []
-        scopes_str = [str(s) for s in scopes if isinstance(s, str)]
-        conflict = False
-        for prev in chosen:
-            prow = by_id.get(prev) or {}
-            ps = prow.get("path_scope") or []
-            if not isinstance(ps, list):
-                ps = []
-            prev_scopes = [str(s) for s in ps if isinstance(s, str)]
-            if scopes_conflict(scopes_str, prev_scopes):
-                conflict = True
-                break
-        if not conflict:
+        if not _conflicts_with_chosen(sid=sid, by_id=by_id, chosen=chosen):
             chosen.append(sid)
     return chosen

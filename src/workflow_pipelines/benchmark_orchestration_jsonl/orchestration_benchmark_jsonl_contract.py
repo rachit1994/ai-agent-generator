@@ -6,6 +6,8 @@ from typing import Any, Final
 
 ORCHESTRATION_BENCHMARK_RESUME_CONTRACT: Final = "sde.orchestration_benchmark_resume.v1"
 ORCHESTRATION_BENCHMARK_ERROR_CONTRACT: Final = "sde.orchestration_benchmark_error.v1"
+_RESUME_ALLOWED_KEYS: Final = frozenset({"run_id", "type", "pending_task_count"})
+_ERROR_ALLOWED_KEYS: Final = frozenset({"run_id", "type", "error_type", "error_message"})
 
 
 def _errs_benchmark_resume_run_id(body: dict[str, Any]) -> list[str]:
@@ -23,7 +25,7 @@ def _errs_benchmark_resume_type(body: dict[str, Any]) -> list[str]:
 
 def _errs_benchmark_resume_pending(body: dict[str, Any]) -> list[str]:
     n = body.get("pending_task_count")
-    if not isinstance(n, int) or n < 0:
+    if not isinstance(n, int) or isinstance(n, bool) or n < 0:
         return ["orchestration_benchmark_resume_pending_task_count"]
     return []
 
@@ -37,6 +39,9 @@ def validate_orchestration_benchmark_resume_dict(body: Any) -> list[str]:
     errs.extend(_errs_benchmark_resume_run_id(b))
     errs.extend(_errs_benchmark_resume_type(b))
     errs.extend(_errs_benchmark_resume_pending(b))
+    for key in b:
+        if key not in _RESUME_ALLOWED_KEYS:
+            errs.append(f"orchestration_benchmark_resume_unknown_key:{key}")
     return errs
 
 
@@ -59,7 +64,7 @@ def _errs_benchmark_error_fields(body: dict[str, Any]) -> list[str]:
     if not isinstance(et, str) or not et.strip():
         errs.append("orchestration_benchmark_error_error_type")
     em = body.get("error_message")
-    if not isinstance(em, str):
+    if not isinstance(em, str) or not em.strip():
         errs.append("orchestration_benchmark_error_error_message")
     return errs
 
@@ -73,4 +78,7 @@ def validate_orchestration_benchmark_error_dict(body: Any) -> list[str]:
     errs.extend(_errs_benchmark_error_run_id(b))
     errs.extend(_errs_benchmark_error_type(b))
     errs.extend(_errs_benchmark_error_fields(b))
+    for key in b:
+        if key not in _ERROR_ALLOWED_KEYS:
+            errs.append(f"orchestration_benchmark_error_unknown_key:{key}")
     return errs

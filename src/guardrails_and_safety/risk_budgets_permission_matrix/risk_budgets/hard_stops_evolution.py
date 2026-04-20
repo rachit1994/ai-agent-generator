@@ -9,6 +9,7 @@ from typing import Any
 from .run_profile import is_coding_only
 
 _CLOSURE_KEYS = ("failure_class", "root_cause_evidence", "intervention_mapped", "post_fix_verified")
+_EXPECTED_GAP_DETECTION_REF = "learning/reflection_bundle.json"
 
 
 def _hs25_causal_closure(output_dir: Path) -> bool:
@@ -26,6 +27,10 @@ def _hs25_causal_closure(output_dir: Path) -> bool:
 
 
 def _hs26_promotion_signals(output_dir: Path) -> bool:
+    from workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.benchmark.promotion_eval_contract import (
+        validate_promotion_package_dict,
+    )
+
     path = output_dir / "lifecycle" / "promotion_package.json"
     if not path.is_file():
         return False
@@ -33,8 +38,7 @@ def _hs26_promotion_signals(output_dir: Path) -> bool:
         body = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
-    sigs = body.get("independent_evaluator_signal_ids")
-    return isinstance(sigs, list) and len(sigs) > 0
+    return validate_promotion_package_dict(body) == []
 
 
 def _hs27_practice_gap(output_dir: Path) -> bool:
@@ -44,13 +48,26 @@ def _hs27_practice_gap(output_dir: Path) -> bool:
         return False
     try:
         body = json.loads(spec.read_text(encoding="utf-8"))
+        evaluation = json.loads(res.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
+    if not isinstance(body, dict) or not isinstance(evaluation, dict):
+        return False
     ref = body.get("gap_detection_ref")
-    return isinstance(ref, str) and len(ref) > 0
+    if not isinstance(ref, str) or len(ref) == 0:
+        return False
+    if ref.strip() != _EXPECTED_GAP_DETECTION_REF:
+        return False
+    if not (output_dir / _EXPECTED_GAP_DETECTION_REF).is_file():
+        return False
+    return isinstance(evaluation.get("passed"), bool)
 
 
 def _hs28_canary(output_dir: Path) -> bool:
+    from workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.benchmark.online_eval_shadow_contract import (
+        validate_canary_report_dict,
+    )
+
     path = output_dir / "learning" / "canary_report.json"
     if not path.is_file():
         return False
@@ -58,9 +75,7 @@ def _hs28_canary(output_dir: Path) -> bool:
         body = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
-    if not isinstance(body.get("shadow_metrics"), dict):
-        return False
-    return isinstance(body.get("promote"), bool)
+    return validate_canary_report_dict(body) == []
 
 
 def evaluate_evolution_hard_stops(output_dir: Path) -> list[dict[str, Any]]:

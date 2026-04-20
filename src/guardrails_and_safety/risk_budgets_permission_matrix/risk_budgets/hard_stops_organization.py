@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_util import parse_iso_utc
+from workflow_pipelines.strategy_overlay.strategy_overlay_contract import validate_strategy_proposal_dict
 
 from .run_profile import is_coding_only
 
@@ -27,13 +28,55 @@ def _active_lease_ids(output_dir: Path) -> set[str]:
     return out
 
 
+def _permission_matrix_valid(output_dir: Path) -> bool:
+    path = output_dir / "iam" / "permission_matrix.json"
+    if not path.is_file():
+        return False
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(body, dict):
+        return False
+    if body.get("schema_version") != "1.0":
+        return False
+    roles = body.get("roles")
+    if not isinstance(roles, list) or len(roles) == 0:
+        return False
+    for row in roles:
+        if not isinstance(row, dict):
+            return False
+        name = row.get("name")
+        if not isinstance(name, str) or not name.strip():
+            return False
+    return True
+
+
+def _action_audit_line_valid(row: dict[str, Any], active_lease_ids: set[str]) -> bool:
+    action = row.get("action")
+    if not isinstance(action, str) or not action.strip():
+        return False
+    actor_id = row.get("actor_id")
+    if not isinstance(actor_id, str) or not actor_id.strip():
+        return False
+    occurred_at = row.get("occurred_at")
+    if not isinstance(occurred_at, str) or parse_iso_utc(occurred_at) is None:
+        return False
+    lease_id = row.get("lease_id")
+    if not isinstance(lease_id, str) or not lease_id.strip():
+        return False
+    return lease_id in active_lease_ids
+
+
 def _hs29_lease_audit(output_dir: Path) -> bool:
     active = _active_lease_ids(output_dir)
     if not active:
         return False
+    if not _permission_matrix_valid(output_dir):
+        return False
     path = output_dir / "iam" / "action_audit.jsonl"
     if not path.is_file():
-        return True
+        return False
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line:
@@ -42,8 +85,7 @@ def _hs29_lease_audit(output_dir: Path) -> bool:
             row: dict[str, Any] = json.loads(line)
         except json.JSONDecodeError:
             return False
-        lid = row.get("lease_id")
-        if lid and lid not in active:
+        if not _action_audit_line_valid(row, active):
             return False
     return True
 
@@ -51,11 +93,12 @@ def _hs29_lease_audit(output_dir: Path) -> bool:
 def _high_risk_approval_line_ok(row: dict[str, Any], now: datetime) -> bool:
     if str(row.get("risk", "")).lower() != "high":
         return True
-    if not row.get("approval_token_id"):
+    token_id = row.get("approval_token_id")
+    if not isinstance(token_id, str) or not token_id.strip():
         return False
     raw_exp = row.get("approval_token_expires_at")
     if raw_exp is None or raw_exp == "":
-        return True
+        return False
     exp = parse_iso_utc(str(raw_exp))
     if exp is None:
         return False
@@ -63,9 +106,11 @@ def _high_risk_approval_line_ok(row: dict[str, Any], now: datetime) -> bool:
 
 
 def _hs30_high_risk_approval(output_dir: Path) -> bool:
+    if not _permission_matrix_valid(output_dir):
+        return False
     path = output_dir / "iam" / "action_audit.jsonl"
     if not path.is_file():
-        return True
+        return False
     now = datetime.now(timezone.utc)
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -101,9 +146,7 @@ def _hs32_strategy_self_approval(output_dir: Path) -> bool:
         body = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return False
-    if body.get("applied_autonomy") is True:
-        return bool(body.get("requires_promotion_package")) and bool(body.get("proposal_ref"))
-    return True
+    return validate_strategy_proposal_dict(body) == []
 
 
 def evaluate_organization_hard_stops(output_dir: Path) -> list[dict[str, Any]]:

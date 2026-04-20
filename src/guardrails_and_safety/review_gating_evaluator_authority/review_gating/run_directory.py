@@ -15,25 +15,40 @@ from guardrails_and_safety.review_gating_evaluator_authority.review_gating.revie
     validate_review_payload,
 )
 
+def _read_json_file(path: Path) -> tuple[dict[str, Any] | None, str | None]:
+    if not path.is_file():
+        return None, f"missing:{path.name}"
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None, f"invalid_json:{path.name}"
+    if not isinstance(body, dict):
+        return None, f"json_not_object:{path.name}"
+    return body, None
+
 
 def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str, Any]:
     """Quality gate for tests and CI: verify V1 artifact contract on a completed run directory."""
     errors: list[str] = []
-    if not (output_dir / "summary.json").is_file():
-        errors.append("missing_summary_json")
-    summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8")) if not errors else {}
+    summary, summary_error = _read_json_file(output_dir / "summary.json")
+    if summary_error:
+        errors.append("missing_summary_json" if summary_error == "missing:summary.json" else summary_error)
+        summary = {}
     if "balanced_gates" not in summary:
         errors.append("missing_balanced_gates")
     review: dict[str, Any] = {}
-    if not (output_dir / "review.json").is_file():
-        errors.append("missing_review_json")
+    review_body, review_error = _read_json_file(output_dir / "review.json")
+    if review_error:
+        errors.append("missing_review_json" if review_error == "missing:review.json" else review_error)
     else:
-        review = json.loads((output_dir / "review.json").read_text(encoding="utf-8"))
+        review = review_body or {}
         errors.extend(validate_review_payload(review))
         if review.get("status") == "completed_review_pass" and not is_evaluator_pass_eligible(review):
             errors.append("review_pass_not_evaluator_eligible")
-    if not (output_dir / "token_context.json").is_file():
-        errors.append("missing_token_context_json")
+    token_ctx_body, token_ctx_error = _read_json_file(output_dir / "token_context.json")
+    if token_ctx_error:
+        errors.append("missing_token_context_json" if token_ctx_error == "missing:token_context.json" else token_ctx_error)
+        token_ctx_body = {}
     if not (output_dir / "outputs").is_dir():
         errors.append("missing_outputs_dir")
     out_files = list((output_dir / "outputs").glob("*")) if (output_dir / "outputs").is_dir() else []
@@ -46,16 +61,28 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
     events: list[dict[str, Any]] = []
     traces = output_dir / "traces.jsonl"
     if traces.is_file():
-        events = [json.loads(line) for line in traces.read_text(encoding="utf-8").splitlines() if line.strip()]
-    token_path = output_dir / "token_context.json"
-    token_ctx = json.loads(token_path.read_text(encoding="utf-8")) if token_path.is_file() else {}
+        for idx, line in enumerate(traces.read_text(encoding="utf-8").splitlines()):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                errors.append(f"invalid_jsonl:traces.jsonl:{idx + 1}")
+                continue
+            if isinstance(row, dict):
+                events.append(row)
+            else:
+                errors.append(f"jsonl_not_object:traces.jsonl:{idx + 1}")
     hard = evaluate_hard_stops(
         output_dir,
         events,
-        token_ctx,
+        token_ctx_body or {},
         run_status=summary.get("runStatus", "ok"),
         mode=mode,
     )
+    failed_hard_stop_ids = [str(row.get("id")) for row in hard if not bool(row.get("passed"))]
+    for hs_id in failed_hard_stop_ids:
+        errors.append(f"hard_stop_failed:{hs_id}")
     ready = validation_ready(summary["balanced_gates"]) if summary.get("balanced_gates") else False
-    strict_ok = ready and not errors
+    strict_ok = ready and not errors and len(failed_hard_stop_ids) == 0
     return {"ok": strict_ok, "errors": errors, "hard_stops": hard, "validation_ready": ready}

@@ -13,6 +13,27 @@ from .project_status import describe_project_session
 STAGE1_OBSERVABILITY_EXPORT_SCHEMA_VERSION = "1.0"
 STAGE1_OBSERVABILITY_EXPORT_KIND = "project_stage1_observability"
 DEFAULT_RELATIVE_EXPORT_PATH = "intake/stage1_observability_export.json"
+_ALLOWED_TOP_LEVEL_KEYS = frozenset(
+    {
+        "schema_version",
+        "kind",
+        "captured_at",
+        "session_dir",
+        "revise_metrics",
+        "status_at_a_glance",
+    }
+)
+
+
+def _require_positive_int(name: str, value: int) -> None:
+    if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+        raise ValueError(f"{name} must be an int >= 1")
+
+
+def _require_optional_positive_int(name: str, value: int | None) -> None:
+    if value is None:
+        return
+    _require_positive_int(name, value)
 
 
 def build_project_stage1_observability_export(
@@ -27,6 +48,11 @@ def build_project_stage1_observability_export(
     max_status_listed_step_ids: int | None = None,
 ) -> dict[str, Any]:
     """Return a versioned dict suitable for JSON export (no disk writes)."""
+    _require_positive_int("max_concurrent_agents", max_concurrent_agents)
+    _require_optional_positive_int("max_status_json_bytes", max_status_json_bytes)
+    _require_optional_positive_int("max_status_jsonl_full_scan_bytes", max_status_jsonl_full_scan_bytes)
+    _require_optional_positive_int("max_status_jsonl_tail_bytes", max_status_jsonl_tail_bytes)
+    _require_optional_positive_int("max_status_listed_step_ids", max_status_listed_step_ids)
     root = session_dir.resolve()
     snap = describe_project_session(
         root,
@@ -55,6 +81,9 @@ def stage1_observability_export_schema_errors(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["root_not_object"]
     reasons: list[str] = []
+    for key in body:
+        if key not in _ALLOWED_TOP_LEVEL_KEYS:
+            reasons.append(f"unknown_key:{key}")
     if body.get("schema_version") != STAGE1_OBSERVABILITY_EXPORT_SCHEMA_VERSION:
         reasons.append("schema_version_invalid")
     if body.get("kind") != STAGE1_OBSERVABILITY_EXPORT_KIND:

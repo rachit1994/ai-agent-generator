@@ -71,16 +71,16 @@ def _errs_trace_timing_tokens(body: dict[str, Any]) -> list[str]:
     if not isinstance(ea, str) or not ea.strip():
         errs.append("traces_jsonl_event_ended_at")
     lat = body.get("latency_ms")
-    if not isinstance(lat, int) or lat < 0:
+    if not isinstance(lat, int) or isinstance(lat, bool) or lat < 0:
         errs.append("traces_jsonl_event_latency_ms")
     ti = body.get("token_input")
-    if not isinstance(ti, int) or ti < 0:
+    if not isinstance(ti, int) or isinstance(ti, bool) or ti < 0:
         errs.append("traces_jsonl_event_token_input")
     to = body.get("token_output")
-    if not isinstance(to, int) or to < 0:
+    if not isinstance(to, int) or isinstance(to, bool) or to < 0:
         errs.append("traces_jsonl_event_token_output")
     cost = body.get("estimated_cost_usd")
-    if not isinstance(cost, (int, float)) or cost < 0:
+    if not isinstance(cost, (int, float)) or isinstance(cost, bool) or cost < 0:
         errs.append("traces_jsonl_event_estimated_cost_usd")
     return errs
 
@@ -88,7 +88,7 @@ def _errs_trace_timing_tokens(body: dict[str, Any]) -> list[str]:
 def _errs_trace_retry_errors_score(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     rc = body.get("retry_count")
-    if not isinstance(rc, int) or rc < 0:
+    if not isinstance(rc, int) or isinstance(rc, bool) or rc < 0:
         errs.append("traces_jsonl_event_retry_count")
     er = body.get("errors")
     if not isinstance(er, list):
@@ -106,7 +106,12 @@ def _errs_trace_retry_errors_score(body: dict[str, Any]) -> list[str]:
             errs.append("traces_jsonl_event_score_passed")
         rel = sc.get("reliability")
         val = sc.get("validity")
-        if not isinstance(rel, (int, float)) or not isinstance(val, (int, float)):
+        if (
+            not isinstance(rel, (int, float))
+            or isinstance(rel, bool)
+            or not isinstance(val, (int, float))
+            or isinstance(val, bool)
+        ):
             errs.append("traces_jsonl_event_score_metrics")
     return errs
 

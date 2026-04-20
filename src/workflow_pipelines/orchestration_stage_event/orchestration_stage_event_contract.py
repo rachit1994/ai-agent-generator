@@ -5,6 +5,23 @@ from __future__ import annotations
 from typing import Any, Final
 
 ORCHESTRATION_STAGE_EVENT_CONTRACT: Final = "sde.orchestration_stage_event.v1"
+_ALLOWED_KEYS: Final = frozenset(
+    {
+        "run_id",
+        "type",
+        "stage",
+        "retry_count",
+        "errors",
+        "agent",
+        "model",
+        "model_error",
+        "attempt",
+        "raw_response_excerpt",
+        "started_at",
+        "ended_at",
+        "latency_ms",
+    }
+)
 
 
 def _errs_stage_event_run_id(body: dict[str, Any]) -> list[str]:
@@ -30,7 +47,7 @@ def _errs_stage_event_stage(body: dict[str, Any]) -> list[str]:
 def _errs_stage_event_retry_errors(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     rc = body.get("retry_count")
-    if not isinstance(rc, int) or rc < 0:
+    if not isinstance(rc, int) or isinstance(rc, bool) or rc < 0:
         errs.append("orchestration_stage_event_retry_count")
     er = body.get("errors")
     if er is None:
@@ -54,7 +71,7 @@ def _errs_stage_event_timing(body: dict[str, Any]) -> list[str]:
     if not isinstance(ea, str) or not ea.strip():
         errs.append("orchestration_stage_event_ended_at")
     lat = body.get("latency_ms")
-    if not isinstance(lat, int) or lat < 0:
+    if not isinstance(lat, int) or isinstance(lat, bool) or lat < 0:
         errs.append("orchestration_stage_event_latency_ms")
     return errs
 
@@ -62,7 +79,7 @@ def _errs_stage_event_timing(body: dict[str, Any]) -> list[str]:
 def _errs_stage_event_flat_metadata(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     att = body.get("attempt")
-    if att is not None and not isinstance(att, int):
+    if att is not None and (not isinstance(att, int) or isinstance(att, bool)):
         errs.append("orchestration_stage_event_attempt")
     me = body.get("model_error")
     if me is not None and not isinstance(me, str):
@@ -82,4 +99,7 @@ def validate_orchestration_stage_event_line_dict(body: Any) -> list[str]:
     errs.extend(_errs_stage_event_retry_errors(b))
     errs.extend(_errs_stage_event_timing(b))
     errs.extend(_errs_stage_event_flat_metadata(b))
+    for key in b:
+        if key not in _ALLOWED_KEYS:
+            errs.append(f"orchestration_stage_event_unknown_key:{key}")
     return errs

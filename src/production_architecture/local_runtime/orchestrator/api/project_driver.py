@@ -453,6 +453,10 @@ def run_project_session(
     """
     if max_steps < 1:
         raise ValueError("max_steps must be >= 1")
+    if not isinstance(max_concurrent_agents, int) or isinstance(max_concurrent_agents, bool):
+        raise ValueError("max_concurrent_agents must be an integer >= 1")
+    if max_concurrent_agents < 1:
+        raise ValueError("max_concurrent_agents must be an integer >= 1")
     ensure_dir(session_dir)
     plan_path = session_dir / "project_plan.json"
     progress_path = progress_file.resolve() if progress_file is not None else session_dir / "progress.json"

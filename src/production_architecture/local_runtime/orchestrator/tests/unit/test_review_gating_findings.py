@@ -77,6 +77,33 @@ def test_hs15_accepts_completed_review_pass_with_only_warn_findings(tmp_path: Pa
     assert _hs15_terminal_honesty(out, []) is True
 
 
+def test_hs15_rejects_completed_review_pass_when_dod_not_passed(tmp_path: Path) -> None:
+    out = tmp_path / "r2b"
+    out.mkdir()
+    body = {
+        "schema_version": "1.1",
+        "status": "completed_review_pass",
+        "definition_of_done": {"schema_version": "1.0", "checks": [], "all_required_passed": False},
+        "review_findings": [],
+    }
+    (out / "review.json").write_text(json.dumps(body), encoding="utf-8")
+    assert _hs15_terminal_honesty(out, []) is False
+
+
+def test_hs15_rejects_when_step_review_event_fails(tmp_path: Path) -> None:
+    out = tmp_path / "r2c"
+    out.mkdir()
+    body = {
+        "schema_version": "1.1",
+        "status": "completed_review_pass",
+        "definition_of_done": {"schema_version": "1.0", "checks": [], "all_required_passed": True},
+        "review_findings": [],
+    }
+    (out / "review.json").write_text(json.dumps(body), encoding="utf-8")
+    events = [{"metadata": {"step_review": "fail"}}]
+    assert _hs15_terminal_honesty(out, events) is False
+
+
 def test_build_review_always_includes_review_findings_list(tmp_path: Path) -> None:
     out = tmp_path / "r3"
     out.mkdir()

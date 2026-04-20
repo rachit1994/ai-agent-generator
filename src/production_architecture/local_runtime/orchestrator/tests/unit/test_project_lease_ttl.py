@@ -55,6 +55,11 @@ def test_resolve_lease_ttl_sec_override_and_plan() -> None:
     assert resolve_lease_ttl_sec({}, None) == DEFAULT_LEASE_TTL_SEC
 
 
+def test_resolve_lease_ttl_sec_rejects_bool_inputs() -> None:
+    assert resolve_lease_ttl_sec({"workspace": {"lease_ttl_sec": True}}, None) == DEFAULT_LEASE_TTL_SEC
+    assert resolve_lease_ttl_sec({"workspace": {"lease_ttl_sec": 120}}, True) == DEFAULT_LEASE_TTL_SEC
+
+
 def test_try_acquire_persisted_overlap_blocks(tmp_path: Path) -> None:
     sess = tmp_path / "s"
     sess.mkdir()

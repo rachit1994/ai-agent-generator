@@ -19,13 +19,17 @@ def append_session_event(
     payload: dict[str, Any] | None = None,
 ) -> None:
     """Append one JSON line to ``session_events.jsonl`` (best-effort; never raises)."""
+    if not isinstance(event, str) or not event.strip():
+        return
+    if payload is not None and not isinstance(payload, dict):
+        return
     try:
         ensure_dir(session_dir)
         path = session_dir / SESSION_EVENTS_FILENAME
         row: dict[str, Any] = {
             "schema_version": SESSION_EVENTS_SCHEMA_VERSION,
             "ts": iso_now(),
-            "event": event,
+            "event": event.strip(),
             "payload": payload or {},
         }
         with path.open("a", encoding="utf-8") as fh:

@@ -21,15 +21,26 @@ def _sha256_hex(value: object) -> bool:
 
 
 def _errors_for_atomic_rollback(body: dict[str, Any]) -> list[str]:
+    errors: list[str] = []
     if not (_sha256_hex(body.get("previous_policy_sha256")) and _sha256_hex(body.get("current_policy_sha256"))):
-        return ["policy_bundle_rollback_sha256_invalid"]
+        errors.append("policy_bundle_rollback_sha256_invalid")
+    prev_sha = body.get("previous_policy_sha256")
+    curr_sha = body.get("current_policy_sha256")
+    if _sha256_hex(prev_sha) and _sha256_hex(curr_sha) and str(prev_sha) == str(curr_sha):
+        errors.append("policy_bundle_rollback_sha256_must_change")
     paths = body.get("paths_touched")
     if not isinstance(paths, list) or len(paths) == 0:
-        return ["policy_bundle_rollback_paths_touched_required"]
+        errors.append("policy_bundle_rollback_paths_touched_required")
+        return errors
+    normalized: list[str] = []
     for p in paths:
         if not isinstance(p, str) or not p.strip():
-            return ["policy_bundle_rollback_paths_touched_invalid"]
-    return []
+            errors.append("policy_bundle_rollback_paths_touched_invalid")
+            continue
+        normalized.append(p.strip())
+    if len(set(normalized)) != len(normalized):
+        errors.append("policy_bundle_rollback_paths_touched_duplicates")
+    return errors
 
 
 def validate_policy_bundle_rollback(output_dir: Path) -> list[str]:
@@ -38,9 +49,12 @@ def validate_policy_bundle_rollback(output_dir: Path) -> list[str]:
     if not path.is_file():
         return []
     try:
-        body: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return ["policy_bundle_rollback_invalid_json"]
+    if not isinstance(payload, dict):
+        return ["policy_bundle_rollback_json_not_object"]
+    body: dict[str, Any] = payload
     if body.get("schema_version") != POLICY_ROLLBACK_SCHEMA:
         return ["policy_bundle_rollback_schema_version"]
     st = body.get("status")

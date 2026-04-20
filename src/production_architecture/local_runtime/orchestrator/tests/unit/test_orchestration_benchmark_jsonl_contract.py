@@ -28,9 +28,19 @@ def test_validate_benchmark_resume_bad_pending() -> None:
     assert "orchestration_benchmark_resume_pending_task_count" in validate_orchestration_benchmark_resume_dict(body)
 
 
+def test_validate_benchmark_resume_rejects_bool_pending() -> None:
+    body = {"run_id": "b", "type": "benchmark_resume", "pending_task_count": True}
+    assert "orchestration_benchmark_resume_pending_task_count" in validate_orchestration_benchmark_resume_dict(body)
+
+
 def test_validate_benchmark_resume_wrong_type() -> None:
     body = {"run_id": "b", "type": "benchmark_error", "pending_task_count": 0}
     assert "orchestration_benchmark_resume_type" in validate_orchestration_benchmark_resume_dict(body)
+
+
+def test_validate_benchmark_resume_rejects_unknown_keys() -> None:
+    body = {"run_id": "b", "type": "benchmark_resume", "pending_task_count": 0, "extra": 1}
+    assert "orchestration_benchmark_resume_unknown_key:extra" in validate_orchestration_benchmark_resume_dict(body)
 
 
 def test_validate_benchmark_error_ok() -> None:
@@ -43,14 +53,14 @@ def test_validate_benchmark_error_ok() -> None:
     assert validate_orchestration_benchmark_error_dict(body) == []
 
 
-def test_validate_benchmark_error_empty_message_ok() -> None:
+def test_validate_benchmark_error_empty_message_rejected() -> None:
     body = {
         "run_id": "b-1",
         "type": "benchmark_error",
         "error_type": "ValueError",
         "error_message": "",
     }
-    assert validate_orchestration_benchmark_error_dict(body) == []
+    assert "orchestration_benchmark_error_error_message" in validate_orchestration_benchmark_error_dict(body)
 
 
 def test_validate_benchmark_error_blank_error_type() -> None:
@@ -61,3 +71,14 @@ def test_validate_benchmark_error_blank_error_type() -> None:
         "error_message": "m",
     }
     assert "orchestration_benchmark_error_error_type" in validate_orchestration_benchmark_error_dict(body)
+
+
+def test_validate_benchmark_error_rejects_unknown_keys() -> None:
+    body = {
+        "run_id": "b-1",
+        "type": "benchmark_error",
+        "error_type": "RuntimeError",
+        "error_message": "x",
+        "extra": 1,
+    }
+    assert "orchestration_benchmark_error_unknown_key:extra" in validate_orchestration_benchmark_error_dict(body)

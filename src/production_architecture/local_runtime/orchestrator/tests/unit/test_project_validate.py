@@ -305,3 +305,62 @@ def test_validate_project_session_require_non_stub_reviewer_enforced(tmp_path: P
     assert out["error"] == "plan_lock_not_ready"
     details = out.get("details") or []
     assert "reviewer_identity_attestation_stub_disallowed" in details
+
+
+def test_validate_project_session_rejects_nonconforming_progress_json(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+            },
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    (sess / "progress.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "session_id": "   ",
+                "completed_step_ids": [],
+                "pending_step_ids": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    out = validate_project_session(sess, repo_root=tmp_path, check_workspace=False)
+    assert out["exit_code"] == EXIT_VALIDATE_INVALID
+    assert out["ok"] is False
+    assert out["error"] == "invalid_progress_json"
+    assert "progress_session_id_bad" in (out.get("details") or [])
+
+
+def test_validate_project_session_rejects_unreadable_progress_json(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    plan = {
+        "schema_version": "1.0",
+        "steps": [
+            {
+                "step_id": "a",
+                "phase": "p",
+                "title": "A",
+                "description": "d",
+                "depends_on": [],
+                "path_scope": [],
+            },
+        ],
+    }
+    (sess / "project_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+    (sess / "progress.json").write_text("{not-json", encoding="utf-8")
+    out = validate_project_session(sess, repo_root=tmp_path, check_workspace=False)
+    assert out["exit_code"] == EXIT_VALIDATE_INVALID
+    assert out["ok"] is False
+    assert out["error"] == "progress_read_failed"

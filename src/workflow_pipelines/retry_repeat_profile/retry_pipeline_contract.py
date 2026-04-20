@@ -9,6 +9,8 @@ RETRY_PIPELINE_REPEAT_CONTRACT: Final = "sde.retry_pipeline_repeat_profile.v1"
 
 def _errs_top_fields(body: dict[str, Any], *, repeat: int) -> list[str]:
     errs: list[str] = []
+    if body.get("schema") != RETRY_PIPELINE_REPEAT_CONTRACT:
+        errs.append("repeat_profile_schema")
     if body.get("repeat") != repeat:
         errs.append("repeat_profile_repeat_mismatch")
     if not isinstance(body.get("task"), str):
@@ -41,6 +43,12 @@ def _errs_one_run(row: Any, idx: int) -> list[str]:
         err = row.get("error")
         if not isinstance(err, dict):
             return [f"repeat_profile_error_shape:{idx}"]
+        et = err.get("type")
+        em = err.get("message")
+        if not isinstance(et, str) or not et.strip():
+            return [f"repeat_profile_error_type:{idx}"]
+        if not isinstance(em, str) or not em.strip():
+            return [f"repeat_profile_error_message:{idx}"]
     else:
         if not isinstance(row.get("output"), str):
             return [f"repeat_profile_output_type:{idx}"]
@@ -59,6 +67,21 @@ def _errs_runs(body: dict[str, Any], *, repeat: int) -> list[str]:
     return errs
 
 
+def _errs_consistency(body: dict[str, Any]) -> list[str]:
+    runs = body.get("runs")
+    if not isinstance(runs, list):
+        return []
+    errs: list[str] = []
+    has_error = any(isinstance(row, dict) and "error" in row for row in runs)
+    all_no_pipeline_error = body.get("all_runs_no_pipeline_error")
+    if isinstance(all_no_pipeline_error, bool) and all_no_pipeline_error != (not has_error):
+        errs.append("repeat_profile_all_runs_no_pipeline_error_value")
+    validation_ready_all = body.get("validation_ready_all")
+    if isinstance(validation_ready_all, bool) and has_error and validation_ready_all:
+        errs.append("repeat_profile_validation_ready_all_value")
+    return errs
+
+
 def validate_repeat_profile_result(body: Any, *, repeat: int) -> list[str]:
     """Return stable error tokens; empty when ``repeat < 2`` or body matches the V1 repeat envelope."""
     if repeat < 2:
@@ -69,4 +92,5 @@ def validate_repeat_profile_result(body: Any, *, repeat: int) -> list[str]:
     errs: list[str] = []
     errs.extend(_errs_top_fields(b, repeat=repeat))
     errs.extend(_errs_runs(b, repeat=repeat))
+    errs.extend(_errs_consistency(b))
     return errs

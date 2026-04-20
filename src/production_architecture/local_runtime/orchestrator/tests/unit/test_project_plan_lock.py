@@ -314,3 +314,40 @@ def test_lineage_manifest_session_event_snapshot_unreadable(tmp_path: Path) -> N
     snap = lineage_manifest_session_event_snapshot(sess)
     assert snap["intake_lineage_manifest_present"] is False
     assert snap.get("intake_lineage_manifest_unreadable") is True
+
+
+def test_write_intake_lineage_manifest_rejects_non_bool_flag(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    out = write_intake_lineage_manifest(sess, require_revise_state="yes")  # type: ignore[arg-type]
+    assert out["ok"] is False
+    assert out["error"] == "require_revise_state_not_bool"
+
+
+def test_evaluate_project_plan_lock_readiness_rejects_non_bool_flags(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    out = evaluate_project_plan_lock_readiness(sess, require_revise_state=1)  # type: ignore[arg-type]
+    assert out["ok"] is False
+    assert out["ready"] is False
+    assert out["error"] == "require_revise_state_not_bool"
+
+    out2 = evaluate_project_plan_lock_readiness(
+        sess,
+        allow_local_stub_attestation="false",  # type: ignore[arg-type]
+    )
+    assert out2["ok"] is False
+    assert out2["ready"] is False
+    assert out2["error"] == "allow_local_stub_attestation_not_bool"
+
+
+def test_write_project_plan_lock_rejects_non_bool_flags(tmp_path: Path) -> None:
+    sess = tmp_path / "s"
+    sess.mkdir()
+    out = write_project_plan_lock(sess, require_revise_state=0)  # type: ignore[arg-type]
+    assert out["ok"] is False
+    assert out["error"] == "require_revise_state_not_bool"
+
+    out2 = write_project_plan_lock(sess, allow_local_stub_attestation="no")  # type: ignore[arg-type]
+    assert out2["ok"] is False
+    assert out2["error"] == "allow_local_stub_attestation_not_bool"

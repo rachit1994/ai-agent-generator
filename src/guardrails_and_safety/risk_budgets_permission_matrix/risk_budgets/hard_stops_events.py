@@ -21,21 +21,51 @@ def _replay_manifest_path(output_dir: Path) -> Path:
     return output_dir / "replay_manifest.json"
 
 
+def _parse_event_line(line: str) -> dict[str, Any] | None:
+    try:
+        parsed = json.loads(line)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    return parsed
+
+
+def _validated_event_id(env: dict[str, Any], seen: set[str]) -> str | None:
+    ver = env.get("contract_version")
+    if ver not in SUPPORTED_EVENT_CONTRACTS:
+        return None
+    event_id = env.get("event_id")
+    aggregate_id = env.get("aggregate_id")
+    occurred_at = env.get("occurred_at")
+    if not isinstance(event_id, str) or not event_id.strip():
+        return None
+    if event_id in seen:
+        return None
+    if not isinstance(aggregate_id, str) or not aggregate_id.strip():
+        return None
+    if not isinstance(occurred_at, str) or not occurred_at.strip():
+        return None
+    return event_id
+
+
 def _hs17_event_contract(output_dir: Path) -> bool:
     path = _run_events_path(output_dir)
     if not path.is_file():
         return False
-    line = path.read_text(encoding="utf-8").splitlines()
-    if not line or not line[0].strip():
+    lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if not lines:
         return False
-    try:
-        env = json.loads(line[0])
-    except json.JSONDecodeError:
-        return False
-    ver = env.get("contract_version")
-    if ver not in SUPPORTED_EVENT_CONTRACTS:
-        return False
-    return bool(env.get("event_id") and env.get("aggregate_id") and env.get("occurred_at"))
+    seen_event_ids: set[str] = set()
+    for line in lines:
+        env = _parse_event_line(line)
+        if env is None:
+            return False
+        event_id = _validated_event_id(env, seen_event_ids)
+        if event_id is None:
+            return False
+        seen_event_ids.add(event_id)
+    return True
 
 
 def _hs18_replay_manifest(output_dir: Path) -> bool:

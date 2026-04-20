@@ -64,6 +64,46 @@ def test_validate_benchmark_manifest_missing_continue_on_error() -> None:
     assert "benchmark_manifest_continue_on_error" in validate_benchmark_manifest_dict(body)
 
 
+def test_validate_benchmark_manifest_rejects_blank_prompt() -> None:
+    body = {
+        "schema": BENCHMARK_MANIFEST_CONTRACT,
+        "run_id": "r",
+        "suite_path": "/s",
+        "mode": "baseline",
+        "tasks": [{"taskId": "t", "prompt": "   "}],
+        "continue_on_error": False,
+    }
+    assert "benchmark_manifest_task_prompt:0" in validate_benchmark_manifest_dict(body)
+
+
+def test_validate_benchmark_manifest_rejects_duplicate_task_ids() -> None:
+    body = {
+        "schema": BENCHMARK_MANIFEST_CONTRACT,
+        "run_id": "r",
+        "suite_path": "/s",
+        "mode": "both",
+        "tasks": [
+            {"taskId": "t1", "prompt": "a"},
+            {"taskId": "t1", "prompt": "b"},
+        ],
+        "continue_on_error": False,
+    }
+    assert "benchmark_manifest_task_id_duplicate" in validate_benchmark_manifest_dict(body)
+
+
+def test_validate_benchmark_manifest_rejects_unknown_keys() -> None:
+    body = {
+        "schema": BENCHMARK_MANIFEST_CONTRACT,
+        "run_id": "r",
+        "suite_path": "/s",
+        "mode": "both",
+        "tasks": [],
+        "continue_on_error": False,
+        "extra": True,
+    }
+    assert "benchmark_manifest_unknown_key:extra" in validate_benchmark_manifest_dict(body)
+
+
 def test_validate_benchmark_manifest_path_ok(tmp_path: Path) -> None:
     p = tmp_path / "benchmark-manifest.json"
     p.write_text(
@@ -81,3 +121,13 @@ def test_validate_benchmark_manifest_path_ok(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     assert validate_benchmark_manifest_path(p) == []
+
+
+def test_validate_benchmark_manifest_path_missing_bad_and_non_object(tmp_path: Path) -> None:
+    assert validate_benchmark_manifest_path(tmp_path / "missing.json") == ["benchmark_manifest_file_missing"]
+    bad = tmp_path / "bad.json"
+    bad.write_text("{", encoding="utf-8")
+    assert validate_benchmark_manifest_path(bad) == ["benchmark_manifest_json"]
+    non_obj = tmp_path / "arr.json"
+    non_obj.write_text("[]", encoding="utf-8")
+    assert validate_benchmark_manifest_path(non_obj) == ["benchmark_manifest_not_object"]
