@@ -11,15 +11,39 @@ from guardrails_and_safety import validate_execution_run_directory
 from workflow_pipelines.benchmark_aggregate_summary.benchmark_aggregate_summary_contract import (
     validate_benchmark_aggregate_summary_path,
 )
+from workflow_pipelines.benchmark_aggregate_summary import (
+    validate_benchmark_aggregate_summary_runtime_path,
+)
 from workflow_pipelines.benchmark_aggregate_manifest.benchmark_manifest_contract import (
     validate_benchmark_manifest_path,
+)
+from workflow_pipelines.benchmark_aggregate_manifest import (
+    validate_benchmark_aggregate_manifest_runtime_path,
 )
 from workflow_pipelines.benchmark_checkpoint.benchmark_checkpoint_contract import (
     validate_benchmark_checkpoint_path,
 )
+from workflow_pipelines.benchmark_checkpoint import (
+    validate_benchmark_checkpoint_runtime_path,
+)
+from workflow_pipelines.benchmark_orchestration_jsonl import (
+    validate_benchmark_orchestration_jsonl_runtime_path,
+)
+from workflow_pipelines.traces_jsonl import (
+    validate_traces_jsonl_event_row_runtime_path,
+)
+from evaluation_framework.offline_evaluation import (
+    validate_offline_evaluation_runtime_path,
+)
 
 _BENCHMARK_MANIFEST = "benchmark-manifest.json"
+_BENCHMARK_MANIFEST_RUNTIME = "benchmark-manifest-runtime.json"
 _BENCHMARK_CHECKPOINT = "benchmark-checkpoint.json"
+_BENCHMARK_CHECKPOINT_RUNTIME = "benchmark-checkpoint-runtime.json"
+_BENCHMARK_SUMMARY_RUNTIME = "benchmark-summary-runtime.json"
+_BENCHMARK_ORCHESTRATION_RUNTIME = "benchmark-orchestration-runtime.json"
+_TRACES_EVENT_ROW_RUNTIME = "traces-event-row-runtime.json"
+_OFFLINE_EVALUATION_RUNTIME = "offline-evaluation-runtime.json"
 
 
 def _resolve_mode_from_manifests(output_dir: Any) -> str:
@@ -81,6 +105,34 @@ def _benchmark_checkpoint_errors(output_dir: Path) -> list[str]:
     return out
 
 
+def _benchmark_checkpoint_runtime_errors(output_dir: Path) -> list[str]:
+    errs = validate_benchmark_checkpoint_runtime_path(output_dir / _BENCHMARK_CHECKPOINT_RUNTIME)
+    out: list[str] = []
+    for err in errs:
+        if err == "benchmark_checkpoint_runtime_file_missing":
+            out.append("missing_benchmark_checkpoint_runtime_json")
+            continue
+        if err == "benchmark_checkpoint_runtime_json":
+            out.append("benchmark_checkpoint_runtime_invalid_json")
+            continue
+        out.append(f"benchmark_checkpoint_runtime_contract:{err}")
+    return out
+
+
+def _benchmark_manifest_runtime_errors(output_dir: Path) -> list[str]:
+    errs = validate_benchmark_aggregate_manifest_runtime_path(output_dir / _BENCHMARK_MANIFEST_RUNTIME)
+    out: list[str] = []
+    for err in errs:
+        if err == "benchmark_aggregate_manifest_runtime_file_missing":
+            out.append("missing_benchmark_manifest_runtime_json")
+            continue
+        if err == "benchmark_aggregate_manifest_runtime_json":
+            out.append("benchmark_manifest_runtime_invalid_json")
+            continue
+        out.append(f"benchmark_manifest_runtime_contract:{err}")
+    return out
+
+
 def _benchmark_summary_errors(output_dir: Path) -> list[str]:
     errs = validate_benchmark_aggregate_summary_path(output_dir / "summary.json")
     out: list[str] = []
@@ -95,12 +147,74 @@ def _benchmark_summary_errors(output_dir: Path) -> list[str]:
     return out
 
 
+def _benchmark_summary_runtime_errors(output_dir: Path) -> list[str]:
+    errs = validate_benchmark_aggregate_summary_runtime_path(output_dir / _BENCHMARK_SUMMARY_RUNTIME)
+    out: list[str] = []
+    for err in errs:
+        if err == "benchmark_aggregate_summary_runtime_file_missing":
+            out.append("missing_benchmark_summary_runtime_json")
+            continue
+        if err == "benchmark_aggregate_summary_runtime_json":
+            out.append("benchmark_summary_runtime_invalid_json")
+            continue
+        out.append(f"benchmark_summary_runtime_contract:{err}")
+    return out
+
+
+def _benchmark_orchestration_runtime_errors(output_dir: Path) -> list[str]:
+    errs = validate_benchmark_orchestration_jsonl_runtime_path(output_dir / _BENCHMARK_ORCHESTRATION_RUNTIME)
+    out: list[str] = []
+    for err in errs:
+        if err == "benchmark_orchestration_jsonl_runtime_file_missing":
+            out.append("missing_benchmark_orchestration_runtime_json")
+            continue
+        if err == "benchmark_orchestration_jsonl_runtime_json":
+            out.append("benchmark_orchestration_runtime_invalid_json")
+            continue
+        out.append(f"benchmark_orchestration_runtime_contract:{err}")
+    return out
+
+
+def _traces_event_row_runtime_errors(output_dir: Path) -> list[str]:
+    errs = validate_traces_jsonl_event_row_runtime_path(output_dir / _TRACES_EVENT_ROW_RUNTIME)
+    out: list[str] = []
+    for err in errs:
+        if err == "traces_jsonl_event_row_runtime_file_missing":
+            out.append("missing_traces_event_row_runtime_json")
+            continue
+        if err == "traces_jsonl_event_row_runtime_json":
+            out.append("traces_event_row_runtime_invalid_json")
+            continue
+        out.append(f"traces_event_row_runtime_contract:{err}")
+    return out
+
+
+def _offline_evaluation_runtime_errors(output_dir: Path) -> list[str]:
+    errs = validate_offline_evaluation_runtime_path(output_dir / _OFFLINE_EVALUATION_RUNTIME)
+    out: list[str] = []
+    for err in errs:
+        if err == "offline_evaluation_runtime_file_missing":
+            out.append("missing_offline_evaluation_runtime_json")
+            continue
+        if err == "offline_evaluation_runtime_json":
+            out.append("offline_evaluation_runtime_invalid_json")
+            continue
+        out.append(f"offline_evaluation_runtime_contract:{err}")
+    return out
+
+
 def _validate_benchmark_aggregate(output_dir: Path) -> dict[str, Any]:
     """Light integrity check for a benchmark suite run (no single-task CTO ladder)."""
     errors = [
         *_benchmark_manifest_errors(output_dir),
+        *_benchmark_manifest_runtime_errors(output_dir),
         *_benchmark_checkpoint_errors(output_dir),
+        *_benchmark_checkpoint_runtime_errors(output_dir),
         *_benchmark_summary_errors(output_dir),
+        *_benchmark_summary_runtime_errors(output_dir),
+        *_benchmark_orchestration_runtime_errors(output_dir),
+        *_traces_event_row_runtime_errors(output_dir),
+        *_offline_evaluation_runtime_errors(output_dir),
     ]
     if not (output_dir / "traces.jsonl").is_file():
         errors.append("missing_traces_jsonl")

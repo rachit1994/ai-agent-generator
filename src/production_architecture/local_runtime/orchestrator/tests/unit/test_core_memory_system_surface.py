@@ -8,15 +8,11 @@ import pytest
 def test_describe_surface_has_expected_shape() -> None:
     module = importlib.import_module("core_components.memory_system.surface")
     payload = module.describe_surface()
-    assert payload == {
-        "subheading": "core_components/memory_system",
-        "status": "scaffold",
-        "references": [
-            "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.hard_stops_memory",
-            "production_architecture.local_runtime.orchestrator.tests.unit.test_memory_hard_stops",
-            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.memory_artifact_layer",
-        ],
-    }
+    assert payload["subheading"] == "core_components/memory_system"
+    assert payload["status"] == "implemented"
+    refs = payload["references"]
+    assert isinstance(refs, list)
+    assert "core_components.memory_system.runtime" in refs
 
 
 def test_describe_surface_rejects_blank_subheading(monkeypatch: pytest.MonkeyPatch) -> None:

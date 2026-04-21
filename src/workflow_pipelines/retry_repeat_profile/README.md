@@ -7,6 +7,9 @@ This folder groups code and artifacts for `retry_repeat_profile` within the repo
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
 - `retry_pipeline_contract.py` (file): Defines machine-checkable interface and schema expectations.
 - `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `program/retry_repeat_profile_runtime.json`.
+- `runtime.py`: Deterministic retry/repeat-profile runtime derivation.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

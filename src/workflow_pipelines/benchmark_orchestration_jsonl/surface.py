@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 SUBHEADING = "workflow_pipelines/benchmark_orchestration_jsonl"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_benchmark_jsonl_contract",
-    "workflow_pipelines.benchmark_orchestration_jsonl.orchestration_benchmark_jsonl_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_benchmark_aggregate_summary_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_benchmark_checkpoint_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_benchmark_harvest",
+    "workflow_pipelines.benchmark_orchestration_jsonl.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.benchmark.run_benchmark",
+    "production_architecture.local_runtime.orchestrator.tests.unit.test_benchmark_orchestration_jsonl_runtime_surface",
 ]
 
 def describe_surface() -> dict[str, object]:

@@ -1,17 +1,17 @@
-"""Surface scaffold for `production_architecture/orchestration`."""
+"""Surface metadata for production orchestration."""
 
 from __future__ import annotations
 
 SUBHEADING = "production_architecture/orchestration"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_benchmark_jsonl_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_end_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_error_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_start_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_stage_event_contract",
+    "production_architecture.orchestration.contracts",
+    "production_architecture.orchestration.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.production_orchestration_layer",
+    "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
 ]
+
 
 def describe_surface() -> dict[str, object]:
     return {

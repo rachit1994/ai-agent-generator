@@ -10,8 +10,13 @@ def test_describe_surface_has_expected_shape() -> None:
     payload = module.describe_surface()
     assert payload == {
         "subheading": "core_components/practice_engine",
-        "status": "scaffold",
-        "references": [],
+        "status": "implemented",
+        "references": [
+            "core_components.practice_engine.runtime",
+            "core_components.practice_engine.contracts",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.practice_engine_layer",
+            "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
+        ],
     }
 
 

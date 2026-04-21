@@ -10,10 +10,12 @@ def test_describe_surface_has_expected_shape() -> None:
     payload = module.describe_surface()
     assert payload == {
         "subheading": "core_components/objective_policy_engine",
-        "status": "scaffold",
+        "status": "implemented",
         "references": [
-            "guardrails_and_safety.rollback_rules_policy_bundle.policy_bundle_rollback",
-            "production_architecture.local_runtime.orchestrator.tests.unit.test_policy_bundle_rollback",
+            "core_components.objective_policy_engine.runtime",
+            "core_components.objective_policy_engine.contracts",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.objective_policy_engine_layer",
+            "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
         ],
     }
 

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 SUBHEADING = "core_components/memory_system"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.hard_stops_memory",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_memory_hard_stops",
-    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.memory_artifact_layer",
+    "core_components.memory_system.contracts",
+    "core_components.memory_system.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.memory_system_layer",
+    "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
 ]
 
 

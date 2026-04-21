@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 SUBHEADING = "core_components/observability"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.observability.project_stage1_observability_export",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_project_stage1_observability_export",
+    "core_components.observability.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.observability_component_layer",
+    "production_architecture.local_runtime.orchestrator.tests.unit.test_core_observability_surface",
 ]
 
 def describe_surface() -> dict[str, object]:

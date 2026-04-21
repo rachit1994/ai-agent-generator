@@ -6,174 +6,30 @@ import json
 from pathlib import Path
 from typing import Any
 
-from guardrails_and_safety.risk_budgets_permission_matrix.gates_constants.constants import (
-    REQUIRED_REVIEW_KEYS,
-    REVIEW_SCHEMA,
+from agent_organization.reviewer_evaluator_agents.evaluator import (
+    is_review_pass_evaluator_eligible,
+    validate_review_payload_contract,
 )
+from agent_organization.reviewer_evaluator_agents.findings import compose_review_findings
+from guardrails_and_safety.risk_budgets_permission_matrix.gates_constants.constants import REVIEW_SCHEMA
 from guardrails_and_safety.risk_budgets_permission_matrix.gates_manifest.manifest import manifest_entries, manifest_paths_for_review
 from guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.metrics_helpers import metrics_from_events, reliability_gate
 from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_util import iso_now
 
 _STATIC_GATES_REPORT = "static_gates_report.json"
-_REVIEW_FINDING_REQUIRED_KEYS = ("severity", "code", "message", "evidence_ref")
-_REVIEW_FINDING_SEVERITIES = frozenset({"blocker", "warn", "info"})
-_REVIEW_STATUSES = frozenset({"completed_review_pass", "completed_review_fail", "incomplete"})
-
-
-def _normalize_review_severity(raw: str | None) -> str:
-    s = (raw or "").lower()
-    if s in ("blocker", "error", "critical", "high"):
-        return "blocker"
-    if s in ("warn", "warning", "medium"):
-        return "warn"
-    return "info"
 
 
 def _review_findings_from_static_gates(output_dir: Path) -> list[dict[str, Any]]:
-    path = output_dir / _STATIC_GATES_REPORT
-    if not path.is_file():
-        return []
-    try:
-        body = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return [
-            {
-                "severity": "warn",
-                "code": "static_gates_unreadable",
-                "message": f"{_STATIC_GATES_REPORT} is not valid JSON",
-                "evidence_ref": _STATIC_GATES_REPORT,
-            }
-        ]
-    out: list[dict[str, Any]] = []
-    for b in body.get("blockers") or []:
-        if not isinstance(b, dict):
-            continue
-        bid = str(b.get("id") or "static_blocker")
-        detail = b.get("detail") or b.get("pattern") or ""
-        msg = f"{bid}:{detail}" if detail else bid
-        out.append(
-            {
-                "severity": _normalize_review_severity(str(b.get("severity"))),
-                "code": bid,
-                "message": msg[:2000],
-                "evidence_ref": _STATIC_GATES_REPORT,
-            }
-        )
-    for w in body.get("warnings") or []:
-        if not isinstance(w, dict):
-            continue
-        wid = str(w.get("id") or "static_warning")
-        detail = w.get("pattern") or w.get("detail") or ""
-        msg = f"{wid}:{detail}" if detail else wid
-        out.append(
-            {
-                "severity": "warn",
-                "code": wid,
-                "message": msg[:2000],
-                "evidence_ref": _STATIC_GATES_REPORT,
-            }
-        )
-    return out
-
-
-def _terminal_review_findings(status: str, reasons: list[str]) -> list[dict[str, Any]]:
-    if status == "completed_review_fail":
-        return [
-            {
-                "severity": "blocker",
-                "code": "verifier_or_checks_failed",
-                "message": "Verifier or structured checks did not pass (see traces / verifier_report).",
-                "evidence_ref": "traces.jsonl",
-            }
-        ]
-    if status == "incomplete":
-        return [
-            {
-                "severity": "warn",
-                "code": "run_incomplete",
-                "message": f"Run did not finish cleanly ({reasons[0] if reasons else 'unknown'}).",
-                "evidence_ref": "summary.json",
-            }
-        ]
-    if reasons == ["safety_refusal_terminal"]:
-        return [
-            {
-                "severity": "info",
-                "code": "safety_refusal_terminal",
-                "message": "Task refused as unsafe; terminal safety outcome.",
-                "evidence_ref": "review.json#refusal",
-            }
-        ]
-    return []
-
-
-def _review_findings_from_manifest(manifest: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    out: list[dict[str, Any]] = []
-    for row in manifest:
-        if not isinstance(row, dict) or row.get("present"):
-            continue
-        rel = str(row.get("path") or "unknown")
-        out.append(
-            {
-                "severity": "warn",
-                "code": "artifact_manifest_missing",
-                "message": f"missing:{rel}",
-                "evidence_ref": rel,
-            }
-        )
-    return out
+    """Compatibility shim for existing tests expecting this helper."""
+    return compose_review_findings(output_dir, [], "completed_review_pass", [])
 
 
 def is_evaluator_pass_eligible(review: dict[str, Any]) -> bool:
-    """Evaluator authority: only pass terminal reviews without blocker findings."""
-    if str(review.get("status") or "") != "completed_review_pass":
-        return False
-    findings = review.get("review_findings")
-    if not isinstance(findings, list):
-        return False
-    for item in findings:
-        if not isinstance(item, dict):
-            return False
-        if str(item.get("severity") or "").lower() == "blocker":
-            return False
-    return True
+    return is_review_pass_evaluator_eligible(review)
 
 
 def validate_review_payload(review: dict[str, Any]) -> list[str]:
-    """Validate review.json contract needed by review-gating evaluator authority."""
-    errors: list[str] = []
-    for key in REQUIRED_REVIEW_KEYS:
-        if key not in review:
-            errors.append(f"missing_review_key:{key}")
-    if review.get("schema_version") != REVIEW_SCHEMA:
-        errors.append("invalid_review_schema_version")
-    status = review.get("status")
-    if not isinstance(status, str) or status not in _REVIEW_STATUSES:
-        errors.append("invalid_review_status")
-    reasons = review.get("reasons")
-    if not isinstance(reasons, list) or any(not isinstance(item, str) for item in reasons):
-        errors.append("invalid_review_reasons")
-    required_fixes = review.get("required_fixes")
-    if not isinstance(required_fixes, list) or any(not isinstance(item, str) for item in required_fixes):
-        errors.append("invalid_required_fixes")
-    completed_at = review.get("completed_at")
-    if not isinstance(completed_at, str) or not completed_at.strip():
-        errors.append("invalid_completed_at")
-    findings = review.get("review_findings")
-    if not isinstance(findings, list):
-        errors.append("review_findings_not_list")
-        return errors
-    for idx, item in enumerate(findings):
-        if not isinstance(item, dict):
-            errors.append(f"review_finding_not_object:{idx}")
-            continue
-        for key in _REVIEW_FINDING_REQUIRED_KEYS:
-            if key not in item:
-                errors.append(f"review_finding_missing_key:{idx}:{key}")
-        sev = str(item.get("severity") or "").lower()
-        if sev not in _REVIEW_FINDING_SEVERITIES:
-            errors.append(f"review_finding_invalid_severity:{idx}:{sev}")
-    return errors
+    return validate_review_payload_contract(review)
 
 
 def build_review(
@@ -227,11 +83,7 @@ def build_review(
         fixes.append("restore_missing_artifacts")
     if status == "completed_review_fail":
         fixes.append("address_verifier_issues")
-    review_findings = (
-        _review_findings_from_static_gates(output_dir)
-        + _review_findings_from_manifest(manifest)
-        + _terminal_review_findings(status, reasons)
-    )
+    review_findings = compose_review_findings(output_dir, manifest, status, reasons)
     return {
         "schema_version": REVIEW_SCHEMA,
         "run_id": run_id,

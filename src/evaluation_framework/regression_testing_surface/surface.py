@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 SUBHEADING = "evaluation_framework/regression_testing_surface"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_regression_surface_contract",
+    "evaluation_framework.regression_testing_surface.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.regression_testing_surface_layer",
     "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.benchmark.regression_surface_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_public_export_surface",
 ]
 
 def describe_surface() -> dict[str, object]:

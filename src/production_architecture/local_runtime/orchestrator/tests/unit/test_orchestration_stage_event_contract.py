@@ -112,5 +112,5 @@ def test_append_orchestration_stage_events_writes_lines() -> None:
         path = Path(td) / "orchestration.jsonl"
         append_orchestration_stage_events(path, "run-z", [trace])
         text = path.read_text(encoding="utf-8").strip()
-        assert '"type": "stage_event"' in text
+        assert '"type":"stage_event"' in text
         assert "run-z" in text

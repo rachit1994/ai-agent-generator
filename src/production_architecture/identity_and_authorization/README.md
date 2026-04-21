@@ -4,8 +4,10 @@
 This folder groups code and artifacts for `identity_and_authorization` within the repository architecture.
 
 ## What is present
-- `__init__.py` (file): Implements a concrete part of this folder responsibility.
-- `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Strict contract for `iam/production_identity_authorization.json`.
+- `runtime.py`: Deterministic runtime derivation for production identity/authz status.
+- `surface.py`: Surface metadata consumed by orchestrator-level tests.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

@@ -10,13 +10,12 @@ def test_describe_surface_has_expected_shape() -> None:
     payload = module.describe_surface()
     assert payload == {
         "subheading": "core_components/career_strategy_layer",
-        "status": "scaffold",
+        "status": "implemented",
         "references": [
-            "production_architecture.local_runtime.orchestrator.tests.unit.test_guarded_completion_layer",
-            "production_architecture.local_runtime.orchestrator.tests.unit.test_strategy_overlay_contract",
-            "workflow_pipelines.strategy_overlay.strategy_overlay_contract",
-            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.completion_layer",
-            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.event_lineage_layer",
+            "core_components.career_strategy_layer.runtime",
+            "core_components.career_strategy_layer.contracts",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.career_strategy_layer",
+            "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
         ],
     }
 

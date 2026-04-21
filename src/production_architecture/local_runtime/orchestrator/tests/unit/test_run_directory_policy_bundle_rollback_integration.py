@@ -74,3 +74,23 @@ def test_run_directory_accepts_valid_atomic_policy_bundle(tmp_path: Path, monkey
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert not any(err.startswith("policy_bundle_rollback_") for err in result["errors"])
+
+
+def test_run_directory_surfaces_invalid_rollback_rules_policy_bundle_contract(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "program" / "rollback_rules_policy_bundle.json").write_text(
+        json.dumps({"schema": "bad"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "rollback_rules_policy_bundle_contract:rollback_rules_policy_bundle_schema" in result["errors"]

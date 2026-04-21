@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 SUBHEADING = "human_professional_evolution_model"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "human_professional_evolution_model.career_progression_model.surface",
-    "human_professional_evolution_model.deliberate_practice.surface",
-    "human_professional_evolution_model.feedback_loops.surface",
-    "human_professional_evolution_model.human_growth_loop.surface",
-    "human_professional_evolution_model.human_to_agent_behavior_mapping.surface",
-    "human_professional_evolution_model.institutional_memory.surface",
-    "human_professional_evolution_model.mentorship_operating_model.surface",
-    "human_professional_evolution_model.performance_review_cycle.surface",
+    "human_professional_evolution_model.runtime",
+    "human_professional_evolution_model.contracts",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.evolution_layer",
+    "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.hard_stops_evolution",
 ]
 
 

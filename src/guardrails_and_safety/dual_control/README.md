@@ -1,6 +1,19 @@
 # Folder: `src/guardrails_and_safety/dual_control`
 
 ## Why this folder exists
+This folder contains deterministic dual-control runtime evidence for guarded/phased runs.
+
+## What is present
+- `contracts.py`: Contract + validators for `program/dual_control_runtime.json`.
+- `runtime.py`: Deterministic derivation from `doc_review` and `dual_control_ack`.
+- `surface.py`: Orchestrator surface descriptor for this feature.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
+
+## Notes
+- Keep imports at top-level and avoid inline imports.
+# Folder: `src/guardrails_and_safety/dual_control`
+
+## Why this folder exists
 This folder groups code and artifacts for `dual_control` within the repository architecture.
 
 ## What is present

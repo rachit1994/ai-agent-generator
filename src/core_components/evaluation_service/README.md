@@ -6,6 +6,9 @@ This folder groups code and artifacts for `evaluation_service` within the reposi
 ## What is present
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
 - `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `evaluation/service_runtime.json`.
+- `runtime.py`: Deterministic evaluation-service runtime derivation.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

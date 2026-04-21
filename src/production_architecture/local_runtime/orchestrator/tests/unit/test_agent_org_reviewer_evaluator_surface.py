@@ -10,12 +10,14 @@ def test_describe_surface_has_expected_shape() -> None:
     payload = module.describe_surface()
     assert payload == {
         "subheading": "agent_organization/reviewer_evaluator_agents",
-        "status": "scaffold",
+        "status": "implemented",
         "references": [
-            "guardrails_and_safety.rollback_rules_policy_bundle.policy_bundle_rollback",
+            "agent_organization.reviewer_evaluator_agents.runtime",
+            "agent_organization.reviewer_evaluator_agents.evaluator",
+            "agent_organization.reviewer_evaluator_agents.findings",
             "guardrails_and_safety.review_gating_evaluator_authority.review_gating.review",
             "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
-            "guardrails_and_safety.review_gating_evaluator_authority.safeguards.safeguards",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.cto_publish",
         ],
     }
 

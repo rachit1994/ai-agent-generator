@@ -7,6 +7,9 @@ This folder groups code and artifacts for `orchestration_run_start` within the r
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
 - `orchestration_run_start_contract.py` (file): Defines machine-checkable interface and schema expectations.
 - `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `orchestration/run_start_runtime.json`.
+- `runtime.py`: Deterministic run-start runtime derivation.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

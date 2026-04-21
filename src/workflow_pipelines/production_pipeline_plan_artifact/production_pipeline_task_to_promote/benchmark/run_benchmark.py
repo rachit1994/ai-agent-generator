@@ -23,18 +23,42 @@ from core_components.orchestrator.common.utils import create_run_id, outputs_bas
 from workflow_pipelines.traces_jsonl.traces_jsonl_event_contract import (
     validate_traces_jsonl_event_dict,
 )
+from workflow_pipelines.traces_jsonl import (
+    build_traces_jsonl_event_row_runtime,
+    validate_traces_jsonl_event_row_runtime_dict,
+)
+from evaluation_framework.offline_evaluation import (
+    build_offline_evaluation_runtime,
+    validate_offline_evaluation_runtime_dict,
+)
 
 from .benchmark_aggregate_summary_contract import (
     BENCHMARK_AGGREGATE_SUMMARY_CONTRACT,
     validate_benchmark_aggregate_summary_dict,
 )
+from workflow_pipelines.benchmark_aggregate_summary import (
+    build_benchmark_aggregate_summary_runtime,
+    validate_benchmark_aggregate_summary_runtime_dict,
+)
 from .benchmark_checkpoint_contract import (
     BENCHMARK_CHECKPOINT_CONTRACT,
     validate_benchmark_checkpoint_dict,
 )
+from workflow_pipelines.benchmark_checkpoint import (
+    build_benchmark_checkpoint_runtime,
+    validate_benchmark_checkpoint_runtime_dict,
+)
+from workflow_pipelines.benchmark_orchestration_jsonl import (
+    build_benchmark_orchestration_jsonl_runtime,
+    validate_benchmark_orchestration_jsonl_runtime_dict,
+)
 from .benchmark_manifest_contract import (
     BENCHMARK_MANIFEST_CONTRACT,
     validate_benchmark_manifest_dict,
+)
+from workflow_pipelines.benchmark_aggregate_manifest import (
+    build_benchmark_aggregate_manifest_runtime,
+    validate_benchmark_aggregate_manifest_runtime_dict,
 )
 from .orchestration_benchmark_jsonl_contract import (
     validate_orchestration_benchmark_error_dict,
@@ -43,9 +67,17 @@ from .orchestration_benchmark_jsonl_contract import (
 from .summary_payload import build_summary
 from .suite import read_suite
 from .task_loop import run_suite_tasks
+from .offline_eval_contract import validate_suite_jsonl
 
 _BENCHMARK_MANIFEST = "benchmark-manifest.json"
 _BENCHMARK_CHECKPOINT = "benchmark-checkpoint.json"
+_BENCHMARK_MANIFEST_RUNTIME = "benchmark-manifest-runtime.json"
+_BENCHMARK_SUMMARY_RUNTIME = "benchmark-summary-runtime.json"
+_BENCHMARK_CHECKPOINT_RUNTIME = "benchmark-checkpoint-runtime.json"
+_BENCHMARK_ORCHESTRATION_RUNTIME = "benchmark-orchestration-runtime.json"
+_TRACES_EVENT_ROW_RUNTIME = "traces-event-row-runtime.json"
+_OFFLINE_EVALUATION_RUNTIME = "offline-evaluation-runtime.json"
+_ORCHESTRATION_JSONL = "orchestration.jsonl"
 _TRACES_JSONL = "traces.jsonl"
 _SUMMARY_JSON = "summary.json"
 
@@ -72,6 +104,11 @@ def _write_benchmark_checkpoint(ck_path: Path, body: dict[str, Any]) -> None:
     if ck_errs:
         raise ValueError(f"benchmark_checkpoint_contract:{','.join(ck_errs)}")
     write_json(ck_path, body)
+    runtime = build_benchmark_checkpoint_runtime(checkpoint=body)
+    rt_errs = validate_benchmark_checkpoint_runtime_dict(runtime)
+    if rt_errs:
+        raise ValueError(f"benchmark_checkpoint_runtime_contract:{','.join(rt_errs)}")
+    write_json(ck_path.parent / _BENCHMARK_CHECKPOINT_RUNTIME, runtime)
 
 
 def _write_benchmark_summary(out_dir: Path, body: dict[str, Any]) -> None:
@@ -79,6 +116,66 @@ def _write_benchmark_summary(out_dir: Path, body: dict[str, Any]) -> None:
     if ag_errs:
         raise ValueError(f"benchmark_aggregate_summary_contract:{','.join(ag_errs)}")
     write_json(out_dir / _SUMMARY_JSON, body)
+    runtime = build_benchmark_aggregate_summary_runtime(summary=body)
+    rt_errs = validate_benchmark_aggregate_summary_runtime_dict(runtime)
+    if rt_errs:
+        raise ValueError(f"benchmark_aggregate_summary_runtime_contract:{','.join(rt_errs)}")
+    write_json(out_dir / _BENCHMARK_SUMMARY_RUNTIME, runtime)
+
+
+def _write_benchmark_manifest_runtime(
+    out_dir: Path,
+    *,
+    manifest: dict[str, Any],
+    checkpoint: dict[str, Any],
+) -> None:
+    runtime = build_benchmark_aggregate_manifest_runtime(manifest=manifest, checkpoint=checkpoint)
+    rt_errs = validate_benchmark_aggregate_manifest_runtime_dict(runtime)
+    if rt_errs:
+        raise ValueError(f"benchmark_aggregate_manifest_runtime_contract:{','.join(rt_errs)}")
+    write_json(out_dir / _BENCHMARK_MANIFEST_RUNTIME, runtime)
+
+
+def _write_benchmark_orchestration_runtime(out_dir: Path, *, run_id: str) -> None:
+    orchestration_path = out_dir / _ORCHESTRATION_JSONL
+    rows_any = read_jsonl(orchestration_path) if orchestration_path.is_file() else []
+    rows = [row for row in rows_any if isinstance(row, dict)]
+    runtime = build_benchmark_orchestration_jsonl_runtime(run_id=run_id, orchestration_rows=rows)
+    rt_errs = validate_benchmark_orchestration_jsonl_runtime_dict(runtime)
+    if rt_errs:
+        raise ValueError(f"benchmark_orchestration_jsonl_runtime_contract:{','.join(rt_errs)}")
+    write_json(out_dir / _BENCHMARK_ORCHESTRATION_RUNTIME, runtime)
+
+
+def _write_traces_event_row_runtime(out_dir: Path, *, run_id: str) -> None:
+    rows_any = read_jsonl(out_dir / _TRACES_JSONL)
+    rows = [row for row in rows_any if isinstance(row, dict)]
+    runtime = build_traces_jsonl_event_row_runtime(run_id=run_id, trace_rows=rows)
+    rt_errs = validate_traces_jsonl_event_row_runtime_dict(runtime)
+    if rt_errs:
+        raise ValueError(f"traces_jsonl_event_row_runtime_contract:{','.join(rt_errs)}")
+    write_json(out_dir / _TRACES_EVENT_ROW_RUNTIME, runtime)
+
+
+def _write_offline_evaluation_runtime(
+    out_dir: Path,
+    *,
+    run_id: str,
+    suite_path: str,
+) -> None:
+    checkpoint = read_json(out_dir / _BENCHMARK_CHECKPOINT) if (out_dir / _BENCHMARK_CHECKPOINT).is_file() else {}
+    suite_errors = validate_suite_jsonl(Path(suite_path))
+    runtime = build_offline_evaluation_runtime(
+        run_id=run_id,
+        suite_errors=suite_errors,
+        traces_present=(out_dir / _TRACES_JSONL).is_file(),
+        summary_present=(out_dir / _SUMMARY_JSON).is_file(),
+        checkpoint_finished=bool(isinstance(checkpoint, dict) and checkpoint.get("finished")),
+    )
+    rt_errs = validate_offline_evaluation_runtime_dict(runtime)
+    if rt_errs:
+        raise ValueError(f"offline_evaluation_runtime_contract:{','.join(rt_errs)}")
+    write_json(out_dir / _OFFLINE_EVALUATION_RUNTIME, runtime)
 
 
 def _checkpoint_body(
@@ -135,6 +232,7 @@ def _bench_ctx_resume(resume_run_id: str, suite_path: str | None, mode: str) -> 
     ck_read_errs = validate_benchmark_checkpoint_dict(prior_ck)
     if ck_read_errs:
         raise ValueError(f"benchmark_checkpoint_contract:{','.join(ck_read_errs)}")
+    _write_benchmark_manifest_runtime(out, manifest=manifest, checkpoint=prior_ck)
     if prior_ck.get("finished"):
         raise ValueError(f"benchmark run {resume_run_id!r} already finished (checkpoint.finished)")
     manifest_suite = str(Path(manifest["suite_path"]).resolve())
@@ -210,6 +308,11 @@ def _bench_ctx_fresh(
             finished=False,
         ),
     )
+    _write_benchmark_manifest_runtime(
+        out,
+        manifest=bench_manifest,
+        checkpoint=read_json(ck_path),
+    )
     return _BenchCtx(
         out=out,
         run_id=run_id,
@@ -281,6 +384,13 @@ def run_benchmark(
                 finished=False,
             ),
         )
+        _write_benchmark_manifest_runtime(
+            out,
+            manifest=read_json(out / _BENCHMARK_MANIFEST),
+            checkpoint=read_json(ck_path),
+        )
+        _write_traces_event_row_runtime(out, run_id=run_id)
+        _write_offline_evaluation_runtime(out, run_id=run_id, suite_path=suite_path)
 
     benchmark_started_ms = int(time.time() * 1000)
     run_logger = setup_run_logger(run_id, out)
@@ -300,7 +410,10 @@ def run_benchmark(
         resume_errs = validate_orchestration_benchmark_resume_dict(resume_body)
         if resume_errs:
             raise ValueError(f"orchestration_benchmark_resume_contract:{','.join(resume_errs)}")
-        append_jsonl(out / "orchestration.jsonl", resume_body)
+        append_jsonl(out / _ORCHESTRATION_JSONL, resume_body)
+        _write_benchmark_orchestration_runtime(out, run_id=run_id)
+    _write_traces_event_row_runtime(out, run_id=run_id)
+    _write_offline_evaluation_runtime(out, run_id=run_id, suite_path=suite_path)
     try:
         try:
             new_baseline, new_guarded = run_suite_tasks(
@@ -324,7 +437,10 @@ def run_benchmark(
             err_line_errs = validate_orchestration_benchmark_error_dict(err_body)
             if err_line_errs:
                 raise ValueError(f"orchestration_benchmark_error_contract:{','.join(err_line_errs)}")
-            append_jsonl(out / "orchestration.jsonl", err_body)
+            append_jsonl(out / _ORCHESTRATION_JSONL, err_body)
+            _write_benchmark_orchestration_runtime(out, run_id=run_id)
+            _write_traces_event_row_runtime(out, run_id=run_id)
+            _write_offline_evaluation_runtime(out, run_id=run_id, suite_path=suite_path)
             _write_benchmark_summary(
                 out,
                 {
@@ -335,6 +451,11 @@ def run_benchmark(
                     "runStatus": "failed",
                     "error": {"type": type(exc).__name__, "message": str(exc)},
                 },
+            )
+            _write_benchmark_manifest_runtime(
+                out,
+                manifest=read_json(out / _BENCHMARK_MANIFEST),
+                checkpoint=read_json(ck_path),
             )
             write_json(out / "config-snapshot.json", config_snapshot())
             log_run_failure_context(run_logger, detail="Benchmark loop raised; see error above.")
@@ -375,6 +496,11 @@ def run_benchmark(
                 finished=True,
             ),
         )
+        _write_benchmark_manifest_runtime(
+            out,
+            manifest=read_json(out / _BENCHMARK_MANIFEST),
+            checkpoint=read_json(ck_path),
+        )
         log_benchmark_verdict(
             run_logger,
             verdict=verdict,
@@ -385,6 +511,9 @@ def run_benchmark(
             artifacts={"traces_jsonl": str(out / _TRACES_JSONL), "summary_json": str(out / _SUMMARY_JSON)},
             output_dir=str(out),
         )
+        _write_benchmark_orchestration_runtime(out, run_id=run_id)
+        _write_traces_event_row_runtime(out, run_id=run_id)
+        _write_offline_evaluation_runtime(out, run_id=run_id, suite_path=suite_path)
         return {"runId": run_id, "verdict": verdict}
     finally:
         shutdown_run_logger(run_logger)

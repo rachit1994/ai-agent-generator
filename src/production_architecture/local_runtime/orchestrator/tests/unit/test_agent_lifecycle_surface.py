@@ -10,14 +10,12 @@ def test_describe_surface_has_expected_shape() -> None:
     payload = module.describe_surface()
     assert payload == {
         "subheading": "agent_lifecycle",
-        "status": "scaffold",
+        "status": "implemented",
         "references": [
-            "agent_lifecycle.autonomy_levels_trust_progression.surface",
-            "agent_lifecycle.demotion_logic.surface",
-            "agent_lifecycle.lifecycle_stages_graph.surface",
-            "agent_lifecycle.promotion_rules.surface",
-            "agent_lifecycle.recertification_decay.surface",
-            "agent_lifecycle.stagnation_detection.surface",
+            "agent_lifecycle.runtime",
+            "agent_lifecycle.contracts",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.evolution_layer",
+            "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.hard_stops_evolution",
         ],
     }
 

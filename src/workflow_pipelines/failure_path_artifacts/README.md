@@ -7,6 +7,9 @@ This folder groups code and artifacts for `failure_path_artifacts` within the re
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
 - `failure_pipeline_contract.py` (file): Defines machine-checkable interface and schema expectations.
 - `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `replay/failure_path_artifacts.json`.
+- `runtime.py`: Deterministic failure-path-artifacts runtime derivation.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

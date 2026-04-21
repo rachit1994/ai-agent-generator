@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 SUBHEADING = "workflow_pipelines/orchestration_stage_event"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_stage_event_contract",
-    "workflow_pipelines.orchestration_stage_event.orchestration_stage_event_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_event_lineage_replay_manifest",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_benchmark_jsonl_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_end_contract",
+    "workflow_pipelines.orchestration_stage_event.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.orchestration_stage_event_layer",
+    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_stage_event_runtime_surface",
 ]
 
 def describe_surface() -> dict[str, object]:

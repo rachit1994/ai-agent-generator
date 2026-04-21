@@ -6,6 +6,9 @@ This folder groups code and artifacts for `safety_controller` within the reposit
 ## What is present
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
 - `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `safety/controller_runtime.json`.
+- `runtime.py`: Deterministic safety-controller runtime derivation.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

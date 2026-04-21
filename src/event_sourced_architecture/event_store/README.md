@@ -4,8 +4,10 @@
 This folder groups code and artifacts for `event_store` within the repository architecture.
 
 ## What is present
-- `__init__.py` (file): Implements a concrete part of this folder responsibility.
-- `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `event_store/semantics.json`.
+- `runtime.py`: Deterministic event-store semantics derivation.
+- `surface.py`: Implemented surface metadata for orchestrator discovery.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

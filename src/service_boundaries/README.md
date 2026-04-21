@@ -29,6 +29,10 @@ This folder groups code and artifacts for `service_boundaries` within the reposi
 - `safety_controller` (folder): Groups related implementation for this subdomain boundary.
 - `storage_lifecycle_manager` (folder): Handles file or state persistence concerns.
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py` (file): Service boundaries artifact contract and validator.
+- `runtime.py` (file): Deterministic service-boundaries coverage derivation.
+- `surface.py` (file): Top-level feature-surface metadata.
+- `tests/` (folder): Unit tests for top-level service boundaries runtime.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 SUBHEADING = "core_components/identity_and_authorization_plane"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
-REFERENCE_MODULES: list[str] = []
+REFERENCE_MODULES: list[str] = [
+    "core_components.identity_and_authorization_plane.runtime",
+    "core_components.identity_and_authorization_plane.contracts",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.identity_authz_plane_layer",
+    "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
+]
 
 
 def _normalized_references(modules: object) -> list[str]:

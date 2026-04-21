@@ -7,6 +7,9 @@ This folder groups code and artifacts for `benchmark_aggregate_manifest` within 
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
 - `benchmark_manifest_contract.py` (file): Defines machine-checkable interface and schema expectations.
 - `surface.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `benchmark-manifest-runtime.json`.
+- `runtime.py`: Deterministic benchmark-manifest runtime derivation.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 SUBHEADING = "capability_model"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "capability_model.capability_graph.surface",
-    "capability_model.dependency_aware_promotion_eligibility.surface",
-    "capability_model.scoring_confidence_decay.surface",
-    "capability_model.transfer_learning_measurement.surface",
+    "capability_model.runtime",
+    "capability_model.contracts",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.memory_artifact_layer",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.evolution_layer",
 ]
 
 

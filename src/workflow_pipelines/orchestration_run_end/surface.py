@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 SUBHEADING = "workflow_pipelines/orchestration_run_end"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_end_contract",
-    "workflow_pipelines.orchestration_run_end.orchestration_run_end_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_error_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_start_contract",
-    "workflow_pipelines.orchestration_run_error.orchestration_run_error_contract",
+    "workflow_pipelines.orchestration_run_end.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.orchestration_run_end_layer",
+    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_run_end_runtime_surface",
 ]
 
 def describe_surface() -> dict[str, object]:

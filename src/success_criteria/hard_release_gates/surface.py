@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 SUBHEADING = "success_criteria/hard_release_gates"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "guardrails_and_safety.risk_budgets_permission_matrix.gates_constants.constants",
-    "guardrails_and_safety.risk_budgets_permission_matrix.gates_manifest.manifest",
-    "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.balanced_gates",
-    "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.hard_stop_schedule",
-    "guardrails_and_safety.risk_budgets_permission_matrix.risk_budgets.hard_stops",
+    "success_criteria.hard_release_gates.runtime",
+    "success_criteria.hard_release_gates.contracts",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.evolution_layer",
+    "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
 ]
 
 def describe_surface() -> dict[str, object]:

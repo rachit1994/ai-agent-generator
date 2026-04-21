@@ -13,6 +13,9 @@ This folder groups code and artifacts for `human_professional_evolution_model` w
 - `mentorship_operating_model` (folder): Wraps model-facing logic and invocation behavior.
 - `performance_review_cycle` (folder): Implements review and gating logic for quality/safety decisions.
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py` (file): Human evolution runtime constants.
+- `runtime.py` (file): Deterministic evolution decision and artifact builders.
+- `tests/` (folder): Unit tests for runtime behavior.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

@@ -9,6 +9,9 @@ This folder groups code and artifacts for `capability_model` within the reposito
 - `scoring_confidence_decay` (folder): Groups related implementation for this subdomain boundary.
 - `transfer_learning_measurement` (folder): Groups related implementation for this subdomain boundary.
 - `__init__.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py` (file): Capability runtime schema constants.
+- `runtime.py` (file): Deterministic capability scoring and promotion recommendation runtime.
+- `tests/` (folder): Unit tests for capability runtime behavior.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

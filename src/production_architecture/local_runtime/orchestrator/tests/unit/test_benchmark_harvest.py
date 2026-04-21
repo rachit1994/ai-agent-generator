@@ -93,6 +93,26 @@ def test_benchmark_manifest_written(tmp_path: Path, monkeypatch) -> None:
     manifest = json.loads((runs[0] / "benchmark-manifest.json").read_text(encoding="utf-8"))
     assert manifest["schema"] == "sde.benchmark_manifest.v1"
     assert manifest["continue_on_error"] is True
+    runtime = json.loads((runs[0] / "benchmark-manifest-runtime.json").read_text(encoding="utf-8"))
+    assert runtime["schema"] == "sde.benchmark_aggregate_manifest_runtime.v1"
+    assert runtime["status"] == "finished"
+    checkpoint_runtime = json.loads((runs[0] / "benchmark-checkpoint-runtime.json").read_text(encoding="utf-8"))
+    assert checkpoint_runtime["schema"] == "sde.benchmark_checkpoint_runtime.v1"
+    assert checkpoint_runtime["status"] == "finished"
+    summary_runtime = json.loads((runs[0] / "benchmark-summary-runtime.json").read_text(encoding="utf-8"))
+    assert summary_runtime["schema"] == "sde.benchmark_aggregate_summary_runtime.v1"
+    assert summary_runtime["status"] == "finished"
+    orchestration_runtime = json.loads(
+        (runs[0] / "benchmark-orchestration-runtime.json").read_text(encoding="utf-8")
+    )
+    assert orchestration_runtime["schema"] == "sde.benchmark_orchestration_jsonl_runtime.v1"
+    assert orchestration_runtime["status"] == "clean"
+    traces_event_runtime = json.loads((runs[0] / "traces-event-row-runtime.json").read_text(encoding="utf-8"))
+    assert traces_event_runtime["schema"] == "sde.traces_jsonl_event_row_runtime.v1"
+    assert traces_event_runtime["status"] == "ready"
+    offline_evaluation_runtime = json.loads((runs[0] / "offline-evaluation-runtime.json").read_text(encoding="utf-8"))
+    assert offline_evaluation_runtime["schema"] == "sde.offline_evaluation_runtime.v1"
+    assert offline_evaluation_runtime["status"] == "ready"
     summary = json.loads((runs[0] / "summary.json").read_text(encoding="utf-8"))
     assert summary["taskCount"] == 1
     assert "benchmarkStartedAtMs" in summary

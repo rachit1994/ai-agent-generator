@@ -1,14 +1,17 @@
-"""Surface scaffold for `production_architecture/observability`."""
+"""Surface metadata for production observability."""
 
 from __future__ import annotations
 
 SUBHEADING = "production_architecture/observability"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.observability.project_stage1_observability_export",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_project_stage1_observability_export",
+    "production_architecture.observability.contracts",
+    "production_architecture.observability.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.observability_layer",
+    "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
 ]
+
 
 def describe_surface() -> dict[str, object]:
     return {

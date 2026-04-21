@@ -5,7 +5,11 @@ This folder groups code and artifacts for `production_pipeline_plan_artifact` wi
 
 ## What is present
 - `production_pipeline_task_to_promote` (folder): Implements stage/pipeline behavior for task execution lifecycle.
-- `__init__.py` (file): Implements a concrete part of this folder responsibility.
+- `contracts.py`: Contract/validation for `program/production_pipeline_plan_artifact.json`.
+- `runtime.py`: Deterministic production-pipeline-plan-artifact derivation.
+- `surface.py`: Implemented surface metadata.
+- `tests/test_runtime.py`: Determinism and fail-closed validation tests.
+- `__init__.py` (file): Package exports for this feature runtime.
 
 ## Notes
 - Keep this inventory updated when adding/removing files.

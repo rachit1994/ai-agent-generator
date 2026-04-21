@@ -5,11 +5,16 @@ from __future__ import annotations
 from pathlib import Path
 
 from production_architecture.storage.storage.storage import ensure_dir, write_json
+from capability_model import build_skill_nodes
 from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_util import iso_now
 
 
-def write_memory_artifacts(*, output_dir: Path, run_id: str) -> None:
+def write_memory_artifacts(
+    *, output_dir: Path, run_id: str, parsed: dict | None = None, events: list[dict] | None = None
+) -> dict:
     """Emit minimal memory contracts (local SDE default-on memory path)."""
+    safe_parsed = parsed if isinstance(parsed, dict) else {}
+    safe_events = events if isinstance(events, list) else []
     mem = output_dir / "memory"
     ensure_dir(mem)
     event_id = f"evt-{run_id}-traces"
@@ -40,4 +45,6 @@ def write_memory_artifacts(*, output_dir: Path, run_id: str) -> None:
     )
     cap = output_dir / "capability"
     ensure_dir(cap)
-    write_json(cap / "skill_nodes.json", {"schema_version": "1.0", "nodes": []})
+    skill_nodes = build_skill_nodes(run_id=run_id, parsed=safe_parsed, events=safe_events)
+    write_json(cap / "skill_nodes.json", skill_nodes)
+    return skill_nodes

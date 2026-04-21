@@ -68,5 +68,5 @@ def test_append_orchestration_run_start_writes_valid_line() -> None:
         path = Path(td) / "orchestration.jsonl"
         append_orchestration_run_start(path, "run-x", "guarded_pipeline")
         text = path.read_text(encoding="utf-8").strip()
-        assert '"type": "run_start"' in text
+        assert '"type":"run_start"' in text
         assert "run-x" in text

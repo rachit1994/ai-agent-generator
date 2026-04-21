@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 SUBHEADING = "event_sourced_architecture/event_store"
-IMPLEMENTATION_STATUS = "scaffold"
+IMPLEMENTATION_STATUS = "implemented"
 
 REFERENCE_MODULES = [
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_event_lineage_replay_manifest",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_orchestration_stage_event_contract",
-    "production_architecture.local_runtime.orchestrator.tests.unit.test_traces_jsonl_event_contract",
-    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.event_lineage_layer",
-    "workflow_pipelines.orchestration_stage_event.orchestration_stage_event_contract",
+    "event_sourced_architecture.event_store.contracts",
+    "event_sourced_architecture.event_store.runtime",
+    "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.event_store_semantics_layer",
+    "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory",
 ]
 
 def describe_surface() -> dict[str, object]:

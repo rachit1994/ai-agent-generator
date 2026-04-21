@@ -10,12 +10,12 @@ def test_describe_surface_has_expected_shape() -> None:
     payload = module.describe_surface()
     assert payload == {
         "subheading": "capability_model",
-        "status": "scaffold",
+        "status": "implemented",
         "references": [
-            "capability_model.capability_graph.surface",
-            "capability_model.dependency_aware_promotion_eligibility.surface",
-            "capability_model.scoring_confidence_decay.surface",
-            "capability_model.transfer_learning_measurement.surface",
+            "capability_model.runtime",
+            "capability_model.contracts",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.memory_artifact_layer",
+            "workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.evolution_layer",
         ],
     }
 

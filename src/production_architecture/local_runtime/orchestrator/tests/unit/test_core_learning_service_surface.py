@@ -8,11 +8,11 @@ import pytest
 def test_describe_surface_has_expected_shape() -> None:
     module = importlib.import_module("core_components.learning_service.surface")
     payload = module.describe_surface()
-    assert payload == {
-        "subheading": "core_components/learning_service",
-        "status": "scaffold",
-        "references": [],
-    }
+    assert payload["subheading"] == "core_components/learning_service"
+    assert payload["status"] == "implemented"
+    refs = payload["references"]
+    assert isinstance(refs, list)
+    assert "core_components.learning_service.runtime" in refs
 
 
 def test_describe_surface_rejects_blank_subheading(monkeypatch: pytest.MonkeyPatch) -> None:

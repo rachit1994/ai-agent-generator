@@ -98,5 +98,5 @@ def test_persist_traces_writes_valid_line() -> None:
         out.mkdir(exist_ok=True)
         persist_traces(out, [_valid_trace_dict()], log)
         text = (out / "traces.jsonl").read_text(encoding="utf-8").strip()
-        assert '"run_id": "r-1"' in text
-        assert '"task_id": "t-1"' in text
+        assert '"run_id":"r-1"' in text
+        assert '"task_id":"t-1"' in text
