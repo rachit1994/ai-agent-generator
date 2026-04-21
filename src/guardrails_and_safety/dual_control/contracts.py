@@ -8,6 +8,61 @@ from typing import Any
 
 DUAL_CONTROL_CONTRACT = "sde.dual_control.v1"
 DUAL_CONTROL_SCHEMA_VERSION = "1.0"
+DUAL_CONTROL_ALLOWED_STATUS = (
+    "validated",
+    "missing_required_ack",
+    "invalid_ack",
+)
+DUAL_CONTROL_REQUIRED_METRICS = (
+    "doc_review_passed",
+    "dual_required",
+    "ack_present",
+    "ack_valid",
+    "distinct_actors",
+)
+DUAL_CONTROL_REQUIRED_EVIDENCE_REFS = (
+    "doc_review_ref",
+    "dual_control_ack_ref",
+    "dual_control_runtime_ref",
+)
+
+
+def _validate_semantics(status: str, metrics: dict[str, Any]) -> list[str]:
+    errs: list[str] = []
+    ack_valid = metrics.get("ack_valid") is True
+    dual_required = metrics.get("dual_required") is True
+    ack_present = metrics.get("ack_present") is True
+    distinct_actors = metrics.get("distinct_actors") is True
+    validated_without_ack_allowed = (not dual_required) and (not ack_present)
+    validated_with_ack_allowed = ack_valid and distinct_actors
+    if status == "validated" and not (validated_without_ack_allowed or validated_with_ack_allowed):
+        errs.append("dual_control_semantics")
+    if status == "missing_required_ack" and not (dual_required and not ack_present):
+        errs.append("dual_control_semantics")
+    if status == "invalid_ack" and not (ack_present and not ack_valid):
+        errs.append("dual_control_semantics")
+    return errs
+
+
+def _validate_metrics(metrics: Any) -> tuple[list[str], dict[str, Any] | None]:
+    if not isinstance(metrics, dict):
+        return ["dual_control_metrics"], None
+    errs: list[str] = []
+    for key in DUAL_CONTROL_REQUIRED_METRICS:
+        if not isinstance(metrics.get(key), bool):
+            errs.append(f"dual_control_metric_type:{key}")
+    return errs, metrics
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["dual_control_evidence"]
+    errs: list[str] = []
+    for key in DUAL_CONTROL_REQUIRED_EVIDENCE_REFS:
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"dual_control_evidence_ref:{key}")
+    return errs
 
 
 def validate_dual_control_dict(body: Any) -> list[str]:
@@ -22,15 +77,14 @@ def validate_dual_control_dict(body: Any) -> list[str]:
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("dual_control_run_id")
     status = body.get("status")
-    if status not in ("validated", "missing_required_ack", "invalid_ack"):
+    if status not in DUAL_CONTROL_ALLOWED_STATUS:
         errs.append("dual_control_status")
-    metrics = body.get("metrics")
-    if not isinstance(metrics, dict):
-        errs.append("dual_control_metrics")
-    else:
-        for key in ("doc_review_passed", "dual_required", "ack_present", "ack_valid", "distinct_actors"):
-            if not isinstance(metrics.get(key), bool):
-                errs.append(f"dual_control_metric_type:{key}")
+    metric_errs, metric_dict = _validate_metrics(body.get("metrics"))
+    errs.extend(metric_errs)
+    evidence = body.get("evidence")
+    errs.extend(_validate_evidence(evidence))
+    if isinstance(status, str) and metric_dict is not None and isinstance(evidence, dict):
+        errs.extend(_validate_semantics(status, metric_dict))
     return errs
 
 

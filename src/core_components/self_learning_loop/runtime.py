@@ -5,6 +5,19 @@ from __future__ import annotations
 from typing import Any
 
 from .contracts import SELF_LEARNING_LOOP_CONTRACT, SELF_LEARNING_LOOP_SCHEMA_VERSION
+from .policy_defaults import (
+    GATE_ID_CONTRADICTION_RATE,
+    GATE_ID_MIN_EXAMPLES,
+    GATE_ID_NOVELTY_SCORE,
+    GATE_ID_REGRESSION_RATE,
+    GATE_ID_VERIFIER_PASS_RATE,
+    MANDATORY_GATE_IDS,
+    MAX_CONTRADICTION_RATE,
+    MAX_REGRESSION_RATE,
+    MIN_ELIGIBLE_EXAMPLES,
+    MIN_NOVELTY_SCORE,
+    MIN_VERIFIER_PASS_RATE,
+)
 
 
 def _clamp01(value: float) -> float:
@@ -22,9 +35,13 @@ def _finalize_pass_rate(events: list[dict[str, Any]]) -> float:
     passed = 0
     for row in finals:
         score = row.get("score")
-        if isinstance(score, dict) and bool(score.get("passed")):
+        if isinstance(score, dict) and score.get("passed") is True:
             passed += 1
     return _clamp01(passed / len(finals))
+
+
+def _gate_order(gate_id: str) -> int:
+    return MANDATORY_GATE_IDS.index(gate_id) if gate_id in MANDATORY_GATE_IDS else len(MANDATORY_GATE_IDS)
 
 
 def build_self_learning_loop(
@@ -69,6 +86,10 @@ def build_self_learning_loop(
         value = practice_scores.get("readiness_signal")
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             practice_readiness = _clamp01(float(value))
+    eligible_examples = len([row for row in events if isinstance(row, dict)])
+    regression_rate = _clamp01(1.0 - practice_readiness)
+    novelty_score = _clamp01((transfer_efficiency + growth_signal) / 2.0)
+    contradiction_rate = _clamp01(abs(capability_score - practice_readiness))
     signals = {
         "finalize_pass_rate": _finalize_pass_rate(events),
         "capability_score": capability_score,
@@ -76,27 +97,31 @@ def build_self_learning_loop(
         "growth_signal": growth_signal,
         "practice_readiness": practice_readiness,
     }
-    state = "hold"
-    next_action = "run_practice_cycle"
-    reason = "gate_blocked"
-    if (
-        signals["finalize_pass_rate"] >= 0.85
-        and signals["capability_score"] >= 0.75
-        and signals["practice_readiness"] >= 0.6
-    ):
-        state = "iterate"
-        next_action = "targeted_improvement_cycle"
-        reason = "progress_detected"
-    if (
-        signals["finalize_pass_rate"] >= 0.95
-        and signals["capability_score"] >= 0.85
-        and signals["transfer_efficiency"] >= 0.75
-        and signals["growth_signal"] >= 0.65
-        and signals["practice_readiness"] >= 0.8
-    ):
-        state = "promote"
-        next_action = "open_promotion_review"
-        reason = "promotion_ready"
+    failed_gates: list[str] = []
+    reason_codes: list[str] = []
+    if eligible_examples < MIN_ELIGIBLE_EXAMPLES:
+        failed_gates.append(GATE_ID_MIN_EXAMPLES)
+        reason_codes.append("self_learning_loop_contract:gate_min_examples_unmet")
+    verifier_pass_rate = signals["finalize_pass_rate"]
+    if verifier_pass_rate < MIN_VERIFIER_PASS_RATE:
+        failed_gates.append(GATE_ID_VERIFIER_PASS_RATE)
+        reason_codes.append("self_learning_loop_contract:gate_verifier_pass_rate_below_threshold")
+    if regression_rate > MAX_REGRESSION_RATE:
+        failed_gates.append(GATE_ID_REGRESSION_RATE)
+        reason_codes.append("self_learning_loop_contract:gate_regression_rate_exceeded")
+    if novelty_score < MIN_NOVELTY_SCORE:
+        failed_gates.append(GATE_ID_NOVELTY_SCORE)
+        reason_codes.append("self_learning_loop_contract:gate_novelty_score_below_threshold")
+    if contradiction_rate > MAX_CONTRADICTION_RATE:
+        failed_gates.append(GATE_ID_CONTRADICTION_RATE)
+        reason_codes.append("self_learning_loop_contract:gate_contradiction_rate_exceeded")
+    failed_gates = sorted(failed_gates, key=_gate_order)
+    hard_failure = GATE_ID_REGRESSION_RATE in failed_gates or GATE_ID_CONTRADICTION_RATE in failed_gates
+    decision = "promote"
+    next_action = "open_promotion_review"
+    if failed_gates:
+        decision = "reject" if hard_failure else "hold"
+        next_action = "run_practice_cycle" if decision == "hold" else "halt_and_repair"
     return {
         "schema": SELF_LEARNING_LOOP_CONTRACT,
         "schema_version": SELF_LEARNING_LOOP_SCHEMA_VERSION,
@@ -104,9 +129,12 @@ def build_self_learning_loop(
         "mode": mode,
         "signals": signals,
         "decision": {
-            "loop_state": state,
+            "decision": decision,
+            "loop_state": decision,
+            "failed_gates": failed_gates,
+            "decision_reasons": reason_codes,
             "next_action": next_action,
-            "primary_reason": reason,
+            "primary_reason": reason_codes[0] if reason_codes else "self_learning_loop_contract:all_gates_passed",
         },
         "evidence": {
             "traces_ref": "traces.jsonl",
@@ -114,6 +142,7 @@ def build_self_learning_loop(
             "practice_engine_ref": "practice/practice_engine.json",
             "transfer_learning_metrics_ref": "learning/transfer_learning_metrics.json",
             "capability_growth_metrics_ref": "learning/capability_growth_metrics.json",
+            "self_learning_candidates_ref": "learning/self_learning_candidates.jsonl",
             "self_learning_loop_ref": "learning/self_learning_loop.json",
         },
     }

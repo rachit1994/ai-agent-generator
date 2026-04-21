@@ -36,7 +36,7 @@ def build_learning_service(
         sum(
             1
             for row in finalize_rows
-            if isinstance(row.get("score"), dict) and bool(row.get("score", {}).get("passed"))
+            if isinstance(row.get("score"), dict) and row.get("score", {}).get("passed") is True
         )
         / max(1, len(finalize_rows))
     )

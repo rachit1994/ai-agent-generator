@@ -7,6 +7,8 @@ from typing import Any
 
 from .contracts import IDENTITY_AUTHZ_PLANE_CONTRACT, IDENTITY_AUTHZ_PLANE_SCHEMA_VERSION
 
+_STATUS_EPSILON = 1e-9
+
 
 def _clamp01(value: float) -> float:
     if value < 0.0:
@@ -16,6 +18,69 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _has_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _active_leases(lease_table: dict[str, Any]) -> set[str]:
+    if not isinstance(lease_table, dict):
+        return set()
+    leases = lease_table.get("leases")
+    if not isinstance(leases, list):
+        return set()
+    out: set[str] = set()
+    for row in leases:
+        if not isinstance(row, dict):
+            continue
+        lease_id = row.get("lease_id")
+        if bool(row.get("active")) and _has_text(lease_id):
+            out.add(lease_id.strip())
+    return out
+
+
+def _initial_controls(permission_matrix: dict[str, Any]) -> dict[str, bool]:
+    return {
+        "permission_matrix_present": isinstance(permission_matrix, dict) and bool(permission_matrix.get("roles")),
+        "lease_bound_audit": True,
+        "high_risk_tokens_valid": True,
+        "authenticated_actor_audit": True,
+        "risk_scope_fields_present": True,
+    }
+
+
+def _mark_invalid_row_controls(controls: dict[str, bool]) -> None:
+    controls["lease_bound_audit"] = False
+    controls["high_risk_tokens_valid"] = False
+    controls["authenticated_actor_audit"] = False
+    controls["risk_scope_fields_present"] = False
+
+
+def _apply_row_controls(row: dict[str, Any], controls: dict[str, bool], active_leases: set[str]) -> None:
+    lease_id = row.get("lease_id")
+    if not _has_text(lease_id) or lease_id.strip() not in active_leases:
+        controls["lease_bound_audit"] = False
+    if not _has_text(row.get("actor_id")):
+        controls["authenticated_actor_audit"] = False
+
+    risk = str(row.get("risk", "")).strip().lower()
+    if risk not in {"low", "medium", "high"}:
+        controls["risk_scope_fields_present"] = False
+    if not _has_text(row.get("role")) or not _has_text(row.get("lifecycle_stage")):
+        controls["risk_scope_fields_present"] = False
+
+    if risk == "high":
+        if not _has_text(row.get("approval_token_id")) or not _has_text(row.get("approval_token_expires_at")):
+            controls["high_risk_tokens_valid"] = False
+
+
+def _status_from_coverage(coverage: float) -> str:
+    if abs(coverage - 1.0) <= _STATUS_EPSILON:
+        return "enforced"
+    if coverage >= 0.5:
+        return "degraded"
+    return "missing"
+
+
 def build_identity_authz_plane(
     *,
     run_id: str,
@@ -23,48 +88,23 @@ def build_identity_authz_plane(
     action_audit_lines: list[str],
     lease_table: dict[str, Any],
 ) -> dict[str, Any]:
-    permission_matrix_present = isinstance(permission_matrix, dict) and bool(permission_matrix.get("roles"))
-    active_leases: set[str] = set()
-    if isinstance(lease_table, dict):
-        leases = lease_table.get("leases")
-        if isinstance(leases, list):
-            for row in leases:
-                if not isinstance(row, dict):
-                    continue
-                if bool(row.get("active")) and isinstance(row.get("lease_id"), str) and row.get("lease_id").strip():
-                    active_leases.add(row.get("lease_id").strip())
-    lease_bound_audit = True
-    high_risk_tokens_valid = True
+    controls = _initial_controls(permission_matrix)
+    active_leases = _active_leases(lease_table)
     for line in action_audit_lines:
         if not isinstance(line, str) or not line.strip():
             continue
         try:
             row = json.loads(line)
         except json.JSONDecodeError:
-            lease_bound_audit = False
-            high_risk_tokens_valid = False
+            controls["lease_bound_audit"] = False
+            controls["high_risk_tokens_valid"] = False
             continue
         if not isinstance(row, dict):
-            lease_bound_audit = False
-            high_risk_tokens_valid = False
+            _mark_invalid_row_controls(controls)
             continue
-        lease_id = row.get("lease_id")
-        if not isinstance(lease_id, str) or lease_id.strip() not in active_leases:
-            lease_bound_audit = False
-        if str(row.get("risk", "")).lower() == "high":
-            token_id = row.get("approval_token_id")
-            token_exp = row.get("approval_token_expires_at")
-            if not isinstance(token_id, str) or not token_id.strip():
-                high_risk_tokens_valid = False
-            if not isinstance(token_exp, str) or not token_exp.strip():
-                high_risk_tokens_valid = False
-    controls = {
-        "permission_matrix_present": permission_matrix_present,
-        "lease_bound_audit": lease_bound_audit,
-        "high_risk_tokens_valid": high_risk_tokens_valid,
-    }
+        _apply_row_controls(row, controls, active_leases)
     coverage = _clamp01(sum(1 for value in controls.values() if value) / len(controls))
-    status = "enforced" if coverage == 1.0 else ("degraded" if coverage >= 0.5 else "missing")
+    status = _status_from_coverage(coverage)
     return {
         "schema": IDENTITY_AUTHZ_PLANE_CONTRACT,
         "schema_version": IDENTITY_AUTHZ_PLANE_SCHEMA_VERSION,

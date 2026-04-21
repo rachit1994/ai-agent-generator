@@ -3,16 +3,65 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
 STABILITY_METRICS_CONTRACT = "sde.stability_metrics.v1"
 STABILITY_METRICS_SCHEMA_VERSION = "1.0"
+_FLOAT_TOLERANCE = 1e-4
 
 
-def validate_stability_metrics_dict(body: Any) -> list[str]:
-    if not isinstance(body, dict):
-        return ["stability_metrics_not_object"]
+def _validate_status_score_semantics(status: Any, metrics: dict[str, Any]) -> list[str]:
+    score = metrics.get("stability_score")
+    if isinstance(score, bool) or not isinstance(score, (int, float)):
+        return []
+    numeric_score = float(score)
+    if not math.isfinite(numeric_score):
+        return []
+    if _status_score_mismatch(status, numeric_score):
+        return ["stability_metrics_status_score_mismatch"]
+    return []
+
+
+def _validate_metric_arithmetic_semantics(metrics: dict[str, Any]) -> list[str]:
+    finalize_pass_rate = metrics.get("finalize_pass_rate")
+    reliability_score = metrics.get("reliability_score")
+    retry_pressure = metrics.get("retry_pressure")
+    stability_score = metrics.get("stability_score")
+    if (
+        isinstance(finalize_pass_rate, bool)
+        or not isinstance(finalize_pass_rate, (int, float))
+        or isinstance(reliability_score, bool)
+        or not isinstance(reliability_score, (int, float))
+        or isinstance(retry_pressure, bool)
+        or not isinstance(retry_pressure, (int, float))
+        or isinstance(stability_score, bool)
+        or not isinstance(stability_score, (int, float))
+    ):
+        return []
+    expected = round(
+        (0.55 * float(finalize_pass_rate))
+        + (0.35 * float(reliability_score))
+        + (0.10 * (1.0 - float(retry_pressure))),
+        4,
+    )
+    if abs(float(stability_score) - expected) > _FLOAT_TOLERANCE:
+        return ["stability_metrics_metric_semantics:stability_score"]
+    return []
+
+
+def _status_score_mismatch(status: Any, score: float) -> bool:
+    if status == "stable":
+        return score < 0.8
+    if status == "degraded":
+        return score < 0.55 or score >= 0.8
+    if status == "unstable":
+        return score >= 0.55
+    return False
+
+
+def _validate_core_fields(body: dict[str, Any]) -> tuple[list[str], Any]:
     errs: list[str] = []
     if body.get("schema") != STABILITY_METRICS_CONTRACT:
         errs.append("stability_metrics_schema")
@@ -21,21 +70,41 @@ def validate_stability_metrics_dict(body: Any) -> list[str]:
     run_id = body.get("run_id")
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("stability_metrics_run_id")
-    metrics = body.get("metrics")
-    if not isinstance(metrics, dict):
-        errs.append("stability_metrics_metrics")
-        return errs
+    status = body.get("status")
+    if status not in ("stable", "degraded", "unstable"):
+        errs.append("stability_metrics_status")
+    return errs, status
+
+
+def _validate_metric_fields(metrics: dict[str, Any]) -> list[str]:
+    errs: list[str] = []
     for key in ("finalize_pass_rate", "reliability_score", "retry_pressure", "stability_score"):
         value = metrics.get(key)
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             errs.append(f"stability_metrics_metric_type:{key}")
             continue
         numeric = float(value)
+        if not math.isfinite(numeric):
+            errs.append(f"stability_metrics_metric_finite:{key}")
+            continue
         if numeric < 0.0 or numeric > 1.0:
             errs.append(f"stability_metrics_metric_range:{key}")
-    status = body.get("status")
-    if status not in ("stable", "degraded", "unstable"):
-        errs.append("stability_metrics_status")
+    return errs
+
+
+def validate_stability_metrics_dict(body: Any) -> list[str]:
+    if not isinstance(body, dict):
+        return ["stability_metrics_not_object"]
+    errs, status = _validate_core_fields(body)
+    metrics = body.get("metrics")
+    if not isinstance(metrics, dict):
+        errs.append("stability_metrics_metrics")
+        return errs
+    errs.extend(_validate_metric_fields(metrics))
+    if not errs:
+        errs.extend(_validate_metric_arithmetic_semantics(metrics))
+    if not errs:
+        errs.extend(_validate_status_score_semantics(status, metrics))
     return errs
 
 

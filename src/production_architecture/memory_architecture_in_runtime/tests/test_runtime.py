@@ -30,3 +30,28 @@ def test_validate_memory_architecture_in_runtime_fail_closed() -> None:
     errs = validate_memory_architecture_in_runtime_dict({"schema": "bad"})
     assert "memory_architecture_in_runtime_schema" in errs
     assert "memory_architecture_in_runtime_schema_version" in errs
+    assert "memory_architecture_in_runtime_evidence" in errs
+
+
+def test_validate_memory_architecture_in_runtime_rejects_bad_evidence_refs() -> None:
+    payload = build_memory_architecture_in_runtime(
+        run_id="rid-memory-runtime",
+        retrieval_bundle={"chunks": [{"text": "x"}]},
+        quality_metrics={"contradiction_rate": 0.1},
+        quarantine_lines=[],
+    )
+    payload["evidence"]["retrieval_bundle_ref"] = "memory/other.json"
+    errs = validate_memory_architecture_in_runtime_dict(payload)
+    assert "memory_architecture_in_runtime_evidence_ref:retrieval_bundle_ref" in errs
+
+
+def test_validate_memory_architecture_in_runtime_rejects_status_semantics_mismatch() -> None:
+    payload = build_memory_architecture_in_runtime(
+        run_id="rid-memory-runtime",
+        retrieval_bundle={"chunks": [{"text": "x"}]},
+        quality_metrics={"contradiction_rate": 0.1},
+        quarantine_lines=[],
+    )
+    payload["status"] = "missing"
+    errs = validate_memory_architecture_in_runtime_dict(payload)
+    assert "memory_architecture_in_runtime_status_semantics:missing" in errs

@@ -10,6 +10,22 @@ SAFETY_CONTROLLER_CONTRACT = "sde.safety_controller.v1"
 SAFETY_CONTROLLER_SCHEMA_VERSION = "1.0"
 
 
+def _validate_metrics(metrics: Any) -> tuple[list[str], tuple[bool, bool, bool] | None]:
+    if not isinstance(metrics, dict):
+        return (["safety_controller_metrics"], None)
+    errs: list[str] = []
+    values: list[bool] = []
+    for key in ("hard_stop_failures", "validation_ready", "policy_bundle_valid"):
+        value = metrics.get(key)
+        if not isinstance(value, bool):
+            errs.append(f"safety_controller_metric_type:{key}")
+            continue
+        values.append(value)
+    if errs:
+        return (errs, None)
+    return ([], (values[0], values[1], values[2]))
+
+
 def validate_safety_controller_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["safety_controller_not_object"]
@@ -24,13 +40,16 @@ def validate_safety_controller_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("allow", "block"):
         errs.append("safety_controller_status")
-    metrics = body.get("metrics")
-    if not isinstance(metrics, dict):
-        errs.append("safety_controller_metrics")
-    else:
-        for key in ("hard_stop_failures", "validation_ready", "policy_bundle_valid"):
-            if not isinstance(metrics.get(key), bool):
-                errs.append(f"safety_controller_metric_type:{key}")
+    metric_errs, metric_values = _validate_metrics(body.get("metrics"))
+    errs.extend(metric_errs)
+    if metric_values is not None and status in ("allow", "block"):
+        hard_stop_failures, validation_ready, policy_bundle_valid = metric_values
+        expected_policy_bundle_valid = not hard_stop_failures
+        if policy_bundle_valid != expected_policy_bundle_valid:
+            errs.append("safety_controller_policy_bundle_valid_mismatch")
+        expected_status = "allow" if (validation_ready and policy_bundle_valid) else "block"
+        if status != expected_status:
+            errs.append("safety_controller_status_metrics_mismatch")
     return errs
 
 

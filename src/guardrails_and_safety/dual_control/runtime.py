@@ -20,6 +20,8 @@ def _dual_required(doc_review: dict[str, Any]) -> bool:
 
 
 def _ack_valid(ack: dict[str, Any]) -> tuple[bool, bool]:
+    if not isinstance(ack, dict):
+        return False, False
     if ack.get("schema_version") != "1.0":
         return False, False
     actor_a = ack.get("implementor_actor_id")
@@ -30,7 +32,12 @@ def _ack_valid(ack: dict[str, Any]) -> tuple[bool, bool]:
     b = actor_b.strip()
     distinct_actors = bool(a and b and a != b)
     acked_at = ack.get("acknowledged_at")
-    acked_at_ok = isinstance(acked_at, str) and bool(acked_at.strip())
+    acked_at_ok = (
+        isinstance(acked_at, str)
+        and bool(acked_at.strip())
+        and "T" in acked_at
+        and acked_at.endswith("Z")
+    )
     return distinct_actors and acked_at_ok, distinct_actors
 
 
@@ -40,10 +47,12 @@ def build_dual_control_runtime(
     doc_review: dict[str, Any],
     dual_control_ack: dict[str, Any],
 ) -> dict[str, Any]:
-    doc_review_passed = doc_review.get("passed") is True
-    dual_required = _dual_required(doc_review)
-    ack_present = bool(dual_control_ack)
-    ack_valid, distinct_actors = _ack_valid(dual_control_ack) if ack_present else (False, False)
+    normalized_doc_review = doc_review if isinstance(doc_review, dict) else {}
+    normalized_ack = dual_control_ack if isinstance(dual_control_ack, dict) else {}
+    doc_review_passed = normalized_doc_review.get("passed") is True
+    dual_required = _dual_required(normalized_doc_review)
+    ack_present = bool(normalized_ack)
+    ack_valid, distinct_actors = _ack_valid(normalized_ack) if ack_present else (False, False)
     status = "validated"
     if dual_required and not ack_present:
         status = "missing_required_ack"

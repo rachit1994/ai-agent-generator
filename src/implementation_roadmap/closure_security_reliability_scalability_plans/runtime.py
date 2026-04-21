@@ -14,6 +14,10 @@ def _plan_status(value: bool) -> str:
     return "ready" if value else "blocked"
 
 
+def _is_true(value: Any) -> bool:
+    return value is True
+
+
 def build_closure_security_reliability_scalability_plans(
     *,
     run_id: str,
@@ -27,7 +31,7 @@ def build_closure_security_reliability_scalability_plans(
     policy_bundle_valid: bool,
 ) -> dict[str, Any]:
     review_pass = str(review.get("status", "")) == "completed_review_pass"
-    validation_ready = bool(summary.get("quality", {}).get("validation_ready"))
+    validation_ready = _is_true(summary.get("quality", {}).get("validation_ready"))
     closure_ok = bool(readiness.get("status") == "ready" and review_pass and validation_ready)
     security_ok = bool(policy_bundle_valid and review_pass and validation_ready)
     reliability_metrics = summary.get("metrics", {}) if isinstance(summary.get("metrics"), dict) else {}

@@ -16,13 +16,19 @@ def build_production_readiness_program(
     hard_stops: list[dict[str, Any]],
     artifact_paths: list[dict[str, Any]],
 ) -> dict[str, Any]:
-    manifest_valid = bool(summary.get("runId") == run_id and isinstance(summary.get("mode"), str))
+    manifest_valid = bool(
+        summary.get("runId") == run_id
+        and isinstance(summary.get("mode"), str)
+        and summary.get("mode") == mode
+    )
     review_status = str(review.get("status", ""))
     review_gate_passed = review_status == "completed_review_pass"
-    hard_stops_passed = all(bool(row.get("passed")) for row in hard_stops if isinstance(row, dict))
+    hard_stop_rows = [row for row in hard_stops if isinstance(row, dict)]
+    hard_stops_passed = bool(hard_stop_rows) and all(row.get("passed") is True for row in hard_stop_rows)
     balanced = summary.get("balanced_gates")
-    balanced_ready = bool(isinstance(balanced, dict) and balanced.get("validation_ready"))
-    required_present = all(bool(row.get("present")) for row in artifact_paths if isinstance(row, dict))
+    balanced_ready = bool(isinstance(balanced, dict) and balanced.get("validation_ready") is True)
+    artifact_rows = [row for row in artifact_paths if isinstance(row, dict)]
+    required_present = bool(artifact_rows) and all(row.get("present") is True for row in artifact_rows)
     policy_bundle_valid = required_present
     checks = {
         "run_manifest_valid": manifest_valid,

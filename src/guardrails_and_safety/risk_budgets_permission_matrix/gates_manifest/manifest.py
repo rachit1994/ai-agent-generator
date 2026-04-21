@@ -78,6 +78,7 @@ STORAGE_MANIFEST_PATHS = [
     "observability/component_runtime.json",
     "safety/risk_budgets_permission_matrix_runtime.json",
     "safety/controller_runtime.json",
+    "safety/autonomy_boundaries_tokens_expiry.json",
 ]
 
 GUARDED_CORE_PATHS = [

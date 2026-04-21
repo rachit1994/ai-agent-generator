@@ -17,7 +17,9 @@ def _read_json_or_empty(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
     body = json.loads(path.read_text(encoding="utf-8"))
-    return body if isinstance(body, dict) else {}
+    if not isinstance(body, dict):
+        raise ValueError(f"learning_lineage_upstream_not_object:{path.name}")
+    return body
 
 
 def _read_jsonl_rows(path: Path) -> list[dict[str, Any]]:
@@ -28,8 +30,9 @@ def _read_jsonl_rows(path: Path) -> list[dict[str, Any]]:
         if not line.strip():
             continue
         row = json.loads(line)
-        if isinstance(row, dict):
-            rows.append(row)
+        if not isinstance(row, dict):
+            raise ValueError(f"learning_lineage_event_row_not_object:{path.name}")
+        rows.append(row)
     return rows
 
 

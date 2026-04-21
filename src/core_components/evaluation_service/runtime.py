@@ -7,6 +7,11 @@ from typing import Any
 from .contracts import EVALUATION_SERVICE_CONTRACT, EVALUATION_SERVICE_SCHEMA_VERSION
 
 
+def _has_status(payload: dict[str, Any]) -> bool:
+    status = payload.get("status")
+    return isinstance(status, str) and bool(status.strip())
+
+
 def build_evaluation_service(
     *,
     run_id: str,
@@ -14,8 +19,8 @@ def build_evaluation_service(
     online_eval: dict[str, Any],
     promotion_eval: dict[str, Any],
 ) -> dict[str, Any]:
-    has_online_eval = bool(online_eval)
-    has_promotion_eval = bool(promotion_eval)
+    has_online_eval = _has_status(online_eval) if isinstance(online_eval, dict) else False
+    has_promotion_eval = _has_status(promotion_eval) if isinstance(promotion_eval, dict) else False
     summary_has_metrics = isinstance(summary.get("metrics"), dict)
     all_checks_passed = has_online_eval and has_promotion_eval and summary_has_metrics
     status = "ready" if all_checks_passed else "degraded"

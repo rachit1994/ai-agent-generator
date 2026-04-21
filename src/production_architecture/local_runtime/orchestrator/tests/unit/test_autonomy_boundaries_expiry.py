@@ -19,12 +19,15 @@ def test_parse_iso_utc_accepts_zulu_and_rejects_garbage() -> None:
 
 
 def test_build_token_context_emits_expiry_fields() -> None:
-    ctx = build_token_context("r1", [], max_tokens=100, context_ttl_seconds=3600)
+    now = datetime(2030, 1, 1, 0, 0, tzinfo=timezone.utc)
+    ctx = build_token_context("r1", [], max_tokens=100, context_ttl_seconds=3600, now_utc=now)
     assert ctx["context_ttl_seconds"] == 3600
     a = parse_iso_utc(str(ctx["autonomy_anchor_at"]))
     e = parse_iso_utc(str(ctx["context_expires_at"]))
     assert a is not None and e is not None
     assert e > a
+    assert str(ctx["autonomy_anchor_at"]) == "2030-01-01T00:00:00+00:00"
+    assert str(ctx["context_expires_at"]) == "2030-01-01T01:00:00+00:00"
 
 
 def test_build_token_context_uses_effective_budget_and_fail_closes_invalid_tokens() -> None:
@@ -63,7 +66,14 @@ def test_hs06_fails_on_expired_context(tmp_path: Path) -> None:
 
 
 def test_hs06_passes_when_expiry_absent(tmp_path: Path) -> None:
-    tc: dict[str, object] = {"schema_version": "1.0", "stages": []}
+    tc: dict[str, object] = {
+        "schema_version": "1.0",
+        "run_id": "rid",
+        "stages": [],
+        "autonomy_anchor_at": "2030-01-01T00:00:00+00:00",
+        "context_expires_at": "2030-01-01T01:00:00+00:00",
+        "context_ttl_seconds": 3600,
+    }
     hs = evaluate_hard_stops(tmp_path, [], tc, run_status="ok", mode="baseline")
     assert next(h for h in hs if h["id"] == "HS06")["passed"] is True
 
@@ -75,7 +85,14 @@ def test_hs06_fails_when_context_expiry_invalid_format(tmp_path: Path) -> None:
 
 
 def test_hs06_fails_when_stage_entry_not_object(tmp_path: Path) -> None:
-    tc: dict[str, object] = {"schema_version": "1.0", "stages": ["bad"]}
+    tc: dict[str, object] = {
+        "schema_version": "1.0",
+        "run_id": "rid",
+        "stages": ["bad"],
+        "autonomy_anchor_at": "2030-01-01T00:00:00+00:00",
+        "context_expires_at": "2030-01-01T01:00:00+00:00",
+        "context_ttl_seconds": 3600,
+    }
     hs = evaluate_hard_stops(tmp_path, [], tc, run_status="ok", mode="baseline")
     assert next(h for h in hs if h["id"] == "HS06")["passed"] is False
 
@@ -87,6 +104,13 @@ def test_hs06_fails_when_budget_status_fail_closed(tmp_path: Path) -> None:
     }
     hs = evaluate_hard_stops(tmp_path, [], tc, run_status="ok", mode="baseline")
     assert next(h for h in hs if h["id"] == "HS06")["passed"] is False
+
+
+def test_hs30_fails_on_malformed_audit_jsonl_row(tmp_path: Path) -> None:
+    _org_plane_dirs(tmp_path, {"risk": "high", "approval_token_id": "autonomy:tok-1", "approval_token_expires_at": "2030-01-01T01:00:00+00:00", "lease_id": "lease-a"})
+    (tmp_path / "iam" / "action_audit.jsonl").write_text("{bad json", encoding="utf-8")
+    hs = {h["id"]: h["passed"] for h in evaluate_organization_hard_stops(tmp_path)}
+    assert hs["HS30"] is False
 
 
 def _org_plane_dirs(tmp_path: Path, audit_line: dict[str, object]) -> None:

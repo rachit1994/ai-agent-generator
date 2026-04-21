@@ -15,6 +15,10 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _is_passed(value: Any) -> bool:
+    return value is True
+
+
 def _finalize_signals(events: list[dict[str, Any]]) -> tuple[float, float]:
     finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
     if not finals:
@@ -25,7 +29,7 @@ def _finalize_signals(events: list[dict[str, Any]]) -> tuple[float, float]:
         score = row.get("score")
         if not isinstance(score, dict):
             continue
-        passed += 1 if bool(score.get("passed")) else 0
+        passed += 1 if _is_passed(score.get("passed")) else 0
         reliability = score.get("reliability")
         if isinstance(reliability, (int, float)) and not isinstance(reliability, bool):
             reliability_values.append(float(reliability))
@@ -48,7 +52,7 @@ def build_extended_binary_gates(
         checks = []
     total_checks = len(checks)
     passed_checks = sum(
-        1 for row in checks if isinstance(row, dict) and bool(row.get("passed")) and row.get("name") != "review"
+        1 for row in checks if isinstance(row, dict) and _is_passed(row.get("passed")) and row.get("name") != "review"
     )
     governance_rate = _clamp01((passed_checks / total_checks) if total_checks else 0.0)
     pass_rate, reliability_rate = _finalize_signals(events)

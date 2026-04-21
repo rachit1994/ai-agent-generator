@@ -18,11 +18,13 @@ def build_failure_path_artifacts(
     replay_present = bool(replay_manifest)
     summary_valid = summary_present and not validate_failure_summary_dict(summary)
     replay_valid = replay_present and not validate_replay_manifest_dict(replay_manifest)
-    status = "ok"
-    run_status = summary.get("runStatus")
-    partial = bool(summary.get("partial"))
-    if run_status == "failed":
-        status = "partial_failure" if partial else "failed"
+    status = "failed"
+    if summary_valid and replay_valid:
+        status = "ok"
+        run_status = summary.get("runStatus")
+        partial = bool(summary.get("partial"))
+        if run_status == "failed":
+            status = "partial_failure" if partial else "failed"
     return {
         "schema": FAILURE_PATH_ARTIFACTS_CONTRACT,
         "schema_version": FAILURE_PATH_ARTIFACTS_SCHEMA_VERSION,

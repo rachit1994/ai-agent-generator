@@ -15,6 +15,10 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _is_passed(value: Any) -> bool:
+    return value is True
+
+
 def build_error_reduction_metrics(
     *,
     run_id: str,
@@ -27,7 +31,7 @@ def build_error_reduction_metrics(
     if not isinstance(checks, list):
         checks = []
     baseline_errors = sum(
-        1 for row in checks if isinstance(row, dict) and (not bool(row.get("passed")))
+        1 for row in checks if isinstance(row, dict) and (not _is_passed(row.get("passed")))
     )
     finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
     candidate_errors = 0
@@ -36,7 +40,7 @@ def build_error_reduction_metrics(
         if not isinstance(score, dict):
             candidate_errors += 1
             continue
-        if not bool(score.get("passed")):
+        if not _is_passed(score.get("passed")):
             candidate_errors += 1
     resolved = baseline_errors - candidate_errors
     if resolved < 0:

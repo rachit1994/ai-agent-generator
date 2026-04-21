@@ -10,6 +10,22 @@ REGRESSION_TESTING_SURFACE_CONTRACT = "sde.regression_testing_surface.v1"
 REGRESSION_TESTING_SURFACE_SCHEMA_VERSION = "1.0"
 
 
+def _validate_metrics(metrics: Any) -> tuple[list[str], bool | None]:
+    if not isinstance(metrics, dict):
+        return (["regression_testing_surface_metrics"], None)
+    errs: list[str] = []
+    values: list[bool] = []
+    for key in ("anchor_validation_passed", "has_promotion_eval", "has_online_eval", "has_eval_summary"):
+        value = metrics.get(key)
+        if not isinstance(value, bool):
+            errs.append(f"regression_testing_surface_metric_type:{key}")
+            continue
+        values.append(value)
+    if errs:
+        return (errs, None)
+    return ([], all(values))
+
+
 def validate_regression_testing_surface_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["regression_testing_surface_not_object"]
@@ -24,13 +40,12 @@ def validate_regression_testing_surface_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("ready", "degraded"):
         errs.append("regression_testing_surface_status")
-    metrics = body.get("metrics")
-    if not isinstance(metrics, dict):
-        errs.append("regression_testing_surface_metrics")
-    else:
-        for key in ("anchor_validation_passed", "has_promotion_eval", "has_online_eval", "has_eval_summary"):
-            if not isinstance(metrics.get(key), bool):
-                errs.append(f"regression_testing_surface_metric_type:{key}")
+    metric_errs, all_checks_passed = _validate_metrics(body.get("metrics"))
+    errs.extend(metric_errs)
+    if all_checks_passed is not None and status in ("ready", "degraded"):
+        expected_status = "ready" if all_checks_passed else "degraded"
+        if status != expected_status:
+            errs.append("regression_testing_surface_status_metrics_mismatch")
     return errs
 
 

@@ -57,6 +57,9 @@ def validate_review_payload_contract(review: dict[str, Any]) -> list[str]:
 
 
 def is_review_pass_evaluator_eligible(review: dict[str, Any]) -> bool:
+    # Fail closed: pass-eligibility requires a contract-valid review payload.
+    if validate_review_payload_contract(review):
+        return False
     if str(review.get("status") or "") != "completed_review_pass":
         return False
     findings = review.get("review_findings")

@@ -15,12 +15,20 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _score_or_zero(value: Any) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return _clamp01(float(value))
+    return 0.0
+
+
 def _finalize_passed(events: list[dict[str, Any]]) -> bool:
     finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
     if not finals:
         return False
     score = finals[-1].get("score")
-    return bool(isinstance(score, dict) and score.get("passed"))
+    return isinstance(score, dict) and score.get("passed") is True
 
 
 def _check_pass_ratio(parsed: dict[str, Any]) -> float:
@@ -33,7 +41,8 @@ def _check_pass_ratio(parsed: dict[str, Any]) -> float:
         if not isinstance(row, dict) or "passed" not in row:
             continue
         total += 1
-        good += 1 if bool(row.get("passed")) else 0
+        passed = row.get("passed")
+        good += 1 if isinstance(passed, bool) and passed else 0
     if total == 0:
         return 0.0
     return _clamp01(good / total)
@@ -72,7 +81,7 @@ def build_promotion_package(
     _ = events
     nodes = skill_nodes.get("nodes") if isinstance(skill_nodes, dict) else None
     node = nodes[0] if isinstance(nodes, list) and nodes and isinstance(nodes[0], dict) else {}
-    score = float(node.get("score", 0.0) or 0.0)
+    score = _score_or_zero(node.get("score", 0.0))
     if score >= 0.9:
         current_stage = "senior"
         proposed_stage = "architect"

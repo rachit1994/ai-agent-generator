@@ -28,3 +28,15 @@ def test_validate_replay_fail_closed_fail_closed() -> None:
     errs = validate_replay_fail_closed_dict({"schema": "bad"})
     assert "replay_fail_closed_schema" in errs
     assert "replay_fail_closed_schema_version" in errs
+
+
+def test_validate_replay_fail_closed_rejects_status_checks_mismatch() -> None:
+    payload = build_replay_fail_closed(
+        run_id="rid-replay-fc",
+        replay_manifest={"chain_root": "abc", "sources": [{"sha256": "abc"}]},
+        trace_rows=[{"t": 1}],
+        event_rows=[{"e": 1}],
+    )
+    payload["status"] = "fail"
+    errs = validate_replay_fail_closed_dict(payload)
+    assert "replay_fail_closed_status_checks_mismatch" in errs

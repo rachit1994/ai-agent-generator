@@ -18,6 +18,7 @@ from guardrails_and_safety import (
 from workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.report import generate_report
 from production_architecture.storage.storage.storage import write_json
 
+from .autonomy_boundaries_layer import write_autonomy_boundaries_artifact
 
 def _guarded_definition_of_done(output_dir: Path, review_status: str) -> dict[str, Any]:
     step_ok = True
@@ -69,6 +70,7 @@ def write_cto_gate_layer(
         max_tokens=DEFAULT_CONFIG.budgets.max_tokens,
     )
     write_json(output_dir / "token_context.json", token_ctx)
+    write_autonomy_boundaries_artifact(output_dir=output_dir, run_id=run_id, token_context=token_ctx)
     review = build_review(
         run_id,
         mode,

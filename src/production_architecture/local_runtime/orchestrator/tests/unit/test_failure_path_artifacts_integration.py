@@ -34,3 +34,26 @@ def test_failure_path_artifacts_written_and_valid(tmp_path: Path) -> None:
     payload = write_failure_path_artifacts(output_dir=run_dir, run_id=run_id)
     assert payload["run_id"] == run_id
     assert validate_failure_path_artifacts_path(run_dir / "replay" / "failure_path_artifacts.json") == []
+
+
+def test_failure_path_artifacts_fails_closed_when_replay_manifest_missing(tmp_path: Path) -> None:
+    run_id = "run-failure-path-missing-replay"
+    run_dir = tmp_path / "runs" / run_id
+    traces = run_dir / "traces.jsonl"
+    traces.parent.mkdir(parents=True, exist_ok=True)
+    traces.write_text('{"type":"run_start"}\n', encoding="utf-8")
+    write_json(
+        run_dir / "summary.json",
+        {
+            "runId": run_id,
+            "mode": "baseline",
+            "runStatus": "ok",
+            "partial": False,
+            "error": {"type": "RuntimeError", "message": "boom"},
+            "provider": "p",
+            "model": "m",
+        },
+    )
+    payload = write_failure_path_artifacts(output_dir=run_dir, run_id=run_id)
+    assert payload["status"] == "failed"
+    assert payload["checks"]["replay_manifest_contract_valid"] is False

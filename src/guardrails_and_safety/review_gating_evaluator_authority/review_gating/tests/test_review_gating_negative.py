@@ -94,6 +94,12 @@ def test_is_evaluator_pass_eligible_false_when_finding_is_not_object() -> None:
     assert is_evaluator_pass_eligible(review) is False
 
 
+def test_is_evaluator_pass_eligible_false_when_pass_contract_is_invalid() -> None:
+    review = _base_review()
+    del review["run_id"]
+    assert is_evaluator_pass_eligible(review) is False
+
+
 def test_validate_execution_run_directory_flags_review_pass_not_eligible(
     tmp_path: Path, monkeypatch,
 ) -> None:

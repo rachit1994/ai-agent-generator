@@ -94,3 +94,88 @@ def test_run_directory_surfaces_invalid_rollback_rules_policy_bundle_contract(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "rollback_rules_policy_bundle_contract:rollback_rules_policy_bundle_schema" in result["errors"]
+
+
+def test_run_directory_requires_derived_artifact_even_without_source_rollback(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "rollback_rules_policy_bundle_contract:rollback_rules_policy_bundle_file_missing" in result["errors"]
+
+
+def test_run_directory_requires_derived_artifact_when_source_rollback_present(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "program" / "policy_bundle_rollback.json").write_text(
+        json.dumps({"schema_version": "1.0", "status": "none"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "rollback_rules_policy_bundle_contract:rollback_rules_policy_bundle_file_missing" in result["errors"]
+
+
+def test_run_directory_surfaces_atomic_source_vs_derived_mismatch(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "program" / "policy_bundle_rollback.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "status": "rolled_back_atomic",
+                "previous_policy_sha256": "0" * 64,
+                "current_policy_sha256": "f" * 64,
+                "paths_touched": ["program/project_plan.json"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (out / "program" / "rollback_rules_policy_bundle.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.rollback_rules_policy_bundle.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "status": "none",
+                "rollback_checks": {
+                    "record_present": True,
+                    "schema_valid": True,
+                    "atomic_sha_change": False,
+                    "paths_touched_valid": False,
+                },
+                "evidence": {
+                    "policy_bundle_rollback_ref": "program/policy_bundle_rollback.json",
+                    "rollback_rules_policy_bundle_ref": "program/rollback_rules_policy_bundle.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "rollback_rules_policy_bundle_source_atomic_checks_failed" in result["errors"]

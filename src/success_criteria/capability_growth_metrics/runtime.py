@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .contracts import (
@@ -11,6 +12,8 @@ from .contracts import (
 
 
 def _clamp01(value: float) -> float:
+    if not math.isfinite(value):
+        return 0.0
     if value < 0.0:
         return 0.0
     if value > 1.0:

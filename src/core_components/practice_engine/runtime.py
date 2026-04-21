@@ -27,7 +27,7 @@ def build_practice_engine(
     readiness_signal = 0.0
     expected_improvement = 0.0
     if isinstance(evaluation_result, dict):
-        passed = bool(evaluation_result.get("passed"))
+        passed = evaluation_result.get("passed") is True
         readiness_signal = 1.0 if passed else 0.4
         expected_improvement = 0.8 if passed else 0.3
     root_causes = reflection_bundle.get("root_causes") if isinstance(reflection_bundle, dict) else []
@@ -39,7 +39,7 @@ def build_practice_engine(
     readiness_signal = _clamp01(readiness_signal)
     expected_improvement = _clamp01(expected_improvement)
     status = "blocked"
-    if readiness_signal >= 0.6 and expected_improvement >= 0.25:
+    if review_pass and readiness_signal >= 0.6 and expected_improvement >= 0.25:
         status = "ready"
     elif readiness_signal >= 0.35:
         status = "needs_practice"

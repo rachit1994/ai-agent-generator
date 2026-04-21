@@ -7,6 +7,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from guardrails_and_safety.autonomy_boundaries.autonomy_boundaries_tokens_expiry.contracts import (
+    validate_high_risk_approval_token_row,
+)
 from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_util import parse_iso_utc
 from workflow_pipelines.strategy_overlay.strategy_overlay_contract import validate_strategy_proposal_dict
 
@@ -91,18 +94,7 @@ def _hs29_lease_audit(output_dir: Path) -> bool:
 
 
 def _high_risk_approval_line_ok(row: dict[str, Any], now: datetime) -> bool:
-    if str(row.get("risk", "")).lower() != "high":
-        return True
-    token_id = row.get("approval_token_id")
-    if not isinstance(token_id, str) or not token_id.strip():
-        return False
-    raw_exp = row.get("approval_token_expires_at")
-    if raw_exp is None or raw_exp == "":
-        return False
-    exp = parse_iso_utc(str(raw_exp))
-    if exp is None:
-        return False
-    return exp >= now
+    return validate_high_risk_approval_token_row(row, now_utc=now) == []
 
 
 def _hs30_high_risk_approval(output_dir: Path) -> bool:

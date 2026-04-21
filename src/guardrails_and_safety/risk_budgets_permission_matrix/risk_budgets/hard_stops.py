@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from guardrails_and_safety.autonomy_boundaries.autonomy_boundaries_tokens_expiry.contracts import (
+    validate_token_context_payload,
+)
 from pathlib import Path
 from typing import Any
 
 from guardrails_and_safety.risk_budgets_permission_matrix.gates_constants.constants import REQUIRED_REVIEW_KEYS, TOKEN_CONTEXT_SCHEMA
 from guardrails_and_safety.review_gating_evaluator_authority.review_gating.review import validate_review_payload
-from guardrails_and_safety.risk_budgets_permission_matrix.time_and_budget.time_util import parse_iso_utc
 from .hard_stops_events import evaluate_event_lineage_hard_stops
 from .hard_stops_guarded import evaluate_guarded_hard_stops
 from .hard_stops_evolution import evaluate_evolution_hard_stops
@@ -107,17 +109,10 @@ def _hs05_lineage(output_dir: Path, events: list[dict[str, Any]], run_status: st
     return traces_ok and orch_ok and len(events) > 0
 
 
-def _token_context_window_unexpired(token_context: dict[str, Any]) -> bool:
-    raw = token_context.get("context_expires_at")
-    if not isinstance(raw, str) or not raw.strip():
-        return True
-    exp = parse_iso_utc(raw.strip())
-    if exp is None:
-        return False
-    return exp >= datetime.now(timezone.utc)
-
-
 def _hs06_token_budgets(token_context: dict[str, Any]) -> bool:
+    token_context_errs = validate_token_context_payload(token_context, now_utc=datetime.now(timezone.utc))
+    if token_context_errs:
+        return False
     for st in token_context.get("stages") or []:
         if not isinstance(st, dict):
             return False
@@ -133,7 +128,7 @@ def _hs06_token_budgets(token_context: dict[str, Any]) -> bool:
             return False
         if actual_output > output_budget:
             return False
-    return _token_context_window_unexpired(token_context)
+    return True
 
 
 def evaluate_hard_stops(

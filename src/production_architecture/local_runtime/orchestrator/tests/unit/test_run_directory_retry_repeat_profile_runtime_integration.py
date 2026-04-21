@@ -53,3 +53,39 @@ def test_run_directory_surfaces_invalid_retry_repeat_profile_runtime_contract(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "retry_repeat_profile_runtime_contract:retry_repeat_profile_runtime_schema" in result["errors"]
+
+
+def test_run_directory_surfaces_retry_repeat_profile_attempt_count_mismatch(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "program" / "retry_repeat_profile_runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.retry_repeat_profile_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "repeat": 2,
+                "status": "repeat_ok",
+                "metrics": {
+                    "attempt_count": 1,
+                    "all_runs_no_pipeline_error": True,
+                    "validation_ready_all": True,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "retry_repeat_profile_runtime_contract:"
+        "retry_repeat_profile_runtime_attempt_count_mismatch"
+    ) in result["errors"]

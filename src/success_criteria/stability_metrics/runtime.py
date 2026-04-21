@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .contracts import STABILITY_METRICS_CONTRACT, STABILITY_METRICS_SCHEMA_VERSION
 
 
 def _clamp01(value: float) -> float:
+    if not math.isfinite(value):
+        return 0.0
     if value < 0.0:
         return 0.0
     if value > 1.0:
@@ -40,7 +43,9 @@ def build_stability_metrics(
         if isinstance(score, dict):
             reliability = score.get("reliability")
             if isinstance(reliability, (int, float)) and not isinstance(reliability, bool):
-                reliability_values.append(float(reliability))
+                numeric_reliability = float(reliability)
+                if math.isfinite(numeric_reliability):
+                    reliability_values.append(numeric_reliability)
         if row.get("stage") in {"repair", "executor_fix", "verifier_fix"}:
             retries += 1
     reliability_score = _clamp01(

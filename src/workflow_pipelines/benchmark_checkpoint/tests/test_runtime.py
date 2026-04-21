@@ -19,3 +19,53 @@ def test_validate_benchmark_checkpoint_runtime_fail_closed() -> None:
     errs = validate_benchmark_checkpoint_runtime_dict({"schema": "bad"})
     assert "benchmark_checkpoint_runtime_schema" in errs
     assert "benchmark_checkpoint_runtime_schema_version" in errs
+
+
+def test_build_benchmark_checkpoint_runtime_finished_requires_completed_tasks() -> None:
+    runtime = build_benchmark_checkpoint_runtime(
+        checkpoint={"run_id": "bench-ck", "finished": True, "completed_task_ids": []}
+    )
+    assert runtime["status"] == "in_progress"
+    assert runtime["checks"]["finished"] is False
+
+
+def test_validate_benchmark_checkpoint_runtime_rejects_status_checks_mismatch() -> None:
+    errs = validate_benchmark_checkpoint_runtime_dict(
+        {
+            "schema": "sde.benchmark_checkpoint_runtime.v1",
+            "schema_version": "1.0",
+            "run_id": "rid",
+            "status": "finished",
+            "checks": {
+                "checkpoint_present": True,
+                "finished": False,
+                "has_completed_tasks": True,
+            },
+        }
+    )
+    assert "benchmark_checkpoint_runtime_status_checks_mismatch" in errs
+
+
+def test_validate_benchmark_checkpoint_runtime_rejects_checkpoint_presence_mismatch() -> None:
+    errs = validate_benchmark_checkpoint_runtime_dict(
+        {
+            "schema": "sde.benchmark_checkpoint_runtime.v1",
+            "schema_version": "1.0",
+            "run_id": "rid",
+            "status": "in_progress",
+            "checks": {
+                "checkpoint_present": False,
+                "finished": True,
+                "has_completed_tasks": False,
+            },
+        }
+    )
+    assert "benchmark_checkpoint_runtime_checks_mismatch" in errs
+
+
+def test_build_benchmark_checkpoint_runtime_treats_truthy_non_boolean_finished_as_false() -> None:
+    runtime = build_benchmark_checkpoint_runtime(
+        checkpoint={"run_id": "bench-ck", "finished": "true", "completed_task_ids": ["task-1"]}
+    )
+    assert runtime["status"] == "in_progress"
+    assert runtime["checks"]["finished"] is False

@@ -8,6 +8,8 @@ from typing import Any
 
 ROLLBACK_RULES_POLICY_BUNDLE_CONTRACT = "sde.rollback_rules_policy_bundle.v1"
 ROLLBACK_RULES_POLICY_BUNDLE_SCHEMA_VERSION = "1.0"
+POLICY_BUNDLE_ROLLBACK_REF = "program/policy_bundle_rollback.json"
+ROLLBACK_RULES_POLICY_BUNDLE_REF = "program/rollback_rules_policy_bundle.json"
 
 
 def validate_rollback_rules_policy_bundle_dict(body: Any) -> list[str]:
@@ -31,6 +33,14 @@ def validate_rollback_rules_policy_bundle_dict(body: Any) -> list[str]:
         for key in ("record_present", "schema_valid", "atomic_sha_change", "paths_touched_valid"):
             if not isinstance(rollback_checks.get(key), bool):
                 errs.append(f"rollback_rules_policy_bundle_check_type:{key}")
+    evidence = body.get("evidence")
+    if not isinstance(evidence, dict):
+        errs.append("rollback_rules_policy_bundle_evidence")
+        evidence = {}
+    if evidence.get("policy_bundle_rollback_ref") != POLICY_BUNDLE_ROLLBACK_REF:
+        errs.append("rollback_rules_policy_bundle_evidence_policy_bundle_rollback_ref")
+    if evidence.get("rollback_rules_policy_bundle_ref") != ROLLBACK_RULES_POLICY_BUNDLE_REF:
+        errs.append("rollback_rules_policy_bundle_evidence_rollback_rules_policy_bundle_ref")
     return errs
 
 

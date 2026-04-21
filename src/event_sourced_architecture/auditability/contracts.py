@@ -10,6 +10,13 @@ AUDITABILITY_CONTRACT = "sde.auditability.v1"
 AUDITABILITY_SCHEMA_VERSION = "1.0"
 _ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
 _ALLOWED_STATUS = {"verifiable", "degraded", "inconsistent"}
+_EVIDENCE_REFS = {
+    "replay_manifest_ref": "replay_manifest.json",
+    "event_store_ref": "event_store/run_events.jsonl",
+    "kill_switch_ref": "kill_switch_state.json",
+    "review_ref": "review.json",
+    "auditability_ref": "audit/auditability.json",
+}
 
 
 def _validate_hash_chain(hash_chain: Any) -> list[str]:
@@ -45,17 +52,38 @@ def _validate_evidence(evidence: Any) -> list[str]:
     if not isinstance(evidence, dict):
         return ["auditability_evidence"]
     errs: list[str] = []
-    for key in (
-        "replay_manifest_ref",
-        "event_store_ref",
-        "kill_switch_ref",
-        "review_ref",
-        "auditability_ref",
-    ):
+    for key, expected_ref in _EVIDENCE_REFS.items():
         value = evidence.get(key)
         if not isinstance(value, str) or not value.strip():
             errs.append(f"auditability_evidence_{key}")
+        elif value != expected_ref:
+            errs.append(f"auditability_evidence_ref_mismatch:{key}")
     return errs
+
+
+def _validate_status_semantics(body: dict[str, Any]) -> list[str]:
+    status = body.get("status")
+    hash_chain = body.get("hash_chain")
+    integrity_ops = body.get("integrity_operations")
+    if status not in _ALLOWED_STATUS or not isinstance(hash_chain, dict) or not isinstance(integrity_ops, dict):
+        return []
+    hash_chain_valid = hash_chain.get("hash_chain_valid")
+    event_count = hash_chain.get("event_count")
+    chain_root = hash_chain.get("chain_root")
+    last_check_passed = integrity_ops.get("last_check_passed")
+    if (
+        not isinstance(hash_chain_valid, bool)
+        or isinstance(event_count, bool)
+        or not isinstance(event_count, int)
+        or not isinstance(chain_root, str)
+        or not isinstance(last_check_passed, bool)
+    ):
+        return []
+    if status == "verifiable" and (not hash_chain_valid or not last_check_passed):
+        return ["auditability_status_semantics_mismatch"]
+    if status == "inconsistent" and event_count > 0 and chain_root != "missing":
+        return ["auditability_status_semantics_mismatch"]
+    return []
 
 
 def validate_auditability_dict(body: Any) -> list[str]:
@@ -78,6 +106,8 @@ def validate_auditability_dict(body: Any) -> list[str]:
     errs.extend(_validate_hash_chain(body.get("hash_chain")))
     errs.extend(_validate_integrity_operations(body.get("integrity_operations")))
     errs.extend(_validate_evidence(body.get("evidence")))
+    if not errs:
+        errs.extend(_validate_status_semantics(body))
     return errs
 
 

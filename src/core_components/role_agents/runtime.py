@@ -15,6 +15,10 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _passed(value: Any) -> bool:
+    return value is True
+
+
 def build_role_agents(
     *,
     run_id: str,
@@ -26,7 +30,7 @@ def build_role_agents(
     if not isinstance(checks, list):
         checks = []
     planner_score = _clamp01(
-        sum(1 for row in checks if isinstance(row, dict) and bool(row.get("passed")))
+        sum(1 for row in checks if isinstance(row, dict) and _passed(row.get("passed")))
         / max(1, len(checks))
     )
     finalize_rows = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
@@ -34,7 +38,8 @@ def build_role_agents(
         sum(
             1
             for row in finalize_rows
-            if isinstance(row.get("score"), dict) and bool(row.get("score", {}).get("passed"))
+            if isinstance(row.get("score"), dict)
+            and _passed(row.get("score", {}).get("passed"))
         )
         / max(1, len(finalize_rows))
     )

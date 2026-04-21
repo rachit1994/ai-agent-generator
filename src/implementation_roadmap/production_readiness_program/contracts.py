@@ -8,6 +8,35 @@ from typing import Any
 
 PRODUCTION_READINESS_PROGRAM_CONTRACT = "sde.production_readiness_program.v1"
 PRODUCTION_READINESS_PROGRAM_SCHEMA_VERSION = "1.0"
+_ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
+_REQUIRED_CHECK_KEYS = (
+    "run_manifest_valid",
+    "review_gate_passed",
+    "hard_stops_passed",
+    "balanced_gates_ready",
+    "required_artifacts_present",
+    "policy_bundle_valid",
+)
+
+
+def _validate_checks_and_status(checks: Any, status: Any) -> list[str]:
+    if not isinstance(checks, dict):
+        return ["production_readiness_program_checks"]
+    errs: list[str] = []
+    for key in _REQUIRED_CHECK_KEYS:
+        value = checks.get(key)
+        if not isinstance(value, bool):
+            errs.append(f"production_readiness_program_check_type:{key}")
+    if status in ("ready", "not_ready") and not errs:
+        checks_all_passed = all(checks[key] for key in _REQUIRED_CHECK_KEYS)
+        expected_status = "ready" if checks_all_passed else "not_ready"
+        if status != expected_status:
+            errs.append("production_readiness_program_status_checks_mismatch")
+        required_artifacts_present = checks["required_artifacts_present"]
+        policy_bundle_valid = checks["policy_bundle_valid"]
+        if required_artifacts_present != policy_bundle_valid:
+            errs.append("production_readiness_program_policy_bundle_mismatch")
+    return errs
 
 
 def validate_production_readiness_program_dict(body: Any) -> list[str]:
@@ -22,26 +51,12 @@ def validate_production_readiness_program_dict(body: Any) -> list[str]:
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("production_readiness_program_run_id")
     mode = body.get("mode")
-    if not isinstance(mode, str) or not mode.strip():
+    if mode not in _ALLOWED_MODES:
         errs.append("production_readiness_program_mode")
     status = body.get("status")
     if status not in ("ready", "not_ready"):
         errs.append("production_readiness_program_status")
-    checks = body.get("checks")
-    if not isinstance(checks, dict):
-        errs.append("production_readiness_program_checks")
-        return errs
-    for key in (
-        "run_manifest_valid",
-        "review_gate_passed",
-        "hard_stops_passed",
-        "balanced_gates_ready",
-        "required_artifacts_present",
-        "policy_bundle_valid",
-    ):
-        value = checks.get(key)
-        if not isinstance(value, bool):
-            errs.append(f"production_readiness_program_check_type:{key}")
+    errs.extend(_validate_checks_and_status(body.get("checks"), status))
     return errs
 
 

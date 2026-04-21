@@ -34,3 +34,23 @@ def test_production_pipeline_plan_artifact_written_and_valid(tmp_path: Path) -> 
     assert payload["run_id"] == run_id
     path = run_dir / "program" / "production_pipeline_plan_artifact.json"
     assert validate_production_pipeline_plan_artifact_path(path) == []
+
+
+def test_production_pipeline_plan_artifact_partial_when_project_plan_steps_missing(
+    tmp_path: Path,
+) -> None:
+    run_id = "run-plan-artifact-partial"
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "program").mkdir(parents=True, exist_ok=True)
+    (run_dir / "program" / "project_plan.json").write_text("{}", encoding="utf-8")
+    (run_dir / "program" / "progress.json").write_text("{}", encoding="utf-8")
+    (run_dir / "program" / "work_batch.json").write_text("{}", encoding="utf-8")
+    (run_dir / "program" / "discovery.json").write_text("{}", encoding="utf-8")
+    (run_dir / "program" / "verification_bundle.json").write_text("{}", encoding="utf-8")
+    payload = write_production_pipeline_plan_artifact(
+        output_dir=run_dir,
+        run_id=run_id,
+        mode="guarded_pipeline",
+    )
+    assert payload["status"] == "partial"
+    assert payload["metrics"]["step_count"] == 0

@@ -13,9 +13,10 @@ from .contracts import (
 def build_benchmark_checkpoint_runtime(*, checkpoint: dict[str, Any]) -> dict[str, Any]:
     run_id = str(checkpoint.get("run_id") or "").strip()
     checkpoint_present = bool(checkpoint)
-    finished = bool(checkpoint.get("finished")) if checkpoint_present else False
+    finished_requested = checkpoint.get("finished") is True if checkpoint_present else False
     completed_task_ids = checkpoint.get("completed_task_ids") if checkpoint_present else []
     has_completed_tasks = isinstance(completed_task_ids, list) and len(completed_task_ids) > 0
+    finished = finished_requested and has_completed_tasks
     status = "finished" if finished else "in_progress"
     return {
         "schema": BENCHMARK_CHECKPOINT_RUNTIME_CONTRACT,

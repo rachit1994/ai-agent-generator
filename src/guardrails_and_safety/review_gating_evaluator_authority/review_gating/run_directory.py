@@ -8,6 +8,9 @@ from typing import Any
 
 from agent_organization.reviewer_evaluator_agents.evaluator import validate_reviewer_evaluator_gate
 from guardrails_and_safety.risk_budgets_permission_matrix.gates_manifest.manifest import all_required_execution_paths
+from guardrails_and_safety.autonomy_boundaries.autonomy_boundaries_tokens_expiry import (
+    validate_autonomy_boundaries_runtime_path,
+)
 from guardrails_and_safety.dual_control import validate_dual_control_path
 from guardrails_and_safety.rollback_rules_policy_bundle.policy_bundle_rollback import validate_policy_bundle_rollback
 from guardrails_and_safety.rollback_rules_policy_bundle import validate_rollback_rules_policy_bundle_path
@@ -54,7 +57,10 @@ from core_components.practice_engine import validate_practice_engine_path
 from core_components.role_agents import validate_role_agents_path
 from core_components.safety_controller import validate_safety_controller_path
 from guardrails_and_safety.risk_budgets_permission_matrix import validate_risk_budgets_permission_matrix_path
-from core_components.self_learning_loop import validate_self_learning_loop_path
+from core_components.self_learning_loop import (
+    validate_self_learning_candidates_path,
+    validate_self_learning_loop_path,
+)
 from service_boundaries import validate_service_boundaries_path
 from scalability_strategy import validate_scalability_strategy_path
 from scalability_strategy.full_build_order_progression import (
@@ -79,6 +85,9 @@ from workflow_pipelines.traces_jsonl import validate_traces_jsonl_event_row_runt
 from workflow_pipelines.run_manifest import validate_run_manifest_path, validate_run_manifest_runtime_path
 from workflow_pipelines.retry_repeat_profile import validate_retry_repeat_profile_runtime_path
 
+_STORAGE_CONTRACT_ERROR_PREFIX = "storage_contract:"
+_AUTONOMY_BOUNDARIES_CONTRACT_ERROR_PREFIX = "autonomy_boundaries_contract:"
+
 _COMPONENT_RUNTIME_FILENAME = "component_runtime.json"
 
 
@@ -92,6 +101,58 @@ def _read_json_file(path: Path) -> tuple[dict[str, Any] | None, str | None]:
     if not isinstance(body, dict):
         return None, f"json_not_object:{path.name}"
     return body, None
+
+
+def _validate_policy_bundle_rollback_coherence(output_dir: Path) -> list[str]:
+    policy_path = output_dir / "program" / "policy_bundle_rollback.json"
+    derived_path = output_dir / "program" / "rollback_rules_policy_bundle.json"
+    if not derived_path.is_file():
+        return ["rollback_rules_policy_bundle_contract:rollback_rules_policy_bundle_file_missing"]
+    derived_body, derived_error = _read_json_file(derived_path)
+    if derived_error:
+        return [f"rollback_rules_policy_bundle_contract:{derived_error}"]
+    assert derived_body is not None
+    derived_status = derived_body.get("status")
+    if not policy_path.is_file():
+        if derived_status != "none":
+            return ["rollback_rules_policy_bundle_source_status_mismatch:none"]
+        return []
+    policy_body, policy_error = _read_json_file(policy_path)
+    if policy_error:
+        return []
+    assert policy_body is not None
+    source_status = policy_body.get("status")
+    if source_status == "none" and derived_status != "none":
+        return ["rollback_rules_policy_bundle_source_status_mismatch:none"]
+    if source_status == "rolled_back_atomic":
+        rollback_checks = derived_body.get("rollback_checks")
+        if (
+            not isinstance(rollback_checks, dict)
+            or rollback_checks.get("atomic_sha_change") is not True
+            or rollback_checks.get("paths_touched_valid") is not True
+        ):
+            return ["rollback_rules_policy_bundle_source_atomic_checks_failed"]
+        if derived_status != "rolled_back_atomic":
+            return ["rollback_rules_policy_bundle_source_status_mismatch:rolled_back_atomic"]
+    return []
+
+
+def _append_missing_evidence_ref_errors(
+    *,
+    output_dir: Path,
+    body: dict[str, Any],
+    required_keys: tuple[str, ...],
+    error_prefix: str,
+) -> list[str]:
+    evidence = body.get("evidence")
+    if not isinstance(evidence, dict):
+        return []
+    errors: list[str] = []
+    for key in required_keys:
+        value = evidence.get(key)
+        if isinstance(value, str) and value.strip() and not (output_dir / value).is_file():
+            errors.append(f"{error_prefix}:{key}_missing")
+    return errors
 
 
 def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str, Any]:
@@ -140,10 +201,9 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         for token in retry_repeat_profile_runtime_errors:
             errors.append(f"retry_repeat_profile_runtime_contract:{token}")
     transfer_metrics_path = output_dir / "learning" / "transfer_learning_metrics.json"
-    if transfer_metrics_path.exists():
-        transfer_metric_errors = validate_transfer_learning_metrics_path(transfer_metrics_path)
-        for token in transfer_metric_errors:
-            errors.append(f"transfer_learning_metrics_contract:{token}")
+    transfer_metric_errors = validate_transfer_learning_metrics_path(transfer_metrics_path)
+    for token in transfer_metric_errors:
+        errors.append(f"transfer_learning_metrics_contract:{token}")
     capability_growth_path = output_dir / "learning" / "capability_growth_metrics.json"
     if capability_growth_path.exists():
         capability_growth_errors = validate_capability_growth_metrics_path(capability_growth_path)
@@ -171,6 +231,11 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         )
         for token in online_eval_shadow_errors:
             errors.append(f"online_evaluation_shadow_canary_contract:{token}")
+        if not (output_dir / "learning" / "online_eval_records.jsonl").is_file():
+            errors.append(
+                "online_evaluation_shadow_canary_contract:"
+                "online_evaluation_shadow_canary_evidence_online_eval_records_ref_missing"
+            )
     stability_metrics_path = output_dir / "learning" / "stability_metrics.json"
     if stability_metrics_path.exists():
         stability_metrics_errors = validate_stability_metrics_path(stability_metrics_path)
@@ -208,11 +273,34 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         practice_engine_errors = validate_practice_engine_path(practice_engine_path)
         for token in practice_engine_errors:
             errors.append(f"practice_engine_contract:{token}")
+    self_learning_loop_body: dict[str, Any] = {}
     self_learning_loop_path = output_dir / "learning" / "self_learning_loop.json"
-    if self_learning_loop_path.exists():
-        self_learning_loop_errors = validate_self_learning_loop_path(self_learning_loop_path)
-        for token in self_learning_loop_errors:
-            errors.append(f"self_learning_loop_contract:{token}")
+    self_learning_loop_errors = validate_self_learning_loop_path(self_learning_loop_path)
+    for token in self_learning_loop_errors:
+        errors.append(f"self_learning_loop_contract:{token}")
+    if not self_learning_loop_errors:
+        self_learning_loop_body, self_learning_loop_read_error = _read_json_file(self_learning_loop_path)
+        if self_learning_loop_read_error:
+            errors.append(f"self_learning_loop_contract:{self_learning_loop_read_error}")
+        else:
+            evidence = self_learning_loop_body.get("evidence", {})
+            for key in (
+                "traces_ref",
+                "skill_nodes_ref",
+                "practice_engine_ref",
+                "transfer_learning_metrics_ref",
+                "capability_growth_metrics_ref",
+                "self_learning_candidates_ref",
+            ):
+                evidence_ref = evidence.get(key)
+                if isinstance(evidence_ref, str) and evidence_ref.strip():
+                    if not (output_dir / evidence_ref).is_file():
+                        errors.append(f"self_learning_loop_contract:self_learning_loop_evidence_ref_missing:{key}")
+            candidates_ref = evidence.get("self_learning_candidates_ref")
+            if isinstance(candidates_ref, str) and candidates_ref.strip():
+                candidate_path = output_dir / candidates_ref
+                for token in validate_self_learning_candidates_path(candidate_path):
+                    errors.append(f"self_learning_loop_contract:{token}")
     readiness_path = output_dir / "program" / "production_readiness.json"
     if readiness_path.exists():
         readiness_errors = validate_production_readiness_program_path(readiness_path)
@@ -278,7 +366,7 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
     if storage_architecture_path.exists():
         storage_architecture_errors = validate_storage_architecture_path(storage_architecture_path)
         for token in storage_architecture_errors:
-            errors.append(f"storage_architecture_contract:{token}")
+            errors.append(f"{_STORAGE_CONTRACT_ERROR_PREFIX}{token}")
     production_observability_path = output_dir / "observability" / "production_observability.json"
     if production_observability_path.exists():
         production_observability_errors = validate_production_observability_path(
@@ -313,6 +401,17 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         identity_authz_plane_errors = validate_identity_authz_plane_path(identity_authz_plane_path)
         for token in identity_authz_plane_errors:
             errors.append(f"identity_authz_plane_contract:{token}")
+        if not identity_authz_plane_errors:
+            identity_authz_body, identity_authz_read_error = _read_json_file(identity_authz_plane_path)
+            if identity_authz_read_error is None and identity_authz_body is not None:
+                errors.extend(
+                    _append_missing_evidence_ref_errors(
+                        output_dir=output_dir,
+                        body=identity_authz_body,
+                        required_keys=("permission_matrix_ref", "action_audit_ref", "lease_table_ref"),
+                        error_prefix="identity_authz_plane_contract:identity_authz_plane_evidence_ref",
+                    )
+                )
     production_identity_authz_path = output_dir / "iam" / "production_identity_authorization.json"
     if production_identity_authz_path.exists():
         production_identity_authz_errors = validate_production_identity_authorization_path(
@@ -320,6 +419,22 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         )
         for token in production_identity_authz_errors:
             errors.append(f"production_identity_authorization_contract:{token}")
+        if not production_identity_authz_errors:
+            production_identity_authz_body, production_identity_authz_read_error = _read_json_file(
+                production_identity_authz_path
+            )
+            if production_identity_authz_read_error is None and production_identity_authz_body is not None:
+                errors.extend(
+                    _append_missing_evidence_ref_errors(
+                        output_dir=output_dir,
+                        body=production_identity_authz_body,
+                        required_keys=("permission_matrix_ref", "action_audit_ref", "strategy_proposal_ref"),
+                        error_prefix=(
+                            "production_identity_authorization_contract:"
+                            "production_identity_authorization_evidence_ref"
+                        ),
+                    )
+                )
     role_agents_path = output_dir / "capability" / "role_agents.json"
     if role_agents_path.exists():
         role_agents_errors = validate_role_agents_path(role_agents_path)
@@ -354,6 +469,11 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         )
         for token in risk_budgets_permission_matrix_errors:
             errors.append(f"risk_budgets_permission_matrix_contract:{token}")
+    autonomy_boundaries_path = output_dir / "safety" / "autonomy_boundaries_tokens_expiry.json"
+    if autonomy_boundaries_path.exists():
+        autonomy_boundaries_errors = validate_autonomy_boundaries_runtime_path(autonomy_boundaries_path)
+        for token in autonomy_boundaries_errors:
+            errors.append(f"{_AUTONOMY_BOUNDARIES_CONTRACT_ERROR_PREFIX}{token}")
     auditability_path = output_dir / "audit" / "auditability.json"
     if auditability_path.exists():
         auditability_errors = validate_auditability_path(auditability_path)
@@ -427,6 +547,7 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         for token in strategy_overlay_runtime_errors:
             errors.append(f"strategy_overlay_runtime_contract:{token}")
     errors.extend(validate_policy_bundle_rollback(output_dir))
+    errors.extend(_validate_policy_bundle_rollback_coherence(output_dir))
     events: list[dict[str, Any]] = []
     traces = output_dir / "traces.jsonl"
     if traces.is_file():
@@ -450,8 +571,18 @@ def validate_execution_run_directory(output_dir: Path, *, mode: str) -> dict[str
         mode=mode,
     )
     failed_hard_stop_ids = [str(row.get("id")) for row in hard if not bool(row.get("passed"))]
+    self_learning_decision = {}
+    if isinstance(self_learning_loop_body, dict):
+        maybe_decision = self_learning_loop_body.get("decision")
+        if isinstance(maybe_decision, dict):
+            self_learning_decision = maybe_decision
     for hs_id in failed_hard_stop_ids:
         errors.append(f"hard_stop_failed:{hs_id}")
+    if (
+        failed_hard_stop_ids
+        and self_learning_decision.get("decision") == "promote"
+    ):
+        errors.append("self_learning_loop_contract:self_learning_loop_promote_with_active_hard_stop")
     ready = validation_ready(summary["balanced_gates"]) if summary.get("balanced_gates") else False
     strict_ok = ready and not errors and len(failed_hard_stop_ids) == 0
     return {"ok": strict_ok, "errors": errors, "hard_stops": hard, "validation_ready": ready}

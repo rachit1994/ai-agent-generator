@@ -15,7 +15,10 @@ def build_observability_component(
     has_traces: bool,
     has_orchestration_log: bool,
 ) -> dict[str, Any]:
-    has_production_observability = bool(production_observability)
+    has_production_observability = (
+        isinstance(production_observability, dict)
+        and production_observability.get("status") == "healthy"
+    )
     all_checks_passed = (
         has_production_observability and has_run_log and has_traces and has_orchestration_log
     )

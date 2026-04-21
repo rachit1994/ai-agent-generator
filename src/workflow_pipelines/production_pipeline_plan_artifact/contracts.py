@@ -10,6 +10,53 @@ PRODUCTION_PIPELINE_PLAN_ARTIFACT_CONTRACT = "sde.production_pipeline_plan_artif
 PRODUCTION_PIPELINE_PLAN_ARTIFACT_SCHEMA_VERSION = "1.0"
 
 
+def _validate_checks(checks: Any) -> tuple[list[str], bool | None]:
+    if not isinstance(checks, dict):
+        return (["production_pipeline_plan_artifact_checks"], None)
+    errs: list[str] = []
+    values: list[bool] = []
+    for key in (
+        "project_plan_present",
+        "progress_present",
+        "work_batch_present",
+        "discovery_present",
+        "verification_bundle_present",
+    ):
+        value = checks.get(key)
+        if not isinstance(value, bool):
+            errs.append(f"production_pipeline_plan_artifact_check_type:{key}")
+            continue
+        values.append(value)
+    if errs:
+        return (errs, None)
+    return ([], all(values))
+
+
+def _validate_metrics_step_count(metrics: Any) -> tuple[list[str], int | None]:
+    if not isinstance(metrics, dict):
+        return (["production_pipeline_plan_artifact_metrics"], None)
+    step_count_value = metrics.get("step_count")
+    if isinstance(step_count_value, bool) or not isinstance(step_count_value, int):
+        return (["production_pipeline_plan_artifact_step_count_type"], None)
+    if step_count_value < 0:
+        return (["production_pipeline_plan_artifact_step_count_range"], None)
+    return ([], step_count_value)
+
+
+def _validate_status_consistency(
+    *,
+    status: Any,
+    checks_all_true: bool | None,
+    step_count: int | None,
+) -> list[str]:
+    if checks_all_true is None or step_count is None or status not in ("ready", "partial"):
+        return []
+    expected_status = "ready" if (checks_all_true and step_count > 0) else "partial"
+    if status != expected_status:
+        return ["production_pipeline_plan_artifact_status_checks_mismatch"]
+    return []
+
+
 def validate_production_pipeline_plan_artifact_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["production_pipeline_plan_artifact_not_object"]
@@ -27,19 +74,11 @@ def validate_production_pipeline_plan_artifact_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("ready", "partial"):
         errs.append("production_pipeline_plan_artifact_status")
-    checks = body.get("checks")
-    if not isinstance(checks, dict):
-        errs.append("production_pipeline_plan_artifact_checks")
-    else:
-        for key in (
-            "project_plan_present",
-            "progress_present",
-            "work_batch_present",
-            "discovery_present",
-            "verification_bundle_present",
-        ):
-            if not isinstance(checks.get(key), bool):
-                errs.append(f"production_pipeline_plan_artifact_check_type:{key}")
+    check_errs, checks_all_true = _validate_checks(body.get("checks"))
+    errs.extend(check_errs)
+    metric_errs, step_count = _validate_metrics_step_count(body.get("metrics"))
+    errs.extend(metric_errs)
+    errs.extend(_validate_status_consistency(status=status, checks_all_true=checks_all_true, step_count=step_count))
     return errs
 
 

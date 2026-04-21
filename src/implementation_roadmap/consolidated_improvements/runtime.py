@@ -15,6 +15,24 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _is_true(value: Any) -> bool:
+    return value is True
+
+
+def _learning_metric_ready(metric: Any) -> bool:
+    return isinstance(metric, dict) and _is_true(metric.get("ok"))
+
+
+def _required_artifacts_present(review: dict[str, Any]) -> bool:
+    manifest = review.get("artifact_manifest")
+    if not isinstance(manifest, list):
+        return False
+    manifest_rows = [row for row in manifest if isinstance(row, dict)]
+    if not manifest_rows:
+        return False
+    return all(_is_true(row.get("present")) for row in manifest_rows)
+
+
 def build_consolidated_improvements(
     *,
     run_id: str,
@@ -28,21 +46,17 @@ def build_consolidated_improvements(
     learning_metrics: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     review_passed = str(review.get("status", "")) == "completed_review_pass"
-    validation_ready = bool(summary.get("quality", {}).get("validation_ready"))
-    required_artifacts_present = all(
-        bool(row.get("present"))
-        for row in review.get("artifact_manifest", [])
-        if isinstance(row, dict)
-    ) if isinstance(review.get("artifact_manifest"), list) else False
+    validation_ready = _is_true(summary.get("quality", {}).get("validation_ready"))
+    required_artifacts_present = _required_artifacts_present(review)
     checks = {
         "production_readiness_program": str(readiness.get("status", "")) == "ready",
         "scalability_strategy": str(scalability.get("status", "")) == "scalable",
         "service_boundaries": str(boundaries.get("status", "")) == "bounded",
         "storage_architecture": str(storage.get("status", "")) == "consistent",
-        "capability_growth_metrics": bool(learning_metrics.get("capability_growth_metrics")),
-        "error_reduction_metrics": bool(learning_metrics.get("error_reduction_metrics")),
-        "extended_binary_gates": bool(learning_metrics.get("extended_binary_gates")),
-        "transfer_learning_metrics": bool(learning_metrics.get("transfer_learning_metrics")),
+        "capability_growth_metrics": _learning_metric_ready(learning_metrics.get("capability_growth_metrics")),
+        "error_reduction_metrics": _learning_metric_ready(learning_metrics.get("error_reduction_metrics")),
+        "extended_binary_gates": _learning_metric_ready(learning_metrics.get("extended_binary_gates")),
+        "transfer_learning_metrics": _learning_metric_ready(learning_metrics.get("transfer_learning_metrics")),
     }
     total = len(checks)
     passed = sum(1 for ok in checks.values() if ok)

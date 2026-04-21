@@ -24,7 +24,7 @@ def build_production_orchestration(
         shards = []
     lease_count = len([row for row in leases if isinstance(row, dict)])
     active_lease_count = len(
-        [row for row in leases if isinstance(row, dict) and bool(row.get("active"))]
+        [row for row in leases if isinstance(row, dict) and row.get("active") is True]
     )
     shard_count = len([row for row in shards if isinstance(row, dict)])
     status = "missing"

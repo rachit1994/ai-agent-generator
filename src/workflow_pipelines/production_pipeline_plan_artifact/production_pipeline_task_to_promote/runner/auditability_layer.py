@@ -21,12 +21,16 @@ def _read_event_rows(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
     rows: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line_no, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
             continue
-        body = json.loads(line)
-        if isinstance(body, dict):
-            rows.append(body)
+        try:
+            body = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"auditability_run_events_jsonl_invalid:{path}:{line_no}") from exc
+        if not isinstance(body, dict):
+            raise ValueError(f"auditability_run_events_row_not_object:{path}:{line_no}")
+        rows.append(body)
     return rows
 
 

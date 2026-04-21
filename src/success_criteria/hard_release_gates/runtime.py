@@ -18,7 +18,8 @@ def _clamp_percent(value: float) -> float:
 def _derive_governance_from_checks(checks: list[dict[str, Any]]) -> float:
     non_review_checks = [row for row in checks if isinstance(row, dict) and row.get("name") != "review"]
     check_total = len(non_review_checks)
-    check_passed = sum(1 for row in non_review_checks if bool(row.get("passed")))
+    # Fail closed: only explicit boolean True counts as pass.
+    check_passed = sum(1 for row in non_review_checks if row.get("passed") is True)
     return _clamp_percent((100.0 * check_passed / check_total) if check_total else 0.0)
 
 
@@ -31,7 +32,8 @@ def _derive_finalize_scores(events: list[dict[str, Any]]) -> tuple[float, float]
         score = row.get("score")
         if not isinstance(score, dict):
             continue
-        finalize_passed += 1 if bool(score.get("passed")) else 0
+        # Fail closed: only explicit boolean True counts as pass.
+        finalize_passed += 1 if score.get("passed") is True else 0
         reliability = score.get("reliability")
         if isinstance(reliability, (int, float)) and not isinstance(reliability, bool):
             reliability_values.append(float(reliability) * 100.0)
@@ -50,7 +52,7 @@ def _collect_failed_hard_stop_ids(parsed: dict[str, Any]) -> list[str]:
     for row in hard_stops:
         if not isinstance(row, dict):
             continue
-        if bool(row.get("passed")):
+        if row.get("passed") is True:
             continue
         hs_id = row.get("id")
         if isinstance(hs_id, str) and hs_id.strip():

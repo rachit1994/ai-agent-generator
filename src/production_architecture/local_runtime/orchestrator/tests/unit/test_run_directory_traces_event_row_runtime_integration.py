@@ -54,3 +54,40 @@ def test_run_directory_surfaces_invalid_traces_event_row_runtime_contract(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "traces_jsonl_event_row_runtime_contract:traces_jsonl_event_row_runtime_schema" in result["errors"]
+
+
+def test_run_directory_surfaces_traces_event_row_runtime_status_checks_mismatch(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "traces").mkdir(parents=True, exist_ok=True)
+    (out / "traces" / "event_row_runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.traces_jsonl_event_row_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "status": "ready",
+                "checks": {"all_rows_valid": True, "run_id_consistent": False},
+                "counts": {"row_count": 1},
+                "evidence": {
+                    "traces_ref": "traces.jsonl",
+                    "runtime_ref": "traces/event_row_runtime.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "traces_jsonl_event_row_runtime_contract:traces_jsonl_event_row_runtime_status_checks_mismatch"
+        in result["errors"]
+    )

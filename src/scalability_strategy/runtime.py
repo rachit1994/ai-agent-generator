@@ -27,14 +27,14 @@ def build_scalability_strategy(
     if not isinstance(checks, list):
         checks = []
     total_checks = len(checks)
-    pass_checks = sum(1 for row in checks if isinstance(row, dict) and bool(row.get("passed")))
+    pass_checks = sum(1 for row in checks if isinstance(row, dict) and row.get("passed") is True)
     event_scaling_score = _clamp01((pass_checks / total_checks) if total_checks else 0.0)
     finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
     finalize_pass = 0
     retry_count = 0
     for row in finals:
         score = row.get("score")
-        if isinstance(score, dict) and bool(score.get("passed")):
+        if isinstance(score, dict) and score.get("passed") is True:
             finalize_pass += 1
         retry = row.get("retry_count")
         if isinstance(retry, int) and not isinstance(retry, bool) and retry > 0:
@@ -45,10 +45,10 @@ def build_scalability_strategy(
     hard_stop_failures = 0
     if isinstance(hard_stops, list):
         hard_stop_failures = sum(
-            1 for row in hard_stops if isinstance(row, dict) and not bool(row.get("passed"))
+            1 for row in hard_stops if isinstance(row, dict) and row.get("passed") is not True
         )
     balanced = cto.get("balanced_gates")
-    balanced_ready = bool(isinstance(balanced, dict) and balanced.get("validation_ready"))
+    balanced_ready = bool(isinstance(balanced, dict) and balanced.get("validation_ready") is True)
     memory_scaling_score = _clamp01(0.7 * finalize_rate + 0.3 * (1.0 if balanced_ready else 0.0))
     multi_agent_scaling_score = _clamp01(0.6 * replay_scaling_score + 0.4 * event_scaling_score)
     overall_scaling_score = _clamp01(

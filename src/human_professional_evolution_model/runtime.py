@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .contracts import (
@@ -10,13 +11,34 @@ from .contracts import (
     PERFORMANCE_EXCEEDS_THRESHOLD,
 )
 
+DEFAULT_FOCUS_AREA = "delivery.structured_output"
+
+
+def _score_or_zero(value: Any) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
+
 
 def _clamp01(value: float) -> float:
+    if not math.isfinite(value):
+        return 0.0
     if value < 0.0:
         return 0.0
     if value > 1.0:
         return 1.0
     return round(value, 4)
+
+
+def _focus_areas_or_default(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return [DEFAULT_FOCUS_AREA]
+    cleaned = [row.strip() for row in value if isinstance(row, str) and row.strip()]
+    if not cleaned:
+        return [DEFAULT_FOCUS_AREA]
+    return cleaned
 
 
 def _finalize_pass_ratio(events: list[dict[str, Any]]) -> float:
@@ -27,7 +49,7 @@ def _finalize_pass_ratio(events: list[dict[str, Any]]) -> float:
         score = row.get("score")
         if not isinstance(score, dict):
             continue
-        finals.append(1.0 if bool(score.get("passed")) else 0.0)
+        finals.append(1.0 if score.get("passed") is True else 0.0)
     if not finals:
         return 0.0
     return _clamp01(sum(finals) / len(finals))
@@ -58,13 +80,13 @@ def build_evolution_decision(
         "performance_score": performance,
         "growth_trend": growth,
         "mentorship_required": performance < 0.7,
-        "focus_areas": ["delivery.structured_output"],
+        "focus_areas": [DEFAULT_FOCUS_AREA],
     }
 
 
 def build_reflection_bundle(*, run_id: str, decision: dict[str, Any], event_ref: str) -> dict[str, Any]:
     trend = str(decision.get("growth_trend") or "steady")
-    intervention = "mentor_loop" if bool(decision.get("mentorship_required")) else "none"
+    intervention = "mentor_loop" if decision.get("mentorship_required") is True else "none"
     return {
         "schema_version": "1.0",
         "run_id": run_id,
@@ -83,9 +105,14 @@ def build_reflection_bundle(*, run_id: str, decision: dict[str, Any], event_ref:
 
 
 def build_promotion_package(*, run_id: str, decision: dict[str, Any]) -> dict[str, Any]:
-    perf = float(decision.get("performance_score", 0.0) or 0.0)
+    perf = _score_or_zero(decision.get("performance_score", 0.0))
+    perf = _clamp01(perf)
     current = "mid" if perf >= 0.5 else "junior"
-    proposed = "senior" if perf >= 0.85 else ("mid" if perf >= 0.5 else "junior")
+    proposed = "junior"
+    if perf >= 0.85:
+        proposed = "senior"
+    elif perf >= 0.5:
+        proposed = "mid"
     return {
         "schema_version": "1.0",
         "aggregate_id": run_id,
@@ -98,7 +125,7 @@ def build_promotion_package(*, run_id: str, decision: dict[str, Any]) -> dict[st
 
 def build_practice_task_spec(*, decision: dict[str, Any]) -> dict[str, Any]:
     focus = decision.get("focus_areas")
-    focus_list = focus if isinstance(focus, list) and focus else ["delivery.structured_output"]
+    focus_list = focus if isinstance(focus, list) and focus else [DEFAULT_FOCUS_AREA]
     return {
         "schema_version": "1.0",
         "gap_detection_ref": "learning/reflection_bundle.json",
@@ -108,12 +135,14 @@ def build_practice_task_spec(*, decision: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_practice_evaluation_result(*, decision: dict[str, Any]) -> dict[str, Any]:
-    perf = float(decision.get("performance_score", 0.0) or 0.0)
+    perf = _score_or_zero(decision.get("performance_score", 0.0))
+    perf = _clamp01(perf)
     return {"schema_version": "1.0", "passed": perf >= 0.5}
 
 
 def build_canary_report(*, decision: dict[str, Any]) -> dict[str, Any]:
-    perf = float(decision.get("performance_score", 0.0) or 0.0)
+    perf = _score_or_zero(decision.get("performance_score", 0.0))
+    perf = _clamp01(perf)
     promote = perf >= 0.7
     return {"schema_version": "1.0", "shadow_metrics": {"latency_p95_ms": 0}, "promote": promote}
 
@@ -123,7 +152,7 @@ def build_mentorship_plan(*, run_id: str, decision: dict[str, Any]) -> dict[str,
         "schema_version": "1.0",
         "aggregate_id": run_id,
         "session_cadence_days": MENTORSHIP_CADENCE_DAYS,
-        "focus_areas": list(decision.get("focus_areas") or ["delivery.structured_output"]),
-        "mentorship_required": bool(decision.get("mentorship_required")),
+        "focus_areas": _focus_areas_or_default(decision.get("focus_areas")),
+        "mentorship_required": decision.get("mentorship_required") is True,
         "evidence_window": [run_id],
     }

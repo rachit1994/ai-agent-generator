@@ -10,6 +10,27 @@ FAILURE_PATH_ARTIFACTS_CONTRACT = "sde.failure_path_artifacts.v1"
 FAILURE_PATH_ARTIFACTS_SCHEMA_VERSION = "1.0"
 
 
+def _validate_checks(checks: Any) -> tuple[list[str], dict[str, bool] | None]:
+    if not isinstance(checks, dict):
+        return (["failure_path_artifacts_checks"], None)
+    errs: list[str] = []
+    values: dict[str, bool] = {}
+    for key in (
+        "summary_present",
+        "summary_contract_valid",
+        "replay_manifest_present",
+        "replay_manifest_contract_valid",
+    ):
+        value = checks.get(key)
+        if not isinstance(value, bool):
+            errs.append(f"failure_path_artifacts_check_type:{key}")
+            continue
+        values[key] = value
+    if errs:
+        return (errs, None)
+    return ([], values)
+
+
 def validate_failure_path_artifacts_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["failure_path_artifacts_not_object"]
@@ -24,13 +45,11 @@ def validate_failure_path_artifacts_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("ok", "failed", "partial_failure"):
         errs.append("failure_path_artifacts_status")
-    checks = body.get("checks")
-    if not isinstance(checks, dict):
-        errs.append("failure_path_artifacts_checks")
-    else:
-        for key in ("summary_present", "summary_contract_valid", "replay_manifest_present", "replay_manifest_contract_valid"):
-            if not isinstance(checks.get(key), bool):
-                errs.append(f"failure_path_artifacts_check_type:{key}")
+    check_errs, values = _validate_checks(body.get("checks"))
+    errs.extend(check_errs)
+    if status == "ok" and values is not None:
+        if values["summary_contract_valid"] is not True or values["replay_manifest_contract_valid"] is not True:
+            errs.append("failure_path_artifacts_status_ok_requires_valid_contracts")
     return errs
 
 

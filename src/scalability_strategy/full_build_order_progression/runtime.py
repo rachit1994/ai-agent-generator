@@ -30,12 +30,7 @@ def _expected_for_mode(mode: str) -> list[str]:
     return ["planner_doc", "planner_prompt", "executor", "finalize"]
 
 
-def build_full_build_order_progression(
-    *,
-    run_id: str,
-    mode: str,
-    orchestration_events: list[dict[str, Any]],
-) -> dict[str, Any]:
+def _collect_stage_sequence(orchestration_events: list[dict[str, Any]]) -> list[str]:
     sequence: list[str] = []
     for row in orchestration_events:
         if not isinstance(row, dict):
@@ -45,37 +40,83 @@ def build_full_build_order_progression(
         stage = row.get("stage")
         if isinstance(stage, str) and stage.strip():
             sequence.append(stage.strip())
-    all_known = all(stage in _EXPECTED_RANK for stage in sequence)
-    starts_ok = bool(sequence) and sequence[0] in {"planner_doc", "executor"}
-    ends_ok = bool(sequence) and sequence[-1] == "finalize"
-    monotonic = True
+    return sequence
+
+
+def _is_monotonic(sequence: list[str]) -> bool:
     last_rank = -1
     for stage in sequence:
         rank = _EXPECTED_RANK.get(stage, -1)
         if rank < last_rank:
-            monotonic = False
-            break
+            return False
         last_rank = rank
-    expected_required = _expected_for_mode(mode)
-    required_present = all(stage in sequence for stage in expected_required)
-    status = "ordered"
-    if not ends_ok or not required_present:
-        status = "incomplete"
+    return True
+
+
+def _status_from_checks(
+    *,
+    all_known: bool,
+    starts_ok: bool,
+    ends_ok: bool,
+    monotonic: bool,
+    required_present: bool,
+) -> str:
     if not all_known or not monotonic:
-        status = "out_of_order"
-    score_checks = [all_known, starts_ok, ends_ok, monotonic, required_present]
-    score = round(sum(1 for ok in score_checks if ok) / len(score_checks), 4)
+        return "out_of_order"
+    if not starts_ok or not ends_ok or not required_present:
+        return "incomplete"
+    return "ordered"
+
+
+def _build_violations(
+    *,
+    sequence: list[str],
+    all_known: bool,
+    monotonic: bool,
+    required_present: bool,
+    expected_required: list[str],
+) -> list[dict[str, str]]:
     violations: list[dict[str, str]] = []
     if not all_known:
-        for stage in sequence:
-            if stage not in _EXPECTED_RANK:
-                violations.append({"type": "unknown_stage", "stage": stage})
+        unknown = [{"type": "unknown_stage", "stage": stage} for stage in sequence if stage not in _EXPECTED_RANK]
+        violations.extend(unknown)
     if not monotonic:
         violations.append({"type": "order_regression", "stage": "sequence"})
     if not required_present:
-        for stage in expected_required:
-            if stage not in sequence:
-                violations.append({"type": "missing_required_stage", "stage": stage})
+        missing = [{"type": "missing_required_stage", "stage": stage} for stage in expected_required if stage not in sequence]
+        violations.extend(missing)
+    return violations
+
+
+def build_full_build_order_progression(
+    *,
+    run_id: str,
+    mode: str,
+    orchestration_events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    sequence = _collect_stage_sequence(orchestration_events)
+    all_known = all(stage in _EXPECTED_RANK for stage in sequence)
+    starts_ok = bool(sequence) and sequence[0] in {"planner_doc", "executor"}
+    ends_ok = bool(sequence) and sequence[-1] == "finalize"
+    monotonic = _is_monotonic(sequence)
+    expected_required = _expected_for_mode(mode)
+    required_present = all(stage in sequence for stage in expected_required)
+    status = _status_from_checks(
+        all_known=all_known,
+        starts_ok=starts_ok,
+        ends_ok=ends_ok,
+        monotonic=monotonic,
+        required_present=required_present,
+    )
+    score_checks = [all_known, starts_ok, ends_ok, monotonic, required_present]
+    score = round(sum(1 for ok in score_checks if ok) / len(score_checks), 4)
+    violations = _build_violations(
+        sequence=sequence,
+        all_known=all_known,
+        monotonic=monotonic,
+        required_present=required_present,
+        expected_required=expected_required,
+    )
     return {
         "schema": FULL_BUILD_ORDER_PROGRESSION_CONTRACT,
         "schema_version": FULL_BUILD_ORDER_PROGRESSION_SCHEMA_VERSION,

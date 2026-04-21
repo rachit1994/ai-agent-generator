@@ -7,6 +7,10 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+from guardrails_and_safety.autonomy_boundaries.autonomy_boundaries_tokens_expiry.contracts import (
+    AUTONOMY_BOUNDARIES_ERROR_PREFIX,
+    validate_token_context_payload,
+)
 from guardrails_and_safety.risk_budgets_permission_matrix.gates_constants.constants import TOKEN_CONTEXT_SCHEMA
 
 
@@ -36,6 +40,7 @@ def build_token_context(
     max_tokens: int,
     model_context_limit: int = 8192,
     context_ttl_seconds: int = 604_800,
+    now_utc: datetime | None = None,
 ) -> dict[str, Any]:
     policy_items = ["required_instructions", "recent_task_state", "historical_context"]
     policy_hash = hashlib.sha256("|".join(policy_items).encode()).hexdigest()[:16]
@@ -74,9 +79,9 @@ def build_token_context(
                 "budget_status": status,
             }
         )
-    anchor = datetime.now(timezone.utc).replace(microsecond=0)
+    anchor = (now_utc or datetime.now(timezone.utc)).replace(microsecond=0)
     expires = anchor + timedelta(seconds=int(context_ttl_seconds))
-    return {
+    payload = {
         "schema_version": TOKEN_CONTEXT_SCHEMA,
         "run_id": run_id,
         "model_context_limit": model_context_limit,
@@ -88,3 +93,7 @@ def build_token_context(
         "context_expires_at": expires.isoformat(),
         "context_ttl_seconds": int(context_ttl_seconds),
     }
+    errs = validate_token_context_payload(payload, now_utc=anchor)
+    if errs:
+        raise ValueError(f"{AUTONOMY_BOUNDARIES_ERROR_PREFIX}{','.join(errs)}")
+    return payload

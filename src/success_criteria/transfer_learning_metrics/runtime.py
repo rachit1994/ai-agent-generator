@@ -18,6 +18,10 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _is_passed(value: Any) -> bool:
+    return value is True
+
+
 def _finalize_pass_rate(events: list[dict[str, Any]]) -> float:
     finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
     if not finals:
@@ -25,7 +29,7 @@ def _finalize_pass_rate(events: list[dict[str, Any]]) -> float:
     passed = 0
     for row in finals:
         score = row.get("score")
-        if isinstance(score, dict) and bool(score.get("passed")):
+        if isinstance(score, dict) and _is_passed(score.get("passed")):
             passed += 1
     return _clamp01(passed / len(finals))
 
@@ -37,6 +41,8 @@ def build_transfer_learning_metrics(
     events: list[dict[str, Any]],
     skill_nodes: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    if not run_id.strip():
+        raise ValueError("transfer_learning_metrics_run_id")
     _ = parsed
     pass_rate = _finalize_pass_rate(events)
     capability_score = 0.0

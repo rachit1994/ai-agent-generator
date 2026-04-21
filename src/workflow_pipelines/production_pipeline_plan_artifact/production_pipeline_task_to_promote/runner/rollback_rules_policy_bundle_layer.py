@@ -16,8 +16,13 @@ from production_architecture.storage.storage.storage import ensure_dir, write_js
 def _read_json_or_empty(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
-    body = json.loads(path.read_text(encoding="utf-8"))
-    return body if isinstance(body, dict) else {}
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError("rollback_rules_policy_bundle_contract:policy_bundle_rollback_invalid_json") from exc
+    if not isinstance(body, dict):
+        raise ValueError("rollback_rules_policy_bundle_contract:policy_bundle_rollback_json_not_object")
+    return body
 
 
 def write_rollback_rules_policy_bundle_artifact(

@@ -31,3 +31,27 @@ def test_validate_evaluation_service_fail_closed() -> None:
     errs = validate_evaluation_service_dict({"schema": "bad"})
     assert "evaluation_service_schema" in errs
     assert "evaluation_service_schema_version" in errs
+
+
+def test_build_evaluation_service_treats_missing_status_payloads_as_not_ready() -> None:
+    payload = build_evaluation_service(
+        run_id="rid-eval",
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"result": "ok"},
+        promotion_eval={"result": "promote"},
+    )
+    assert payload["status"] == "degraded"
+    assert payload["metrics"]["has_online_eval"] is False
+    assert payload["metrics"]["has_promotion_eval"] is False
+
+
+def test_validate_evaluation_service_rejects_status_metrics_mismatch() -> None:
+    payload = build_evaluation_service(
+        run_id="rid-eval",
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"status": "finished"},
+        promotion_eval={"status": "promote"},
+    )
+    payload["status"] = "degraded"
+    errs = validate_evaluation_service_dict(payload)
+    assert "evaluation_service_status_metrics_mismatch" in errs

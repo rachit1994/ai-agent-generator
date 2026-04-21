@@ -10,6 +10,21 @@ RETRY_REPEAT_PROFILE_RUNTIME_CONTRACT = "sde.retry_repeat_profile_runtime.v1"
 RETRY_REPEAT_PROFILE_RUNTIME_SCHEMA_VERSION = "1.0"
 
 
+def _validate_metrics(metrics: Any, *, repeat: Any) -> list[str]:
+    if not isinstance(metrics, dict):
+        return ["retry_repeat_profile_runtime_metrics"]
+    errs: list[str] = []
+    for key in ("all_runs_no_pipeline_error", "validation_ready_all"):
+        if not isinstance(metrics.get(key), bool):
+            errs.append(f"retry_repeat_profile_runtime_metric_type:{key}")
+    attempt_count = metrics.get("attempt_count")
+    if isinstance(attempt_count, bool) or not isinstance(attempt_count, int) or attempt_count < 1:
+        errs.append("retry_repeat_profile_runtime_attempt_count")
+    elif isinstance(repeat, int) and not isinstance(repeat, bool) and attempt_count != repeat:
+        errs.append("retry_repeat_profile_runtime_attempt_count_mismatch")
+    return errs
+
+
 def validate_retry_repeat_profile_runtime_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["retry_repeat_profile_runtime_not_object"]
@@ -27,16 +42,7 @@ def validate_retry_repeat_profile_runtime_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("single", "repeat_ok", "repeat_degraded"):
         errs.append("retry_repeat_profile_runtime_status")
-    metrics = body.get("metrics")
-    if not isinstance(metrics, dict):
-        errs.append("retry_repeat_profile_runtime_metrics")
-    else:
-        for key in ("all_runs_no_pipeline_error", "validation_ready_all"):
-            if not isinstance(metrics.get(key), bool):
-                errs.append(f"retry_repeat_profile_runtime_metric_type:{key}")
-        attempt_count = metrics.get("attempt_count")
-        if isinstance(attempt_count, bool) or not isinstance(attempt_count, int) or attempt_count < 1:
-            errs.append("retry_repeat_profile_runtime_attempt_count")
+    errs.extend(_validate_metrics(body.get("metrics"), repeat=repeat))
     return errs
 
 

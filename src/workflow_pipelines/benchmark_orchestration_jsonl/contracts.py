@@ -13,6 +13,17 @@ BENCHMARK_ORCHESTRATION_JSONL_RUNTIME_SCHEMA_VERSION = "1.0"
 def validate_benchmark_orchestration_jsonl_runtime_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["benchmark_orchestration_jsonl_runtime_not_object"]
+    errs, status = _validate_core_fields(body)
+    checks = body.get("checks")
+    errs.extend(_validate_checks(checks))
+    counts = body.get("counts")
+    errs.extend(_validate_counts(counts))
+    if not errs and isinstance(checks, dict) and isinstance(counts, dict):
+        errs.extend(_validate_status_semantics(status=status, checks=checks, counts=counts))
+    return errs
+
+
+def _validate_core_fields(body: dict[str, Any]) -> tuple[list[str], Any]:
     errs: list[str] = []
     if body.get("schema") != BENCHMARK_ORCHESTRATION_JSONL_RUNTIME_CONTRACT:
         errs.append("benchmark_orchestration_jsonl_runtime_schema")
@@ -24,13 +35,61 @@ def validate_benchmark_orchestration_jsonl_runtime_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("clean", "has_error"):
         errs.append("benchmark_orchestration_jsonl_runtime_status")
-    checks = body.get("checks")
+    return errs, status
+
+
+def _validate_checks(checks: Any) -> list[str]:
     if not isinstance(checks, dict):
-        errs.append("benchmark_orchestration_jsonl_runtime_checks")
-    else:
-        for key in ("orchestration_present", "resume_lines_valid", "error_lines_valid"):
-            if not isinstance(checks.get(key), bool):
-                errs.append(f"benchmark_orchestration_jsonl_runtime_check_type:{key}")
+        return ["benchmark_orchestration_jsonl_runtime_checks"]
+    errs: list[str] = []
+    for key in ("orchestration_present", "resume_lines_valid", "error_lines_valid"):
+        if not isinstance(checks.get(key), bool):
+            errs.append(f"benchmark_orchestration_jsonl_runtime_check_type:{key}")
+    return errs
+
+
+def _validate_counts(counts: Any) -> list[str]:
+    if not isinstance(counts, dict):
+        return ["benchmark_orchestration_jsonl_runtime_counts"]
+    errs: list[str] = []
+    for key in ("row_count", "resume_count", "error_count"):
+        value = counts.get(key)
+        if isinstance(value, bool) or not isinstance(value, int):
+            errs.append(f"benchmark_orchestration_jsonl_runtime_count_type:{key}")
+            continue
+        if value < 0:
+            errs.append(f"benchmark_orchestration_jsonl_runtime_count_range:{key}")
+    return errs
+
+
+def _validate_status_semantics(status: Any, checks: dict[str, Any], counts: dict[str, Any]) -> list[str]:
+    orchestration_present = checks.get("orchestration_present")
+    resume_lines_valid = checks.get("resume_lines_valid")
+    error_lines_valid = checks.get("error_lines_valid")
+    row_count = counts.get("row_count")
+    resume_count = counts.get("resume_count")
+    error_count = counts.get("error_count")
+    if (
+        status not in ("clean", "has_error")
+        or not isinstance(orchestration_present, bool)
+        or not isinstance(resume_lines_valid, bool)
+        or not isinstance(error_lines_valid, bool)
+        or isinstance(row_count, bool)
+        or not isinstance(row_count, int)
+        or isinstance(resume_count, bool)
+        or not isinstance(resume_count, int)
+        or isinstance(error_count, bool)
+        or not isinstance(error_count, int)
+    ):
+        return []
+    errs: list[str] = []
+    if orchestration_present != (row_count > 0):
+        errs.append("benchmark_orchestration_jsonl_runtime_counts_mismatch")
+    if resume_count + error_count > row_count:
+        errs.append("benchmark_orchestration_jsonl_runtime_counts_mismatch")
+    expected_status = "clean" if resume_lines_valid and error_lines_valid else "has_error"
+    if status != expected_status:
+        errs.append("benchmark_orchestration_jsonl_runtime_status_checks_mismatch")
     return errs
 
 

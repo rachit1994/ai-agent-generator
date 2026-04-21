@@ -48,3 +48,20 @@ def test_validate_reviewer_evaluator_review_rejects_pass_with_blocker() -> None:
     contract = evaluate_review_contract(review)
     assert contract["evaluator_eligible"] is False
     assert contract["strict_ok"] is False
+
+
+def test_evaluate_review_contract_fails_closed_when_pass_payload_is_contract_invalid() -> None:
+    review = {
+        "schema_version": "1.1",
+        "status": "completed_review_pass",
+        "reasons": [],
+        "required_fixes": [],
+        "gate_snapshot": {},
+        "artifact_manifest": [],
+        "review_findings": [{"severity": "info", "code": "ok", "message": "m", "evidence_ref": "e"}],
+        "completed_at": "2026-01-01T00:00:00Z",
+    }
+    contract = evaluate_review_contract(review)
+    assert "missing_review_key:run_id" in contract["errors"]
+    assert contract["evaluator_eligible"] is False
+    assert contract["strict_ok"] is False

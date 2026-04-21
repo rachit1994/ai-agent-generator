@@ -43,7 +43,7 @@ def build_review(
 ) -> dict[str, Any]:
     refusal = parsed.get("refusal")
     finals = [e for e in events if e.get("stage") == "finalize"]
-    passed = bool(finals and finals[-1].get("score", {}).get("passed"))
+    passed = bool(finals and finals[-1].get("score", {}).get("passed") is True)
     if run_status != "ok":
         status = "incomplete"
         reasons = [f"run_{run_status}"]

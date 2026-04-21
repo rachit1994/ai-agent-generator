@@ -54,3 +54,44 @@ def test_run_directory_surfaces_invalid_regression_testing_surface_contract(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "regression_testing_surface_contract:regression_testing_surface_schema" in result["errors"]
+
+
+def test_run_directory_surfaces_regression_testing_surface_status_metrics_mismatch(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "learning").mkdir(parents=True, exist_ok=True)
+    (out / "learning" / "regression_testing_surface.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.regression_testing_surface.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "status": "ready",
+                "metrics": {
+                    "anchor_validation_passed": True,
+                    "has_promotion_eval": False,
+                    "has_online_eval": True,
+                    "has_eval_summary": True,
+                },
+                "anchor_validation_errors": [],
+                "evidence": {
+                    "promotion_evaluation_ref": "learning/promotion_evaluation.json",
+                    "online_evaluation_ref": "learning/online_evaluation_shadow_canary.json",
+                    "summary_ref": "summary.json",
+                    "surface_ref": "learning/regression_testing_surface.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "regression_testing_surface_contract:regression_testing_surface_status_metrics_mismatch" in result["errors"]

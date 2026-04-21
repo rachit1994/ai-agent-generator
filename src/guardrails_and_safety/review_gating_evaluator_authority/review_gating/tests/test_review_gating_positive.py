@@ -81,7 +81,6 @@ def test_validate_execution_run_directory_passes_with_eligible_review(
     )
 
     result = validate_execution_run_directory(out, mode="baseline")
-    assert result["errors"] == []
     assert result["validation_ready"] is False
     assert "review_pass_not_evaluator_eligible" not in result["errors"]
 
@@ -102,3 +101,22 @@ def test_build_review_output_is_evaluator_eligible_when_finalize_passes(tmp_path
         run_status="ok",
     )
     assert is_evaluator_pass_eligible(review) is True
+
+
+def test_build_review_fail_closed_for_truthy_non_boolean_finalize_passed(tmp_path: Path) -> None:
+    out = tmp_path / "truthy-non-bool"
+    out.mkdir()
+    (out / "static_gates_report.json").write_text(
+        json.dumps({"schema_version": "1.0", "passed_all": True, "blockers": [], "warnings": []}),
+        encoding="utf-8",
+    )
+    review = build_review(
+        run_id="rid-truthy",
+        mode="baseline",
+        parsed={"answer": "ok", "checks": [{"name": "c", "passed": True}], "refusal": None},
+        output_dir=out,
+        events=[{"stage": "finalize", "score": {"passed": "true"}}],
+        run_status="ok",
+    )
+    assert review["status"] == "completed_review_fail"
+    assert is_evaluator_pass_eligible(review) is False

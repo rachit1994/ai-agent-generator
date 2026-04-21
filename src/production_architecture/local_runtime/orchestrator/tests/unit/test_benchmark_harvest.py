@@ -237,3 +237,5 @@ def test_resume_rejects_finished_checkpoint(tmp_path: Path, monkeypatch) -> None
     )
     with pytest.raises(ValueError, match="already finished"):
         run_benchmark(None, "baseline", resume_run_id="rid3")
+
+

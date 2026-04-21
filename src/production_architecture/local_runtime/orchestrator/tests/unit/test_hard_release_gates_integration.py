@@ -35,3 +35,27 @@ def test_hard_release_gates_written_and_valid(tmp_path: Path) -> None:
     assert validate_hard_release_gates_path(gates_path) == []
     payload = json.loads(gates_path.read_text(encoding="utf-8"))
     assert payload["run_id"] == run_id
+
+
+def test_hard_release_gates_fail_closed_on_non_boolean_hard_stop_passed(tmp_path: Path) -> None:
+    run_id = "run-hard-release-gates-truthy-hard-stop"
+    run_dir = tmp_path / "runs" / run_id
+    parsed = {
+        "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
+        "hard_stops": [{"id": "HS01", "passed": "true"}],
+    }
+    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.91}}]
+    skill_nodes = write_memory_artifacts(
+        output_dir=run_dir, run_id=run_id, parsed=parsed, events=events
+    )
+    write_evolution_artifacts(
+        output_dir=run_dir,
+        run_id=run_id,
+        mode="guarded_pipeline",
+        parsed=parsed,
+        events=events,
+        skill_nodes=skill_nodes,
+    )
+    payload = json.loads((run_dir / "learning" / "hard_release_gates.json").read_text(encoding="utf-8"))
+    assert payload["failed_hard_stop_ids"] == ["HS01"]
+    assert payload["overall_pass"] is False

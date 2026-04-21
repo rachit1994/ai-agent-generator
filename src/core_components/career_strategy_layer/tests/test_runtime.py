@@ -45,3 +45,104 @@ def test_validate_career_strategy_layer_fail_closed() -> None:
     assert "career_strategy_layer_schema" in errs
     assert "career_strategy_layer_schema_version" in errs
 
+
+def test_validate_career_strategy_layer_requires_strategy_fields() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 0.8}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 0.75}},
+        error_reduction={"metrics": {"error_reduction_rate": 0.7}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.7}},
+    )
+    payload["strategy"].pop("priority")
+    payload["strategy"]["recommended_actions"] = [""]
+    errs = validate_career_strategy_layer_dict(payload)
+    assert "career_strategy_layer_priority" in errs
+    assert "career_strategy_layer_recommended_actions_item" in errs
+
+
+def test_validate_career_strategy_layer_rejects_status_priority_mismatch() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 0.9}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 0.9}},
+        error_reduction={"metrics": {"error_reduction_rate": 0.9}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.9}},
+    )
+    payload["strategy"]["priority"] = "stabilize"
+    errs = validate_career_strategy_layer_dict(payload)
+    assert "career_strategy_layer_status_priority_mismatch" in errs
+
+
+def test_validate_career_strategy_layer_rejects_risk_readiness_mismatch() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 0.8}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 0.8}},
+        error_reduction={"metrics": {"error_reduction_rate": 0.8}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.8}},
+    )
+    payload["strategy"]["risk_score"] = 0.0
+    errs = validate_career_strategy_layer_dict(payload)
+    assert "career_strategy_layer_risk_readiness_mismatch" in errs
+
+
+def test_build_career_strategy_layer_fail_closed_for_non_numeric_metrics() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": "bad"}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": None}},
+        error_reduction={"metrics": {"error_reduction_rate": object()}},
+        scalability_strategy={"scores": {"overall_scaling_score": True}},
+    )
+    assert payload["status"] == "hold"
+    assert abs(payload["strategy"]["career_signal_score"]) < 1e-9
+
+
+def test_build_career_strategy_layer_treats_truthy_validation_ready_as_not_ready() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": "yes"}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 1.0}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 1.0}},
+        error_reduction={"metrics": {"error_reduction_rate": 1.0}},
+        scalability_strategy={"scores": {"overall_scaling_score": 1.0}},
+    )
+    assert payload["status"] == "watchlist"
+
+
+def test_validate_career_strategy_layer_rejects_status_readiness_mismatch() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 0.9}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 0.9}},
+        error_reduction={"metrics": {"error_reduction_rate": 0.9}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.9}},
+    )
+    payload["status"] = "hold"
+    errs = validate_career_strategy_layer_dict(payload)
+    assert "career_strategy_layer_status_readiness_mismatch" in errs
+

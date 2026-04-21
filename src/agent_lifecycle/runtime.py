@@ -22,6 +22,14 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _score_or_zero(value: Any) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return _clamp01(float(value))
+    return 0.0
+
+
 def _extract_score(skill_nodes: dict[str, Any] | None) -> float:
     if not isinstance(skill_nodes, dict):
         return 0.0
@@ -56,7 +64,7 @@ def _stagnation(score: float, events: list[dict[str, Any]]) -> bool:
         if not isinstance(body, dict):
             continue
         passed = body.get("passed")
-        finals.append(1.0 if bool(passed) else 0.0)
+        finals.append(1.0 if passed is True else 0.0)
     if len(finals) < STAGNATION_MIN_OBSERVATIONS:
         return False
     span = max(finals) - min(finals)
@@ -127,7 +135,7 @@ def build_reflection_bundle(*, run_id: str, decision: dict[str, Any], event_ref:
 
 
 def build_promotion_package(*, run_id: str, decision: dict[str, Any]) -> dict[str, Any]:
-    score = float(decision.get("score", 0.0) or 0.0)
+    score = _score_or_zero(decision.get("score", 0.0))
     return {
         "schema_version": "1.0",
         "aggregate_id": run_id,

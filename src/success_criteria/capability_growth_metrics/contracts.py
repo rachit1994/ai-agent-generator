@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,9 @@ def validate_capability_growth_metrics_dict(body: Any) -> list[str]:
             errs.append(f"capability_growth_metrics_metric_type:{key}")
             continue
         num = float(value)
+        if not math.isfinite(num):
+            errs.append(f"capability_growth_metrics_metric_non_finite:{key}")
+            continue
         if key == "promotion_readiness_delta":
             if num < -1.0 or num > 1.0:
                 errs.append(f"capability_growth_metrics_metric_range:{key}")

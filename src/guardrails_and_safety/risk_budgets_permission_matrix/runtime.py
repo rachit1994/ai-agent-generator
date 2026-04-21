@@ -10,6 +10,10 @@ from .contracts import (
 )
 
 
+def _passed(value: Any) -> bool:
+    return value is True
+
+
 def build_risk_budgets_permission_matrix(
     *,
     run_id: str,
@@ -17,11 +21,11 @@ def build_risk_budgets_permission_matrix(
 ) -> dict[str, Any]:
     balanced_gates = cto.get("balanced_gates")
     balanced_gates_present = isinstance(balanced_gates, dict)
-    validation_ready = bool(cto.get("validation_ready"))
+    validation_ready = _passed(cto.get("validation_ready"))
     hard_stops = cto.get("hard_stops")
     hard_stops_list = hard_stops if isinstance(hard_stops, list) else []
-    hard_stops_all_pass = all(
-        bool(row.get("passed")) for row in hard_stops_list if isinstance(row, dict)
+    hard_stops_all_pass = len(hard_stops_list) > 0 and all(
+        _passed(row.get("passed")) for row in hard_stops_list if isinstance(row, dict)
     )
     status = "ready" if balanced_gates_present and validation_ready and hard_stops_all_pass else "degraded"
     return {

@@ -37,3 +37,52 @@ def test_write_service_boundaries_artifact_and_validate(tmp_path: Path) -> None:
     body = json.loads((output_dir / "strategy" / "service_boundaries.json").read_text(encoding="utf-8"))
     assert body["run_id"] == run_id
 
+
+def test_validate_service_boundaries_path_rejects_coverage_mismatch(tmp_path: Path) -> None:
+    run_id = "run-service-boundaries-coverage-mismatch"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir / "strategy")
+    path = output_dir / "strategy" / "service_boundaries.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "sde.service_boundaries.v1",
+                "schema_version": "1.0",
+                "run_id": run_id,
+                "mode": "guarded_pipeline",
+                "status": "boundary_violation",
+                "violations": [{"service": "event_store", "missing_path": "event_store/run_events.jsonl"}],
+                "services": {
+                    "orchestrator": {
+                        "owned_paths": ["traces.jsonl", "orchestration.jsonl", "summary.json", "review.json"],
+                        "present_count": 4,
+                        "required_count": 4,
+                        "coverage": 0.0,
+                    },
+                    "event_store": {
+                        "owned_paths": ["event_store/run_events.jsonl"],
+                        "present_count": 0,
+                        "required_count": 1,
+                        "coverage": 0.0,
+                    },
+                    "memory_system": {
+                        "owned_paths": ["memory/retrieval_bundle.json"],
+                        "present_count": 0,
+                        "required_count": 1,
+                        "coverage": 0.0,
+                    },
+                    "learning_service": {
+                        "owned_paths": ["learning/reflection_bundle.json"],
+                        "present_count": 0,
+                        "required_count": 1,
+                        "coverage": 0.0,
+                    },
+                },
+                "evidence": {"review_ref": "review.json", "boundaries_ref": "strategy/service_boundaries.json"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errs = validate_service_boundaries_path(path)
+    assert "service_boundaries_coverage_mismatch:orchestrator" in errs
+

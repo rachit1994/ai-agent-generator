@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any
 
@@ -49,6 +50,24 @@ from workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_ta
 )
 
 
+def _sanitize_skill_nodes(skill_nodes: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(skill_nodes, dict):
+        return {"schema_version": "1.0", "nodes": []}
+    raw_nodes = skill_nodes.get("nodes")
+    if not isinstance(raw_nodes, list):
+        return {"schema_version": "1.0", "nodes": []}
+    nodes: list[dict[str, Any]] = []
+    for item in raw_nodes:
+        if not isinstance(item, dict):
+            continue
+        normalized = dict(item)
+        score = normalized.get("score")
+        if isinstance(score, (int, float)) and not isinstance(score, bool):
+            normalized["score"] = float(score) if math.isfinite(float(score)) else 0.0
+        nodes.append(normalized)
+    return {"schema_version": str(skill_nodes.get("schema_version") or "1.0"), "nodes": nodes}
+
+
 def write_evolution_artifacts(
     *,
     output_dir: Path,
@@ -61,7 +80,7 @@ def write_evolution_artifacts(
     """Minimal lifecycle + learning artifacts (local SDE default-on)."""
     safe_parsed = parsed if isinstance(parsed, dict) else {}
     safe_events = events if isinstance(events, list) else []
-    safe_nodes = skill_nodes if isinstance(skill_nodes, dict) else {"schema_version": "1.0", "nodes": []}
+    safe_nodes = _sanitize_skill_nodes(skill_nodes)
     learn = output_dir / "learning"
     ensure_dir(learn)
     life = output_dir / "lifecycle"

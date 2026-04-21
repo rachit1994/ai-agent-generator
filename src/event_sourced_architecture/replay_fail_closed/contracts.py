@@ -37,7 +37,25 @@ def validate_replay_fail_closed_dict(body: Any) -> list[str]:
         ):
             if not isinstance(checks.get(key), bool):
                 errs.append(f"replay_fail_closed_check_type:{key}")
+    if not errs and isinstance(checks, dict):
+        errs.extend(_validate_status_semantics(status, checks))
     return errs
+
+
+def _validate_status_semantics(status: Any, checks: dict[str, Any]) -> list[str]:
+    check_values = (
+        checks.get("replay_manifest_present"),
+        checks.get("trace_rows_present"),
+        checks.get("event_rows_present"),
+        checks.get("chain_root_present"),
+        checks.get("chain_root_matches_trace_hash"),
+    )
+    if status not in ("pass", "fail") or any(not isinstance(value, bool) for value in check_values):
+        return []
+    expected_status = "pass" if all(check_values) else "fail"
+    if status != expected_status:
+        return ["replay_fail_closed_status_checks_mismatch"]
+    return []
 
 
 def validate_replay_fail_closed_path(path: Path) -> list[str]:

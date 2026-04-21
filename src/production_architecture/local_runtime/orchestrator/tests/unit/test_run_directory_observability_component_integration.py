@@ -54,3 +54,41 @@ def test_run_directory_surfaces_invalid_observability_component_contract(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "observability_component_contract:observability_component_schema" in result["errors"]
+
+
+def test_run_directory_surfaces_observability_component_consistency_violation(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "observability").mkdir(parents=True, exist_ok=True)
+    (out / "observability" / "component_runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.observability_component.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "status": "ready",
+                "metrics": {
+                    "has_production_observability": True,
+                    "has_run_log": True,
+                    "has_traces": True,
+                    "has_orchestration_log": True,
+                    "all_checks_passed": False,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "observability_component_contract:observability_component_metric_consistency:all_checks_passed"
+        in result["errors"]
+    )

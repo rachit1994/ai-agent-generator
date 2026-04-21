@@ -15,6 +15,14 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _score_or_zero(value: Any) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return _clamp01(float(value))
+    return 0.0
+
+
 def build_career_strategy_layer(
     *,
     run_id: str,
@@ -27,15 +35,15 @@ def build_career_strategy_layer(
     error_reduction: dict[str, Any],
     scalability_strategy: dict[str, Any],
 ) -> dict[str, Any]:
-    capability_score = float(capability_growth.get("metrics", {}).get("capability_growth_rate", 0.0))
-    transfer_score = float(transfer_learning.get("metrics", {}).get("transfer_efficiency_score", 0.0))
-    error_reduction_rate = float(error_reduction.get("metrics", {}).get("error_reduction_rate", 0.0))
-    scale_score = float(scalability_strategy.get("scores", {}).get("overall_scaling_score", 0.0))
+    capability_score = _score_or_zero(capability_growth.get("metrics", {}).get("capability_growth_rate", 0.0))
+    transfer_score = _score_or_zero(transfer_learning.get("metrics", {}).get("transfer_efficiency_score", 0.0))
+    error_reduction_rate = _score_or_zero(error_reduction.get("metrics", {}).get("error_reduction_rate", 0.0))
+    scale_score = _score_or_zero(scalability_strategy.get("scores", {}).get("overall_scaling_score", 0.0))
     signal = _clamp01(
         0.35 * capability_score + 0.25 * transfer_score + 0.2 * error_reduction_rate + 0.2 * scale_score
     )
     review_pass = str(review.get("status", "")) == "completed_review_pass"
-    validation_ready = bool(summary.get("quality", {}).get("validation_ready"))
+    validation_ready = summary.get("quality", {}).get("validation_ready") is True
     readiness = signal
     if not review_pass:
         readiness = max(0.0, readiness - 0.15)

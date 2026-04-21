@@ -9,6 +9,8 @@ from .contracts import (
     OBJECTIVE_POLICY_ENGINE_SCHEMA_VERSION,
 )
 
+_COMPOSITE_RELEASE_FLOOR = 70.0
+
 
 def _to_float_or_zero(value: Any) -> float:
     if isinstance(value, bool):
@@ -24,6 +26,10 @@ def _clamp_score(value: float) -> float:
     if value > 100.0:
         return 100.0
     return round(value, 2)
+
+
+def _passed(value: Any) -> bool:
+    return value is True
 
 
 def build_objective_policy_engine(
@@ -48,12 +54,16 @@ def build_objective_policy_engine(
     hard_stop_rows = cto.get("hard_stops") if isinstance(cto, dict) else []
     if not isinstance(hard_stop_rows, list):
         hard_stop_rows = []
-    failed_hard_stops = sum(1 for row in hard_stop_rows if isinstance(row, dict) and not bool(row.get("passed")))
+    failed_hard_stops = sum(1 for row in hard_stop_rows if isinstance(row, dict) and not _passed(row.get("passed")))
     rollback_ok = len(policy_bundle_rollback_errors) == 0
+    score_floor_ok = scores["composite"] >= _COMPOSITE_RELEASE_FLOOR
     decision = "deny"
     reason = "hard_stop_failure"
     next_step = "resolve_hard_stops"
-    if failed_hard_stops == 0 and review_status == "completed_review_pass" and rollback_ok:
+    if failed_hard_stops == 0 and not score_floor_ok:
+        reason = "score_floor_failure"
+        next_step = "improve_balanced_scores"
+    elif failed_hard_stops == 0 and review_status == "completed_review_pass" and rollback_ok:
         decision = "allow"
         reason = "policy_checks_passed"
         next_step = "proceed_with_release"
@@ -75,6 +85,7 @@ def build_objective_policy_engine(
         "context": {
             "review_status": review_status,
             "failed_hard_stop_count": failed_hard_stops,
+            "score_floor_ok": score_floor_ok,
             "rollback_errors": sorted(policy_bundle_rollback_errors),
         },
         "evidence": {

@@ -48,3 +48,18 @@ def test_run_directory_surfaces_invalid_dual_control_contract(tmp_path: Path, mo
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "dual_control_contract:dual_control_schema" in result["errors"]
+
+
+def test_run_directory_surfaces_malformed_dual_control_json(tmp_path: Path, monkeypatch) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "program" / "dual_control_runtime.json").write_text("{bad", encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "dual_control_contract:dual_control_json" in result["errors"]

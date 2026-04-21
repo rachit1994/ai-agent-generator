@@ -13,8 +13,8 @@ def build_safety_controller(
     cto: dict[str, Any],
 ) -> dict[str, Any]:
     hard_stops = cto.get("hard_stops") if isinstance(cto.get("hard_stops"), list) else []
-    hard_stop_failures = any(not bool(row.get("passed")) for row in hard_stops if isinstance(row, dict))
-    validation_ready = bool(cto.get("validation_ready"))
+    hard_stop_failures = any(row.get("passed") is not True for row in hard_stops if isinstance(row, dict))
+    validation_ready = cto.get("validation_ready") is True
     policy_bundle_valid = not hard_stop_failures
     status = "allow" if validation_ready and policy_bundle_valid else "block"
     return {

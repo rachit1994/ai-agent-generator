@@ -26,3 +26,4 @@ def test_memory_architecture_in_runtime_written_and_valid(tmp_path: Path) -> Non
     assert validate_memory_architecture_in_runtime_path(memory_arch_path) == []
     body = json.loads(memory_arch_path.read_text(encoding="utf-8"))
     assert body["status"] in {"healthy", "degraded", "missing"}
+    assert body["evidence"]["memory_architecture_ref"] == "memory/runtime_memory_architecture.json"

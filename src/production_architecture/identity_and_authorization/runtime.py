@@ -19,6 +19,42 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def _has_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _parse_audit_row(line: str) -> dict[str, Any] | None:
+    try:
+        row = json.loads(line)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+    return row
+
+
+def _apply_high_risk_controls(row: dict[str, Any], controls: dict[str, bool]) -> None:
+    if str(row.get("risk", "")).lower() != "high":
+        return
+    if not _has_text(row.get("approval_token_id")) or not _has_text(row.get("approval_token_expires_at")):
+        controls["high_risk_approvals_valid"] = False
+    actor_id = row.get("actor_id")
+    approver_id = row.get("approver_id")
+    if not _has_text(actor_id) or not _has_text(approver_id):
+        controls["high_risk_dual_control_valid"] = False
+        return
+    if actor_id.strip() == approver_id.strip():
+        controls["high_risk_dual_control_valid"] = False
+
+
+def _status_from_coverage(coverage: float) -> str:
+    if coverage >= 1.0:
+        return "enforced"
+    if coverage >= 0.5:
+        return "degraded"
+    return "missing"
+
+
 def build_production_identity_authorization(
     *,
     run_id: str,
@@ -26,41 +62,26 @@ def build_production_identity_authorization(
     action_audit_lines: list[str],
     strategy_proposal: dict[str, Any],
 ) -> dict[str, Any]:
-    permission_matrix_present = isinstance(permission_matrix, dict) and bool(permission_matrix.get("roles"))
-    high_risk_approvals_valid = True
+    controls = {
+        "permission_matrix_present": isinstance(permission_matrix, dict) and bool(permission_matrix.get("roles")),
+        "high_risk_approvals_valid": True,
+        "high_risk_dual_control_valid": True,
+    }
     for line in action_audit_lines:
         if not isinstance(line, str) or not line.strip():
             continue
-        try:
-            row = json.loads(line)
-        except json.JSONDecodeError:
-            high_risk_approvals_valid = False
+        row = _parse_audit_row(line)
+        if row is None:
+            controls["high_risk_approvals_valid"] = False
+            controls["high_risk_dual_control_valid"] = False
             continue
-        if not isinstance(row, dict):
-            high_risk_approvals_valid = False
-            continue
-        if str(row.get("risk", "")).lower() != "high":
-            continue
-        token_id = row.get("approval_token_id")
-        token_exp = row.get("approval_token_expires_at")
-        if not isinstance(token_id, str) or not token_id.strip():
-            high_risk_approvals_valid = False
-        if not isinstance(token_exp, str) or not token_exp.strip():
-            high_risk_approvals_valid = False
+        _apply_high_risk_controls(row, controls)
     requires_promotion = bool(strategy_proposal.get("requires_promotion_package")) if isinstance(strategy_proposal, dict) else False
     applied_autonomy = bool(strategy_proposal.get("applied_autonomy")) if isinstance(strategy_proposal, dict) else False
     strategy_guarded = (not applied_autonomy) or requires_promotion
-    controls = {
-        "permission_matrix_present": permission_matrix_present,
-        "high_risk_approvals_valid": high_risk_approvals_valid,
-        "strategy_self_approval_guarded": strategy_guarded,
-    }
+    controls["strategy_self_approval_guarded"] = strategy_guarded
     coverage = _clamp01(sum(1 for ok in controls.values() if ok) / len(controls))
-    status = "missing"
-    if coverage >= 1.0:
-        status = "enforced"
-    elif coverage >= 0.5:
-        status = "degraded"
+    status = _status_from_coverage(coverage)
     return {
         "schema": PRODUCTION_IDENTITY_AUTHORIZATION_CONTRACT,
         "schema_version": PRODUCTION_IDENTITY_AUTHORIZATION_SCHEMA_VERSION,

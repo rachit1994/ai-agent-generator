@@ -29,3 +29,42 @@ def test_validate_production_observability_fail_closed() -> None:
     errs = validate_production_observability_dict({"schema": "bad"})
     assert "production_observability_schema" in errs
     assert "production_observability_schema_version" in errs
+
+
+def test_validate_production_observability_rejects_status_metrics_mismatch() -> None:
+    payload = build_production_observability(
+        run_id="rid-observability",
+        mode="guarded_pipeline",
+        trace_rows=1,
+        orchestration_rows=1,
+        run_log_lines=1,
+    )
+    payload["status"] = "missing"
+    errs = validate_production_observability_dict(payload)
+    assert "production_observability_status_metrics_mismatch" in errs
+
+
+def test_validate_production_observability_rejects_missing_evidence_ref() -> None:
+    payload = build_production_observability(
+        run_id="rid-observability",
+        mode="guarded_pipeline",
+        trace_rows=1,
+        orchestration_rows=1,
+        run_log_lines=1,
+    )
+    payload["evidence"]["run_log_ref"] = ""
+    errs = validate_production_observability_dict(payload)
+    assert "production_observability_evidence_ref:run_log_ref" in errs
+
+
+def test_validate_production_observability_rejects_non_canonical_evidence_ref() -> None:
+    payload = build_production_observability(
+        run_id="rid-observability",
+        mode="guarded_pipeline",
+        trace_rows=1,
+        orchestration_rows=1,
+        run_log_lines=1,
+    )
+    payload["evidence"]["orchestration_ref"] = "orchestration-events.jsonl"
+    errs = validate_production_observability_dict(payload)
+    assert "production_observability_evidence_ref_mismatch:orchestration_ref" in errs

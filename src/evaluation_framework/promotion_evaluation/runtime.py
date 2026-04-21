@@ -22,7 +22,7 @@ def _finalize_pass_rate(events: list[dict[str, Any]]) -> float:
     passed = 0
     for row in finals:
         score = row.get("score")
-        if isinstance(score, dict) and bool(score.get("passed")):
+        if isinstance(score, dict) and score.get("passed") is True:
             passed += 1
     return _clamp01(passed / len(finals))
 

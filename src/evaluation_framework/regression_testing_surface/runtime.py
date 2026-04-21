@@ -10,6 +10,11 @@ from .contracts import (
 )
 
 
+def _has_status(payload: dict[str, Any]) -> bool:
+    status = payload.get("status")
+    return isinstance(status, str) and bool(status.strip())
+
+
 def build_regression_testing_surface(
     *,
     run_id: str,
@@ -19,8 +24,8 @@ def build_regression_testing_surface(
     summary: dict[str, Any],
 ) -> dict[str, Any]:
     anchor_validation_passed = len(anchor_errors) == 0
-    has_promotion_eval = bool(promotion_evaluation)
-    has_online_eval = bool(online_evaluation)
+    has_promotion_eval = _has_status(promotion_evaluation) if isinstance(promotion_evaluation, dict) else False
+    has_online_eval = _has_status(online_evaluation) if isinstance(online_evaluation, dict) else False
     has_eval_summary = isinstance(summary.get("metrics"), dict)
     all_checks = anchor_validation_passed and has_promotion_eval and has_online_eval and has_eval_summary
     status = "ready" if all_checks else "degraded"

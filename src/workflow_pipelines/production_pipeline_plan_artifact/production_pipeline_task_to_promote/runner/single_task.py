@@ -358,18 +358,42 @@ def execute_single_task(
             project_session_dir=project_session_dir,
         )
         out_dir = attempt.get("output_dir")
+        run_directory_errors: list[str] = []
         if isinstance(out_dir, str) and out_dir.strip():
             validation_ready = False
-            if "error" not in attempt:
-                verdict = validate_execution_run_directory(Path(out_dir), mode=mode)
-                validation_ready = bool(verdict.get("ok") and verdict.get("validation_ready"))
+            retry_profile_path = Path(out_dir)
             write_retry_repeat_profile_runtime_artifact(
-                output_dir=Path(out_dir),
+                output_dir=retry_profile_path,
                 run_id=str(attempt.get("run_id") or ""),
                 repeat=1,
                 attempts=[attempt],
                 all_runs_no_pipeline_error=("error" not in attempt),
                 validation_ready_all=validation_ready,
+            )
+            if "error" not in attempt:
+                verdict = validate_execution_run_directory(Path(out_dir), mode=mode)
+                validation_ready = bool(verdict.get("ok") and verdict.get("validation_ready"))
+                run_directory_errors = [str(err) for err in verdict.get("errors", [])]
+                write_retry_repeat_profile_runtime_artifact(
+                    output_dir=retry_profile_path,
+                    run_id=str(attempt.get("run_id") or ""),
+                    repeat=1,
+                    attempts=[attempt],
+                    all_runs_no_pipeline_error=True,
+                    validation_ready_all=validation_ready,
+                )
+            else:
+                write_retry_repeat_profile_runtime_artifact(
+                    output_dir=retry_profile_path,
+                    run_id=str(attempt.get("run_id") or ""),
+                    repeat=1,
+                    attempts=[attempt],
+                    all_runs_no_pipeline_error=False,
+                    validation_ready_all=False,
+                )
+        if "error" not in attempt and run_directory_errors:
+            raise ValueError(
+                "run_directory_validation_failed:" + ",".join(run_directory_errors)
             )
         return attempt
     attempts: list[dict] = []

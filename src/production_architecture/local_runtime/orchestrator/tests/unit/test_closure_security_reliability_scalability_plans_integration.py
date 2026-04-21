@@ -44,3 +44,30 @@ def test_write_closure_plan_artifact_and_validate(tmp_path: Path) -> None:
     )
     assert body["run_id"] == run_id
 
+
+def test_write_closure_plan_fails_closed_for_truthy_non_boolean_validation_ready(
+    tmp_path: Path,
+) -> None:
+    run_id = "run-closure-plans-fail-closed"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir / "program")
+    ensure_dir(output_dir / "strategy")
+    ensure_dir(output_dir / "storage")
+    write_json(
+        output_dir / "summary.json",
+        {"quality": {"validation_ready": "true"}, "metrics": {"reliability": 0.9, "retryFrequency": 0.1, "passRate": 1.0}},
+    )
+    write_json(output_dir / "review.json", {"status": "completed_review_pass"})
+    write_json(output_dir / "program" / "production_readiness.json", {"status": "ready"})
+    write_json(output_dir / "strategy" / "scalability_strategy.json", {"status": "scalable"})
+    write_json(output_dir / "strategy" / "service_boundaries.json", {"status": "bounded"})
+    write_json(output_dir / "storage" / "storage_architecture.json", {"status": "consistent"})
+    payload = write_closure_security_reliability_scalability_plans_artifact(
+        output_dir=output_dir,
+        run_id=run_id,
+        mode="guarded_pipeline",
+        policy_bundle_valid=True,
+    )
+    assert payload["plans"]["closure"]["status"] == "blocked"
+    assert payload["plans"]["security"]["status"] == "blocked"
+

@@ -25,3 +25,54 @@ def test_write_practice_engine_artifact_and_validate(tmp_path: Path) -> None:
     body = json.loads((output_dir / "practice" / "practice_engine.json").read_text(encoding="utf-8"))
     assert body["run_id"] == run_id
 
+
+def test_write_practice_engine_artifact_fails_closed_without_review_pass(
+    tmp_path: Path,
+) -> None:
+    run_id = "run-practice-engine-no-review-pass"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir / "practice")
+    ensure_dir(output_dir / "learning")
+    write_json(output_dir / "practice" / "task_spec.json", {"task": "deliberate_practice_cycle"})
+    write_json(output_dir / "practice" / "evaluation_result.json", {"passed": True})
+    write_json(output_dir / "learning" / "reflection_bundle.json", {"root_causes": []})
+    payload = write_practice_engine_artifact(output_dir=output_dir, run_id=run_id)
+    assert payload["status"] != "ready"
+    assert payload["result"]["passed"] is False
+
+
+def test_validate_practice_engine_path_rejects_status_scores_mismatch(tmp_path: Path) -> None:
+    run_id = "run-practice-engine-status-mismatch"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir / "practice")
+    path = output_dir / "practice" / "practice_engine.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema": "sde.practice_engine.v1",
+                "schema_version": "1.0",
+                "run_id": run_id,
+                "status": "ready",
+                "scores": {
+                    "gap_severity": 0.5,
+                    "readiness_signal": 0.4,
+                    "expected_improvement": 0.3,
+                },
+                "plan": {
+                    "task": "deliberate_practice_cycle",
+                    "focus_area": "delivery.structured_output",
+                    "acceptance_criteria": ["focus:delivery.structured_output"],
+                },
+                "result": {"passed": True},
+                "evidence": {
+                    "task_spec_ref": "practice/task_spec.json",
+                    "evaluation_result_ref": "practice/evaluation_result.json",
+                    "practice_engine_ref": "practice/practice_engine.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    errs = validate_practice_engine_path(path)
+    assert "practice_engine_status_scores_mismatch" in errs
+

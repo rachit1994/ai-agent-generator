@@ -13,8 +13,13 @@ from production_architecture.storage.storage.storage import ensure_dir, write_js
 def _read_json_or_empty(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
-    body = json.loads(path.read_text(encoding="utf-8"))
-    return body if isinstance(body, dict) else {}
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"dual_control_contract:dual_control_json:{path.name}") from exc
+    if not isinstance(body, dict):
+        raise ValueError(f"dual_control_contract:dual_control_not_object:{path.name}")
+    return body
 
 
 def write_dual_control_artifact(*, output_dir: Path, run_id: str) -> dict[str, Any]:

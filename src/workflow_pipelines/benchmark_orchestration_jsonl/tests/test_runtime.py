@@ -27,3 +27,26 @@ def test_validate_benchmark_orchestration_jsonl_runtime_fail_closed() -> None:
     errs = validate_benchmark_orchestration_jsonl_runtime_dict({"schema": "bad"})
     assert "benchmark_orchestration_jsonl_runtime_schema" in errs
     assert "benchmark_orchestration_jsonl_runtime_schema_version" in errs
+
+
+def test_validate_benchmark_orchestration_jsonl_runtime_rejects_counts_status_mismatch() -> None:
+    errs = validate_benchmark_orchestration_jsonl_runtime_dict(
+        {
+            "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+            "schema_version": "1.0",
+            "run_id": "rid-bench",
+            "status": "clean",
+            "checks": {
+                "orchestration_present": False,
+                "resume_lines_valid": True,
+                "error_lines_valid": True,
+            },
+            "counts": {
+                "row_count": 1,
+                "resume_count": 1,
+                "error_count": 0,
+            },
+            "evidence": {},
+        }
+    )
+    assert "benchmark_orchestration_jsonl_runtime_counts_mismatch" in errs

@@ -17,12 +17,15 @@ def build_production_pipeline_plan_artifact(
     program_manifest: dict[str, bool],
     project_plan: dict[str, Any],
 ) -> dict[str, Any]:
+    def _is_true(value: Any) -> bool:
+        return value is True
+
     checks = {
-        "project_plan_present": bool(program_manifest.get("project_plan")),
-        "progress_present": bool(program_manifest.get("progress")),
-        "work_batch_present": bool(program_manifest.get("work_batch")),
-        "discovery_present": bool(program_manifest.get("discovery")),
-        "verification_bundle_present": bool(program_manifest.get("verification_bundle")),
+        "project_plan_present": _is_true(program_manifest.get("project_plan")),
+        "progress_present": _is_true(program_manifest.get("progress")),
+        "work_batch_present": _is_true(program_manifest.get("work_batch")),
+        "discovery_present": _is_true(program_manifest.get("discovery")),
+        "verification_bundle_present": _is_true(program_manifest.get("verification_bundle")),
     }
     steps = project_plan.get("steps") if isinstance(project_plan, dict) else []
     step_count = len(steps) if isinstance(steps, list) else 0
