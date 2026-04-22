@@ -1,0 +1,18 @@
+{
+  "admin_policy_controls_present": true,
+  "deny_by_default_enforced": true,
+  "escalation_scope_confusion_tests_present": true,
+  "least_privilege_policy_engine_implemented": true,
+  "allowed_scopes_by_plugin": {
+    "plugin-a": [
+      "read:artifacts"
+    ],
+    "plugin-b": [
+      "read:artifacts",
+      "execute:tools"
+    ]
+  },
+  "policy_model_version": "2026.04",
+  "policy_authoring_simulation_versioned": true,
+  "scope_checks_every_invocation": true
+}

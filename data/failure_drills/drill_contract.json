@@ -1,0 +1,10 @@
+{
+  "automatic_ci_nightly_execution": true,
+  "drill_outcomes_persisted_and_trended": true,
+  "drill_regression_alerting": true,
+  "drill_slo_pass_fail_criteria": true,
+  "executable_reliability_drill_framework": true,
+  "provider_429_and_queue_lag_simulation": true,
+  "remediation_behavior_verified": true,
+  "restart_crash_recovery_simulation": true
+}

@@ -16,6 +16,20 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["stability_metrics_execution"]
+    errs: list[str] = []
+    int_fields = ("events_processed", "stable_events_processed", "malformed_event_rows")
+    for field in int_fields:
+        value = execution.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"stability_metrics_execution_type:{field}")
+    if not isinstance(execution.get("reliability_violations"), list):
+        errs.append("stability_metrics_execution_type:reliability_violations")
+    return errs
+
+
 def _validate_status_score_semantics(status: Any, metrics: dict[str, Any]) -> list[str]:
     score = metrics.get("stability_score")
     if isinstance(score, bool) or not isinstance(score, (int, float)):
@@ -115,6 +129,7 @@ def validate_stability_metrics_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["stability_metrics_not_object"]
     errs, status = _validate_core_fields(body)
+    errs.extend(_validate_execution(body.get("execution")))
     metrics = body.get("metrics")
     if not isinstance(metrics, dict):
         errs.append("stability_metrics_metrics")

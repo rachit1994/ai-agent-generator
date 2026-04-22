@@ -1,0 +1,12 @@
+{
+  "auto_rollback_on_slo_or_policy_breach": true,
+  "error_rate_pct": 0.4,
+  "health_gated_promotion_enforced": true,
+  "latency_p95_ms": 180,
+  "observability_signal_ids": [
+    "sig-01",
+    "sig-02"
+  ],
+  "rollback_triggered": false,
+  "rollout_actions_integrated_with_observability_signals": true
+}

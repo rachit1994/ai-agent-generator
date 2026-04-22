@@ -1,0 +1,14 @@
+{
+  "auth_boundary": "mTLS+service-token",
+  "control_api": [
+    "schedule_job",
+    "cancel_job",
+    "get_job_status"
+  ],
+  "data_api": [
+    "execute_job",
+    "report_result"
+  ],
+  "isolation_policy": "no_direct_state_mutation",
+  "version": "v1"
+}

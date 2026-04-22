@@ -1,0 +1,43 @@
+{
+  "cancel_timeout_supported": true,
+  "durable_backend": true,
+  "dlq_policy_version": "2026.04",
+  "job_timeout_seconds": 300,
+  "lifecycle_api": true,
+  "max_allowed_lag_seconds": 120,
+  "max_attempts": 3,
+  "oldest_job_lag_seconds": 90,
+  "queue_metrics_present": true,
+  "jobs": [
+    {
+      "attempt": 0,
+      "job_id": "job-001",
+      "status": "queued"
+    },
+    {
+      "attempt": 1,
+      "job_id": "job-002",
+      "status": "running"
+    },
+    {
+      "attempt": 1,
+      "job_id": "job-003",
+      "status": "succeeded"
+    },
+    {
+      "attempt": 3,
+      "job_id": "job-004",
+      "status": "failed"
+    },
+    {
+      "attempt": 1,
+      "job_id": "job-005",
+      "status": "cancelled"
+    }
+  ],
+  "replay_checkpointing": true,
+  "retry_backoff_jitter": true,
+  "state_recovery": true,
+  "worker_heartbeat_interval_seconds": 30,
+  "worker_lease_policy_version": "2026.04"
+}

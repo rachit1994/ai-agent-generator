@@ -1,0 +1,19 @@
+{
+  "active_plugin_version": "2.4.1",
+  "canary_cohorts_staged_traffic_supported": true,
+  "plugin_progressive_rollout_controller_built": true,
+  "stages": [
+    {
+      "cohort": "canary",
+      "traffic_percent": 10
+    },
+    {
+      "cohort": "ramp",
+      "traffic_percent": 30
+    },
+    {
+      "cohort": "stable",
+      "traffic_percent": 60
+    }
+  ]
+}

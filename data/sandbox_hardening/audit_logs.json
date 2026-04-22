@@ -1,0 +1,17 @@
+{
+  "denied_events": [
+    {
+      "action": "network.connect",
+      "event_id": "deny-001",
+      "reason": "egress_allowlist_violation",
+      "timestamp": "2026-04-22T10:01:00Z"
+    },
+    {
+      "action": "syscall.unshare",
+      "event_id": "deny-002",
+      "reason": "syscall_filtered",
+      "timestamp": "2026-04-22T10:02:00Z"
+    }
+  ],
+  "denied_ops_count": 2
+}

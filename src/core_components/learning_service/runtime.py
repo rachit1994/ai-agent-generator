@@ -15,6 +15,32 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def execute_learning_service_runtime(
+    *,
+    reflection_bundle: dict[str, Any],
+    canary_report: dict[str, Any],
+    events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    reflections = reflection_bundle.get("reflections") if isinstance(reflection_bundle, dict) else []
+    canary_rows = canary_report.get("rows") if isinstance(canary_report, dict) else []
+    finalize_rows = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
+    malformed_event_rows = len(events) - len([row for row in events if isinstance(row, dict)])
+    missing_signal_sources: list[str] = []
+    if not isinstance(reflections, list) or len(reflections) == 0:
+        missing_signal_sources.append("reflection_bundle")
+    if not isinstance(canary_rows, list) or len(canary_rows) == 0:
+        missing_signal_sources.append("canary_report")
+    if len(finalize_rows) == 0:
+        missing_signal_sources.append("finalize_events")
+    return {
+        "reflections_processed": len(reflections) if isinstance(reflections, list) else 0,
+        "canary_rows_processed": len(canary_rows) if isinstance(canary_rows, list) else 0,
+        "finalize_events_processed": len(finalize_rows),
+        "malformed_event_rows": malformed_event_rows,
+        "missing_signal_sources": missing_signal_sources,
+    }
+
+
 def build_learning_service(
     *,
     run_id: str,
@@ -23,6 +49,9 @@ def build_learning_service(
     canary_report: dict[str, Any],
     events: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    execution = execute_learning_service_runtime(
+        reflection_bundle=reflection_bundle, canary_report=canary_report, events=events
+    )
     reflections = reflection_bundle.get("reflections") if isinstance(reflection_bundle, dict) else []
     reflection_count = len(reflections) if isinstance(reflections, list) else 0
     canary_items = canary_report.get("rows") if isinstance(canary_report, dict) else []
@@ -53,6 +82,7 @@ def build_learning_service(
         "run_id": run_id,
         "mode": mode,
         "status": status,
+        "execution": execution,
         "metrics": {
             "reflection_count": reflection_count,
             "canary_count": canary_count,

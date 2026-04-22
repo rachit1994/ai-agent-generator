@@ -18,10 +18,24 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["role_agents_execution"]
+    errs: list[str] = []
+    for key in ("checks_processed", "finalize_events_processed", "malformed_event_rows"):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"role_agents_execution_type:{key}")
+    if not isinstance(execution.get("strict_boolean_violations"), list):
+        errs.append("role_agents_execution_type:strict_boolean_violations")
+    return errs
+
+
 def validate_role_agents_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["role_agents_not_object"]
     errs = _validate_core_fields(body)
+    errs.extend(_validate_execution(body.get("execution")))
     role_scores = body.get("role_scores")
     errs.extend(_validate_role_scores(role_scores))
     errs.extend(_validate_evidence(body.get("evidence")))

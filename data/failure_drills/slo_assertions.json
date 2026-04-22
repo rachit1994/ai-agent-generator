@@ -1,0 +1,14 @@
+{
+  "drill_outcomes_persisted_and_trended": true,
+  "drill_slo_based_pass_fail_defined": true,
+  "baseline_metrics": {
+    "avg_429_error_rate_pct": 1.2,
+    "avg_queue_lag_seconds": 90.0,
+    "avg_restart_recovery_seconds": 30.0
+  },
+  "last_drill_run_id": "drill-23-0007",
+  "max_429_error_rate_pct": 2.5,
+  "max_queue_lag_seconds": 120,
+  "max_restart_recovery_seconds": 45,
+  "regression_budget_pct": 10
+}

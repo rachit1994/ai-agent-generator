@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from production_architecture.orchestration import (
     build_production_orchestration,
+    execute_production_orchestration_runtime,
     validate_production_orchestration_dict,
 )
 
@@ -19,6 +20,7 @@ def test_build_production_orchestration_is_deterministic() -> None:
     )
     assert one == two
     assert validate_production_orchestration_dict(one) == []
+    assert one["execution"]["lease_rows_processed"] == 1
 
 
 def test_validate_production_orchestration_fail_closed() -> None:
@@ -59,3 +61,15 @@ def test_validate_production_orchestration_rejects_invalid_evidence_refs() -> No
     errs = validate_production_orchestration_dict(payload)
     assert "production_orchestration_evidence_ref:lease_table_ref" in errs
     assert "production_orchestration_evidence_ref:shard_map_ref" in errs
+
+
+def test_execute_production_orchestration_runtime_detects_malformed_rows() -> None:
+    execution = execute_production_orchestration_runtime(
+        lease_table={"leases": [{"lease_id": "l1", "active": True}, {"active": False}, "bad-row"]},  # type: ignore[list-item]
+        shard_map={"shards": [{"id": "s1"}, "bad-row"]},  # type: ignore[list-item]
+    )
+    assert execution["lease_rows_processed"] == 3
+    assert execution["shard_rows_processed"] == 2
+    assert execution["malformed_lease_rows"] == 1
+    assert execution["malformed_shard_rows"] == 1
+    assert execution["inactive_or_missing_lease_ids"] == 2

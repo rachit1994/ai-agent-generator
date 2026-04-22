@@ -32,6 +32,33 @@ def _passed(value: Any) -> bool:
     return value is True
 
 
+def execute_objective_policy_runtime(
+    *,
+    summary: dict[str, Any],
+    review: dict[str, Any],
+    cto: dict[str, Any],
+    policy_bundle_rollback_errors: list[str],
+) -> dict[str, Any]:
+    balanced = summary.get("balanced_gates") if isinstance(summary, dict) else {}
+    missing_signal_sources: list[str] = []
+    if not isinstance(balanced, dict):
+        missing_signal_sources.append("summary")
+    if not isinstance(review, dict) or not isinstance(review.get("status"), str):
+        missing_signal_sources.append("review")
+    hard_stop_rows = cto.get("hard_stops") if isinstance(cto, dict) else []
+    if not isinstance(hard_stop_rows, list):
+        hard_stop_rows = []
+        missing_signal_sources.append("cto")
+    malformed_hard_stop_rows = len([row for row in hard_stop_rows if not isinstance(row, dict)])
+    return {
+        "signals_processed": 4,
+        "hard_stop_rows_processed": len(hard_stop_rows),
+        "malformed_hard_stop_rows": malformed_hard_stop_rows,
+        "rollback_error_count": len(policy_bundle_rollback_errors),
+        "missing_signal_sources": missing_signal_sources,
+    }
+
+
 def build_objective_policy_engine(
     *,
     run_id: str,
@@ -41,6 +68,12 @@ def build_objective_policy_engine(
     cto: dict[str, Any],
     policy_bundle_rollback_errors: list[str],
 ) -> dict[str, Any]:
+    execution = execute_objective_policy_runtime(
+        summary=summary,
+        review=review,
+        cto=cto,
+        policy_bundle_rollback_errors=policy_bundle_rollback_errors,
+    )
     balanced = summary.get("balanced_gates") if isinstance(summary, dict) else {}
     if not isinstance(balanced, dict):
         balanced = {}
@@ -79,6 +112,7 @@ def build_objective_policy_engine(
         "schema_version": OBJECTIVE_POLICY_ENGINE_SCHEMA_VERSION,
         "run_id": run_id,
         "mode": mode,
+        "execution": execution,
         "scores": scores,
         "policy": {
             "decision": decision,

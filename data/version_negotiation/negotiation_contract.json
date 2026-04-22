@@ -1,0 +1,9 @@
+{
+  "deprecation_window_enforced": true,
+  "dual_version_rollback_safe": true,
+  "fallback_selection": true,
+  "handshake_defined": true,
+  "incompatible_hard_reject": true,
+  "telemetry_emitted": true,
+  "version_range_advertisement": true
+}

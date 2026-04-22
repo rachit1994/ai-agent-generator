@@ -1,0 +1,47 @@
+{
+  "checks": {
+    "admin_controls_present": true,
+    "durable_quota_state": true,
+    "fairness_policy_enforced": true,
+    "hard_limit_enforced": true,
+    "refill_window_supported": true,
+    "rejection_reasons_present": true,
+    "runtime_cap_enforcement_consistent": true,
+    "runtime_rejection_metrics_coherent": true,
+    "runtime_rejection_reasons_complete": true,
+    "tenant_identity_threaded": true,
+    "tenant_observability_present": true
+  },
+  "evidence": {
+    "events_ref": "data/tenant_quotas/quota_events.jsonl",
+    "history_ref": "data/tenant_quotas/trend_history.jsonl",
+    "observability_ref": "data/tenant_quotas/observability.json",
+    "quota_ref": "data/tenant_quotas/quota_state.json",
+    "scheduler_ref": "data/tenant_quotas/scheduler_state.json"
+  },
+  "execution": {
+    "cap_violations": [],
+    "events_processed": 2,
+    "missing_reason_violations": [],
+    "rejection_count_coherent": true
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "quota_contract": {
+    "admin_controls": [
+      "set_quota",
+      "set_concurrency",
+      "set_refill_window"
+    ],
+    "concurrency_ceiling": "hard_limit",
+    "fairness_policy": "weighted_round_robin",
+    "quota_refill_window": "fixed_interval",
+    "quota_storage": "durable",
+    "tenant_identity_required": true
+  },
+  "release_blocked": false,
+  "run_id": "run-feature-06-ci",
+  "schema": "sde.scale.feature_06.tenant_quota.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

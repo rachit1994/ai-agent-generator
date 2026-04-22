@@ -1,0 +1,26 @@
+{
+  "auth_boundary": "service-token",
+  "dispatch_events": [
+    {
+      "event_id": "evt-001",
+      "from_plane": "control",
+      "route": "schedule_job",
+      "run_id": "run-feature-03-ci",
+      "status": "dispatched",
+      "to_plane": "data"
+    },
+    {
+      "event_id": "evt-002",
+      "from_plane": "control",
+      "route": "get_job_status",
+      "run_id": "run-feature-03-ci",
+      "status": "succeeded",
+      "to_plane": "data"
+    }
+  ],
+  "owner_team": "platform-control",
+  "rollback_runbook": "RB-CONTROL-003",
+  "scaling_policy": "control-cpu_target_60",
+  "service_name": "control-plane-api",
+  "telemetry_channel": "control-traces"
+}

@@ -4,12 +4,13 @@ from .contracts import (
     validate_event_store_component_dict,
     validate_event_store_component_path,
 )
-from .runtime import build_event_store_component
+from .runtime import build_event_store_component, execute_event_store_runtime
 
 __all__ = [
     "EVENT_STORE_COMPONENT_CONTRACT",
     "EVENT_STORE_COMPONENT_SCHEMA_VERSION",
     "build_event_store_component",
+    "execute_event_store_runtime",
     "validate_event_store_component_dict",
     "validate_event_store_component_path",
 ]

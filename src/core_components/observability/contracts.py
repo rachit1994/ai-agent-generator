@@ -25,6 +25,20 @@ _EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["observability_component_execution"]
+    errs: list[str] = []
+    signals_processed = execution.get("signals_processed")
+    if isinstance(signals_processed, bool) or not isinstance(signals_processed, int) or signals_processed < 0:
+        errs.append("observability_component_execution_type:signals_processed")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("observability_component_execution_type:missing_signal_sources")
+    if not isinstance(execution.get("healthy_production_observability"), bool):
+        errs.append("observability_component_execution_type:healthy_production_observability")
+    return errs
+
+
 def _validate_metric_types(metrics: Any) -> tuple[list[str], bool]:
     if not isinstance(metrics, dict):
         return ["observability_component_metrics"], False
@@ -79,6 +93,7 @@ def validate_observability_component_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in _ALLOWED_STATUS:
         errs.append("observability_component_status")
+    errs.extend(_validate_execution(body.get("execution")))
     metric_errs, has_required_metric_types = _validate_metric_types(body.get("metrics"))
     errs.extend(metric_errs)
     metrics = body.get("metrics")

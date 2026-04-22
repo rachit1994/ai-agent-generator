@@ -1,0 +1,17 @@
+{
+  "allowlist_enforced": true,
+  "default_egress": "deny",
+  "deny_audit_schema": "sandbox.v1.deny_event",
+  "escape_kill_switch": true,
+  "filesystem_isolation": true,
+  "policy_versioned_validated": true,
+  "resource_limits": [
+    "cpu",
+    "memory",
+    "pids",
+    "fds"
+  ],
+  "startup_policy_validation": true,
+  "syscall_filtering": true,
+  "timeout_kill_semantics": true
+}

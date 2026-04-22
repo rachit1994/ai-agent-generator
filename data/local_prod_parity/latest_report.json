@@ -1,0 +1,36 @@
+{
+  "checks": {
+    "authz_match": true,
+    "errors_match": true,
+    "idempotency_match": true,
+    "semantic_outputs_match": true,
+    "state_transitions_match": true
+  },
+  "diagnostics": [],
+  "evidence": {
+    "diff_ref": "data/local_prod_parity/diff.json",
+    "history_ref": "data/local_prod_parity/trend_history.jsonl",
+    "local_ref": "data/local_prod_parity/local_results.json",
+    "prod_ref": "data/local_prod_parity/prod_results.json"
+  },
+  "failed_gates": [],
+  "mode": "preflight",
+  "parity_contract": {
+    "comparators": [
+      "semantic_outputs",
+      "state_transitions",
+      "errors",
+      "authz",
+      "idempotency"
+    ],
+    "diagnostic_hints": true,
+    "immutable_artifacts": true,
+    "release_block_on_drift": true,
+    "scheduled_regression": true
+  },
+  "release_blocked": false,
+  "run_id": "local-prod-parity-check",
+  "schema": "sde.scale.feature_14.local_prod_parity.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

@@ -8,7 +8,7 @@ from .contracts import (
     validate_identity_authz_plane_dict,
     validate_identity_authz_plane_path,
 )
-from .runtime import build_identity_authz_plane
+from .runtime import build_identity_authz_plane, execute_identity_authz_runtime
 
 __all__ = [
     "IDENTITY_AUTHZ_PLANE_CONTRACT",
@@ -18,6 +18,7 @@ __all__ = [
     "IDENTITY_AUTHZ_PLANE_SCHEMA_VERSION",
     "IDENTITY_AUTHZ_PLANE_VALID_STATUSES",
     "build_identity_authz_plane",
+    "execute_identity_authz_runtime",
     "validate_identity_authz_plane_dict",
     "validate_identity_authz_plane_path",
 ]

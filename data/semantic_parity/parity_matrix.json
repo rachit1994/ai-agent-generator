@@ -1,0 +1,26 @@
+{
+  "authz": [
+    "role",
+    "resource",
+    "decision",
+    "reason_code"
+  ],
+  "error_taxonomy": [
+    "operation",
+    "error_code",
+    "retryable",
+    "class"
+  ],
+  "idempotency": [
+    "operation",
+    "request_hash",
+    "result_hash",
+    "replay_safe"
+  ],
+  "state_transitions": [
+    "operation",
+    "from_state",
+    "to_state",
+    "transition_valid"
+  ]
+}

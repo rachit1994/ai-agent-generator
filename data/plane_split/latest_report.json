@@ -1,0 +1,46 @@
+{
+  "boundary_contract": {
+    "auth_boundary": "mTLS+service-token",
+    "control_api": [
+      "schedule_job",
+      "cancel_job",
+      "get_job_status"
+    ],
+    "data_api": [
+      "execute_job",
+      "report_result"
+    ],
+    "isolation_policy": "no_direct_state_mutation",
+    "version": "v1"
+  },
+  "checks": {
+    "auth_boundary": true,
+    "failure_isolated": true,
+    "operational_ownership_split": true,
+    "plane_rollbacks_defined": true,
+    "separate_scaling": true,
+    "separate_services": true,
+    "telemetry_partitioned": true
+  },
+  "evidence": {
+    "boundary_ref": "data/plane_split/boundary_contract.json",
+    "control_ref": "data/plane_split/control_plane.json",
+    "data_ref": "data/plane_split/data_plane.json",
+    "events_ref": "data/plane_split/plane_events.jsonl",
+    "history_ref": "data/plane_split/trend_history.jsonl"
+  },
+  "execution": {
+    "dependency_violations": [],
+    "events_processed": 2,
+    "ownership_violations": [],
+    "rollback_ready": true,
+    "route_violations": []
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "release_blocked": false,
+  "run_id": "run-feature-03-ci",
+  "schema": "sde.scale.feature_03.plane_split.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

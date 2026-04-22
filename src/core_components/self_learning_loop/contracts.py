@@ -25,6 +25,19 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["self_learning_loop_execution"]
+    errs: list[str] = []
+    for key in ("events_processed", "finalize_events_processed", "malformed_event_rows"):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"self_learning_loop_execution_type:{key}")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("self_learning_loop_execution_type:missing_signal_sources")
+    return errs
+
+
 def _validate_failed_gates(failed_gates: Any) -> tuple[list[str], list[str]]:
     if not isinstance(failed_gates, list) or any(not isinstance(row, str) for row in failed_gates):
         return [], ["self_learning_loop_failed_gates"]
@@ -156,6 +169,7 @@ def validate_self_learning_loop_dict(body: Any) -> list[str]:
     mode = body.get("mode")
     if mode not in _ALLOWED_MODES:
         errs.append("self_learning_loop_mode")
+    errs.extend(_validate_execution(body.get("execution")))
     errs.extend(_validate_signals(body.get("signals")))
     errs.extend(_validate_decision(body.get("decision")))
     evidence = body.get("evidence")

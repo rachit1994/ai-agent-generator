@@ -1,0 +1,10 @@
+{
+  "deterministic_scheduler_tests": true,
+  "distributed_weighted_fair_queue_delivered": true,
+  "fairness_wait_time_telemetry_published": true,
+  "mixed_load_stress_validation": true,
+  "safe_admin_weight_tuning_controls": true,
+  "scheduler_state_persistence_replay": true,
+  "starvation_prevention_aging_policy": true,
+  "tenant_plugin_priority_weighting_supported": true
+}

@@ -4,12 +4,13 @@ from .contracts import (
     validate_transfer_learning_metrics_dict,
     validate_transfer_learning_metrics_path,
 )
-from .runtime import build_transfer_learning_metrics
+from .runtime import build_transfer_learning_metrics, execute_transfer_learning_runtime
 
 __all__ = [
     "TRANSFER_LEARNING_METRICS_CONTRACT",
     "TRANSFER_LEARNING_METRICS_SCHEMA_VERSION",
     "build_transfer_learning_metrics",
+    "execute_transfer_learning_runtime",
     "validate_transfer_learning_metrics_dict",
     "validate_transfer_learning_metrics_path",
 ]

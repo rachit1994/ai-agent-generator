@@ -6,6 +6,7 @@ import pytest
 
 from success_criteria.transfer_learning_metrics import (
     build_transfer_learning_metrics,
+    execute_transfer_learning_runtime,
     validate_transfer_learning_metrics_dict,
     validate_transfer_learning_metrics_path,
 )
@@ -19,6 +20,7 @@ def test_build_transfer_learning_metrics_is_deterministic() -> None:
     two = build_transfer_learning_metrics(run_id="rid-t", parsed=parsed, events=events, skill_nodes=skill_nodes)
     assert one == two
     assert validate_transfer_learning_metrics_dict(one) == []
+    assert one["execution"]["events_processed"] == 1
 
 
 def test_transfer_learning_metrics_fail_closed_when_malformed() -> None:
@@ -232,3 +234,28 @@ def test_transfer_learning_metrics_reports_efficiency_mismatch_with_other_errors
     errs = validate_transfer_learning_metrics_dict(payload)
     assert "transfer_learning_metrics_evidence_traces_ref" in errs
     assert "transfer_learning_metrics_transfer_efficiency_score_mismatch" in errs
+
+
+def test_execute_transfer_learning_runtime_detects_malformed_rows() -> None:
+    execution = execute_transfer_learning_runtime(
+        events=[
+            {"event_id": "evt-1", "stage": "finalize", "score": {"passed": True}},
+            {"stage": "finalize", "score": {"passed": True}},
+            {"event_id": "evt-3", "stage": "score", "score": {"passed": True}},
+        ],
+        skill_nodes={"nodes": [{"score": 0.8}, {"score": 0.7}]},
+    )
+    assert execution["events_processed"] == 3
+    assert execution["transfer_events_processed"] == 1
+    assert execution["malformed_event_rows"] == 2
+    assert execution["skill_node_count"] == 2
+
+
+def test_build_transfer_learning_metrics_records_boolean_pass_violation() -> None:
+    payload = build_transfer_learning_metrics(
+        run_id="rid-bool",
+        parsed={},
+        events=[{"event_id": "evt-1", "stage": "finalize", "score": {"passed": "yes"}}],
+        skill_nodes={"nodes": [{"score": 0.8}]},
+    )
+    assert payload["execution"]["strict_boolean_violations"] == ["evt-1"]

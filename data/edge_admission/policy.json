@@ -1,0 +1,18 @@
+{
+  "burst_limit_per_minute": 60,
+  "burst_sustained_budgets": true,
+  "dynamic_policy_updates_safe": true,
+  "edge_middleware_present": true,
+  "max_retry_after_seconds": 60,
+  "outage_mode": "fail_closed",
+  "outage_policy_defined": true,
+  "policy_version": "edge-policy-v1",
+  "scope_keys": [
+    "tenant_id",
+    "user_id",
+    "api_key",
+    "route"
+  ],
+  "scoped_limits_present": true,
+  "sustained_limit_per_hour": 600
+}

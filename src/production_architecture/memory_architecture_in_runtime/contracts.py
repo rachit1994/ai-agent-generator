@@ -16,6 +16,23 @@ _EXPECTED_EVIDENCE_REFS = {
 }
 
 
+def _append_execution_errors(execution: Any, errs: list[str]) -> None:
+    if not isinstance(execution, dict):
+        errs.append("memory_architecture_in_runtime_execution")
+        return
+    for key in (
+        "chunks_processed",
+        "quarantine_rows_processed",
+        "malformed_chunk_rows",
+        "malformed_quarantine_rows",
+    ):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"memory_architecture_in_runtime_execution_type:{key}")
+    if not isinstance(execution.get("missing_quality_fields"), list):
+        errs.append("memory_architecture_in_runtime_execution_type:missing_quality_fields")
+
+
 def _valid_status(status: Any) -> bool:
     return status in ("healthy", "degraded", "missing")
 
@@ -73,6 +90,7 @@ def validate_memory_architecture_in_runtime_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["memory_architecture_in_runtime_not_object"]
     errs, status = _validate_core_fields(body)
+    _append_execution_errors(body.get("execution"), errs)
     metrics = body.get("metrics")
     if not isinstance(metrics, dict):
         errs.append("memory_architecture_in_runtime_metrics")

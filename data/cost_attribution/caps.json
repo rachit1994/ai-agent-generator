@@ -1,0 +1,10 @@
+{
+  "breach_action": "deny",
+  "cap_breach_response_contracts_defined": true,
+  "cap_window_seconds": 300,
+  "concurrency_cap_enforcement_tested": true,
+  "hard_cap_usd": 500.0,
+  "hard_soft_caps_admission_enforced": true,
+  "max_burst_requests": 200,
+  "soft_cap_usd": 250.0
+}

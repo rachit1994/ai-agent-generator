@@ -1,0 +1,11 @@
+{
+  "class_wait_p95_ms": {
+    "tenant-a": 42,
+    "tenant-b": 47
+  },
+  "fairness_score": 0.93,
+  "deterministic_trace_hash": "trace-hash-008",
+  "mixed_load_samples": 180,
+  "mixed_load_stress_validation": true,
+  "p95_wait_ms": 47
+}

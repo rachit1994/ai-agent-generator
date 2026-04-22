@@ -15,6 +15,23 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["production_orchestration_execution"]
+    errs: list[str] = []
+    for key in (
+        "lease_rows_processed",
+        "shard_rows_processed",
+        "malformed_lease_rows",
+        "malformed_shard_rows",
+        "inactive_or_missing_lease_ids",
+    ):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"production_orchestration_execution_type:{key}")
+    return errs
+
+
 def _expected_status(lease_count: int, active_lease_count: int, shard_count: int) -> str:
     if active_lease_count > 0 and shard_count > 0:
         return "healthy"
@@ -81,6 +98,7 @@ def validate_production_orchestration_dict(body: Any) -> list[str]:
     run_id = body.get("run_id")
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("production_orchestration_run_id")
+    errs.extend(_validate_execution(body.get("execution")))
     status_errs, normalized_status = _validate_status(body.get("status"))
     errs.extend(status_errs)
     metric_errs, values = _validate_metrics(body.get("metrics"))

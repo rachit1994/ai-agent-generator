@@ -1,0 +1,19 @@
+{
+  "authz": {
+    "decision": "allow",
+    "scope": "tenant:read"
+  },
+  "errors": [],
+  "idempotency": {
+    "replay_safe": true
+  },
+  "semantic_outputs": {
+    "code": 200,
+    "decision": "allow"
+  },
+  "state_transitions": [
+    "queued",
+    "active",
+    "done"
+  ]
+}

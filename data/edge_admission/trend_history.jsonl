@@ -1,0 +1,5 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-edge-admission-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-05-structured", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-05-retry-after-cap", "status": "pass"}
+{"events_processed": 3, "failed_gate_count": 0, "run_id": "run-feature-05-ci", "status": "pass"}

@@ -10,12 +10,45 @@ from .contracts import (
 )
 
 
+def execute_production_orchestration_runtime(
+    *,
+    lease_table: dict[str, Any],
+    shard_map: dict[str, Any],
+) -> dict[str, Any]:
+    leases = lease_table.get("leases") if isinstance(lease_table, dict) else []
+    shards = shard_map.get("shards") if isinstance(shard_map, dict) else []
+    leases = leases if isinstance(leases, list) else []
+    shards = shards if isinstance(shards, list) else []
+    malformed_lease_rows = len([row for row in leases if not isinstance(row, dict)])
+    malformed_shard_rows = len([row for row in shards if not isinstance(row, dict)])
+    inactive_or_missing_lease_ids = len(
+        [
+            row
+            for row in leases
+            if not isinstance(row, dict)
+            or row.get("active") is not True
+            or not isinstance(row.get("lease_id"), str)
+            or not row.get("lease_id").strip()
+        ]
+    )
+    return {
+        "lease_rows_processed": len(leases),
+        "shard_rows_processed": len(shards),
+        "malformed_lease_rows": malformed_lease_rows,
+        "malformed_shard_rows": malformed_shard_rows,
+        "inactive_or_missing_lease_ids": inactive_or_missing_lease_ids,
+    }
+
+
 def build_production_orchestration(
     *,
     run_id: str,
     lease_table: dict[str, Any],
     shard_map: dict[str, Any],
 ) -> dict[str, Any]:
+    execution = execute_production_orchestration_runtime(
+        lease_table=lease_table, shard_map=shard_map
+    )
     leases = lease_table.get("leases") if isinstance(lease_table, dict) else []
     if not isinstance(leases, list):
         leases = []
@@ -37,6 +70,7 @@ def build_production_orchestration(
         "schema_version": PRODUCTION_ORCHESTRATION_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "metrics": {
             "lease_count": lease_count,
             "active_lease_count": active_lease_count,

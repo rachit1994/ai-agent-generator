@@ -1,0 +1,11 @@
+{
+  "quota_policy_version": "2026.04",
+  "rejection_count": 1,
+  "refill_window_seconds": 60,
+  "tenant_scope": "tenant-a",
+  "tracked_rejection_reason_codes": [
+    "tenant_quota_exhausted",
+    "tenant_concurrency_exhausted"
+  ],
+  "tenant_observability_present": true
+}

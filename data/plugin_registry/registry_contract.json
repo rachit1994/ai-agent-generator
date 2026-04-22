@@ -1,0 +1,20 @@
+{
+  "compatibility_policy": "semver+matrix",
+  "governance_controls": [
+    "deprecate",
+    "rollback_safe",
+    "audit_history"
+  ],
+  "metadata_contract": [
+    "plugin_id",
+    "version",
+    "capabilities",
+    "signature"
+  ],
+  "publish_gates": [
+    "metadata_valid",
+    "compatibility_pass",
+    "signature_verified"
+  ],
+  "registry_service": true
+}

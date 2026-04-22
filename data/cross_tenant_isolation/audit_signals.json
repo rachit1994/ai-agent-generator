@@ -1,0 +1,11 @@
+{
+  "containment_actions": [
+    "kill-tenant-workers",
+    "revoke-tenant-keys"
+  ],
+  "continuous_isolation_audit_present": true,
+  "incident_containment_actions_defined": true,
+  "tenant_budget_profile_id": "budget-standard-v1",
+  "tenant_id": "tenant-a",
+  "tenant_key_policy_version": "2026.04.1"
+}

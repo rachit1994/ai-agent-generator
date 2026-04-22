@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from production_architecture.memory_architecture_in_runtime import (
     build_memory_architecture_in_runtime,
+    execute_memory_architecture_runtime,
     validate_memory_architecture_in_runtime_dict,
 )
 
@@ -24,6 +25,7 @@ def test_build_memory_architecture_in_runtime_is_deterministic() -> None:
     )
     assert one == two
     assert validate_memory_architecture_in_runtime_dict(one) == []
+    assert one["execution"]["chunks_processed"] == 1
 
 
 def test_validate_memory_architecture_in_runtime_fail_closed() -> None:
@@ -55,3 +57,16 @@ def test_validate_memory_architecture_in_runtime_rejects_status_semantics_mismat
     payload["status"] = "missing"
     errs = validate_memory_architecture_in_runtime_dict(payload)
     assert "memory_architecture_in_runtime_status_semantics:missing" in errs
+
+
+def test_execute_memory_architecture_runtime_detects_malformed_rows() -> None:
+    execution = execute_memory_architecture_runtime(
+        retrieval_bundle={"chunks": [{"text": "x"}, "bad-row"]},  # type: ignore[list-item]
+        quality_metrics={},
+        quarantine_lines=["ok", {"bad": True}],  # type: ignore[list-item]
+    )
+    assert execution["chunks_processed"] == 2
+    assert execution["quarantine_rows_processed"] == 2
+    assert execution["malformed_chunk_rows"] == 1
+    assert execution["malformed_quarantine_rows"] == 1
+    assert execution["missing_quality_fields"] == ["contradiction_rate"]

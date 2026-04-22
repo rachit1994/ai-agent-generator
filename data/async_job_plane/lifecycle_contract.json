@@ -1,0 +1,17 @@
+{
+  "api": [
+    "submit",
+    "get",
+    "cancel",
+    "retry"
+  ],
+  "delivery_guarantee": "at_least_once_with_idempotency_key",
+  "status_states": [
+    "queued",
+    "running",
+    "succeeded",
+    "failed",
+    "cancelled"
+  ],
+  "submit_response": "202 + job_id"
+}

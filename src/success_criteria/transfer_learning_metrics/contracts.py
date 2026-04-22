@@ -16,6 +16,26 @@ def _is_number(value: Any) -> bool:
     return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["transfer_learning_metrics_execution"]
+    errs: list[str] = []
+    int_fields = (
+        "events_processed",
+        "transfer_events_processed",
+        "malformed_event_rows",
+        "skill_node_count",
+    )
+    for field in int_fields:
+        value = execution.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"transfer_learning_metrics_execution_type:{field}")
+    violations = execution.get("strict_boolean_violations")
+    if not isinstance(violations, list):
+        errs.append("transfer_learning_metrics_execution_type:strict_boolean_violations")
+    return errs
+
+
 def _validate_metrics(metrics: Any) -> tuple[list[str], dict[str, float]]:
     if not isinstance(metrics, dict):
         return ["transfer_learning_metrics_metrics"], {}
@@ -97,6 +117,7 @@ def validate_transfer_learning_metrics_dict(body: Any) -> list[str]:
     run_id = body.get("run_id")
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("transfer_learning_metrics_run_id")
+    errs.extend(_validate_execution(body.get("execution")))
     metric_errs, numeric_values = _validate_metrics(body.get("metrics"))
     errs.extend(metric_errs)
     if numeric_values:

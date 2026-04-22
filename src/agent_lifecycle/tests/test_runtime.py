@@ -5,11 +5,23 @@ from agent_lifecycle import (
     build_practice_evaluation_result,
     build_promotion_package,
     build_reflection_bundle,
+    execute_lifecycle_runtime,
 )
 
 
 def test_build_lifecycle_decision_is_deterministic() -> None:
-    parsed = {"checks": [{"name": "a", "passed": True}]}
+    parsed = {
+        "checks": [{"name": "a", "passed": True}],
+        "transition_events": [
+            {
+                "event_id": "life-evt-001",
+                "from_stage": "senior",
+                "to_stage": "senior",
+                "reason": "steady_state",
+                "approved": True,
+            }
+        ],
+    }
     events = [{"stage": "finalize", "score": {"passed": True}} for _ in range(3)]
     skill_nodes = {"schema_version": "1.0", "nodes": [{"skill_id": "x", "score": 0.72}]}
     one = build_lifecycle_decision(
@@ -21,6 +33,7 @@ def test_build_lifecycle_decision_is_deterministic() -> None:
     assert one == two
     assert one["current_stage"] == "senior"
     assert one["proposed_stage"] == "senior"
+    assert one["execution"]["events_processed"] == 1
 
 
 def test_build_lifecycle_decision_detects_stagnation() -> None:
@@ -111,3 +124,44 @@ def test_build_lifecycle_decision_fail_closed_without_prior_stage() -> None:
     )
     assert "missing_or_invalid_prior_stage" in out["reasons"]
     assert "promotion_threshold_met" not in out["reasons"]
+
+
+def test_execute_lifecycle_runtime_detects_unapproved_stage_change() -> None:
+    decision = {
+        "current_stage": "mid",
+        "proposed_stage": "senior",
+    }
+    parsed = {
+        "transition_events": [
+            {
+                "event_id": "life-evt-009",
+                "from_stage": "mid",
+                "to_stage": "senior",
+                "reason": "promotion_threshold_met",
+                "approved": False,
+            }
+        ]
+    }
+    execution = execute_lifecycle_runtime(parsed=parsed, decision=decision)
+    assert execution["approval_violations"] == ["life-evt-009"]
+
+
+def test_build_lifecycle_decision_marks_transition_mismatch() -> None:
+    out = build_lifecycle_decision(
+        run_id="rid-mismatch",
+        parsed={
+            "transition_events": [
+                {
+                    "event_id": "life-evt-010",
+                    "from_stage": "junior",
+                    "to_stage": "mid",
+                    "reason": "promotion_threshold_met",
+                    "approved": True,
+                }
+            ]
+        },
+        events=[],
+        skill_nodes={"nodes": [{"score": 0.2}]},
+        prior_stage="senior",
+    )
+    assert out["execution"]["decision_transition_matches"] is False

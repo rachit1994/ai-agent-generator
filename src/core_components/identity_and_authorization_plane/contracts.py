@@ -25,6 +25,21 @@ IDENTITY_AUTHZ_PLANE_ERROR_PREFIX = "identity_authz_plane_contract:"
 _COVERAGE_ENFORCED_EPSILON = 1e-9
 
 
+def _append_execution_errors(execution: Any, errs: list[str]) -> None:
+    if not isinstance(execution, dict):
+        errs.append("identity_authz_plane_execution")
+        return
+    for key in (
+        "audit_rows_processed",
+        "active_leases",
+        "malformed_audit_rows",
+        "unknown_lease_rows",
+    ):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"identity_authz_plane_execution_type:{key}")
+
+
 def _append_evidence_errors(evidence: Any, errs: list[str]) -> None:
     if not isinstance(evidence, dict):
         errs.append("identity_authz_plane_evidence")
@@ -82,6 +97,7 @@ def validate_identity_authz_plane_dict(body: Any) -> list[str]:
         return ["identity_authz_plane_not_object"]
     errs: list[str] = []
     status, controls, coverage = _append_core_field_errors(body, errs)
+    _append_execution_errors(body.get("execution"), errs)
     if not isinstance(controls, dict):
         errs.append("identity_authz_plane_controls")
     else:

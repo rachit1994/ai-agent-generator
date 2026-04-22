@@ -1,0 +1,8 @@
+{
+  "concurrent_duplicate_write_safety": true,
+  "dedupe_lock_held_ms": 18,
+  "global_dedupe_ledger_services_plugins": true,
+  "ledger_partition": "tenant-a:plugin-orders",
+  "ttl_replay_policy": true,
+  "ttl_seconds": 86400
+}

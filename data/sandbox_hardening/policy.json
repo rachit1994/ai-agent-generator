@@ -1,0 +1,21 @@
+{
+  "default_egress": "deny",
+  "egress_allowlist": [
+    "api.openai.com",
+    "storage.internal"
+  ],
+  "max_timeout_ms": 60000,
+  "policy_version": "1.2.0",
+  "policy_versioned_validated": true,
+  "read_only_mounts": [
+    "/usr",
+    "/bin"
+  ],
+  "startup_policy_validation_enforced": true,
+  "syscall_allowlist": [
+    "read",
+    "write",
+    "close"
+  ],
+  "syscall_default_action": "deny"
+}

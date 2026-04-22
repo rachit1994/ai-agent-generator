@@ -1,0 +1,6 @@
+{
+  "disconnect_failover_tests_present": true,
+  "heartbeat_resume_supported": true,
+  "session_lifecycle_api_present": true,
+  "session_persistence_reclaim": true
+}

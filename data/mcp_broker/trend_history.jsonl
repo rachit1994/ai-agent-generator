@@ -1,0 +1,3 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-mcp-broker-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-10-broker-telemetry-alignment", "status": "pass"}

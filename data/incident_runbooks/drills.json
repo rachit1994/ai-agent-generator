@@ -1,0 +1,1 @@
+{"runbooks_validated_with_gameday_drills": true, "validated_incident_types": ["outage", "saturation", "auth"], "escalation_policy_version": "2026.04", "drill_evidence_captured_for_audit": true, "post_incident_feedback_integrated_into_revisions": true}

@@ -4,6 +4,7 @@ import math
 
 from core_components.career_strategy_layer import (
     build_career_strategy_layer,
+    execute_career_strategy_runtime,
     validate_career_strategy_layer_dict,
 )
 
@@ -40,6 +41,7 @@ def test_build_career_strategy_layer_is_deterministic() -> None:
     )
     assert one == two
     assert validate_career_strategy_layer_dict(one) == []
+    assert one["execution"]["signals_processed"] == 7
 
 
 def test_validate_career_strategy_layer_fail_closed() -> None:
@@ -196,4 +198,26 @@ def test_validate_career_strategy_layer_rejects_noncanonical_evidence_ref() -> N
     payload["evidence"]["career_strategy_ref"] = "strategy/career_strategy.json"
     errs = validate_career_strategy_layer_dict(payload)
     assert "career_strategy_layer_evidence_career_strategy_ref" in errs
+
+
+def test_execute_career_strategy_runtime_detects_missing_sources() -> None:
+    execution = execute_career_strategy_runtime(
+        summary={},
+        review={},
+        promotion_package={},
+        capability_growth={},
+        transfer_learning={"metrics": {}},
+        error_reduction={},
+        scalability_strategy={},
+    )
+    assert execution["signals_processed"] == 7
+    assert execution["has_proposed_stage"] is False
+    assert execution["missing_signal_sources"] == [
+        "summary",
+        "review",
+        "promotion_package",
+        "capability_growth",
+        "error_reduction",
+        "scalability_strategy",
+    ]
 

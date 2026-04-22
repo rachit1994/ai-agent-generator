@@ -1,0 +1,20 @@
+{
+  "allow_decisions": 1,
+  "allow_deny_decisions_audited": true,
+  "decision_events": [
+    {
+      "decision": "allow",
+      "event_id": "authz-evt-001",
+      "plugin_id": "plugin-a",
+      "scope": "read:artifacts"
+    },
+    {
+      "decision": "deny",
+      "event_id": "authz-evt-002",
+      "plugin_id": "plugin-a",
+      "scope": "write:artifacts"
+    }
+  ],
+  "deny_decisions": 1,
+  "total_decisions": 2
+}

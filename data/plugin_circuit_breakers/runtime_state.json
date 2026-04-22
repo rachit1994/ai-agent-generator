@@ -1,0 +1,10 @@
+{
+  "bulkhead_blast_radius_containment": true,
+  "current_state": "closed",
+  "plugin_id": "plugin-x",
+  "plugin_level_circuit_breaker_runtime": true,
+  "plugin_level_retry_budget_enforcement": true,
+  "retry_budget_policy_version": "2026.04",
+  "retry_budget_limit": 10,
+  "retry_budget_remaining": 7
+}

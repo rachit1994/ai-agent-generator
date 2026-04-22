@@ -18,6 +18,28 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def execute_memory_architecture_runtime(
+    *,
+    retrieval_bundle: dict[str, Any],
+    quality_metrics: dict[str, Any],
+    quarantine_lines: list[str],
+) -> dict[str, Any]:
+    chunks = retrieval_bundle.get("chunks") if isinstance(retrieval_bundle, dict) else []
+    chunks = chunks if isinstance(chunks, list) else []
+    malformed_chunk_rows = len([row for row in chunks if not isinstance(row, dict)])
+    malformed_quarantine_rows = len([row for row in quarantine_lines if not isinstance(row, str)])
+    missing_quality_fields: list[str] = []
+    if not isinstance(quality_metrics, dict) or "contradiction_rate" not in quality_metrics:
+        missing_quality_fields.append("contradiction_rate")
+    return {
+        "chunks_processed": len(chunks),
+        "quarantine_rows_processed": len(quarantine_lines),
+        "malformed_chunk_rows": malformed_chunk_rows,
+        "malformed_quarantine_rows": malformed_quarantine_rows,
+        "missing_quality_fields": missing_quality_fields,
+    }
+
+
 def build_memory_architecture_in_runtime(
     *,
     run_id: str,
@@ -25,6 +47,11 @@ def build_memory_architecture_in_runtime(
     quality_metrics: dict[str, Any],
     quarantine_lines: list[str],
 ) -> dict[str, Any]:
+    execution = execute_memory_architecture_runtime(
+        retrieval_bundle=retrieval_bundle,
+        quality_metrics=quality_metrics,
+        quarantine_lines=quarantine_lines,
+    )
     chunks = retrieval_bundle.get("chunks") if isinstance(retrieval_bundle, dict) else []
     if not isinstance(chunks, list):
         chunks = []
@@ -45,6 +72,7 @@ def build_memory_architecture_in_runtime(
         "schema_version": MEMORY_ARCHITECTURE_IN_RUNTIME_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "metrics": {
             "retrieval_coverage": retrieval_coverage,
             "quality_signal": quality_signal,

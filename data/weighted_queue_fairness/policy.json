@@ -1,0 +1,11 @@
+{
+  "admin_tuning_range": {
+    "max": 20,
+    "min": 1
+  },
+  "deterministic_scheduler_tests": true,
+  "deterministic_trace_hash": "trace-hash-008",
+  "last_admin_change_ticket": "CAB-2026-0042",
+  "safe_admin_weight_tuning_controls": true,
+  "starvation_prevention_aging_policy": true
+}

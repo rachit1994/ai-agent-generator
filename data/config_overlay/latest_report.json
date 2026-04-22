@@ -1,0 +1,38 @@
+{
+  "checks": {
+    "adapter_overlay_tests_present": true,
+    "drift_detection_present": true,
+    "invariants_fail_fast_enforced": true,
+    "overlay_merge_deterministic": true,
+    "override_allowlist_enforced": true,
+    "secret_redaction_consistent": true,
+    "shared_schema_present": true,
+    "versioned_migrations_supported": true
+  },
+  "evidence": {
+    "base_ref": "data/config_overlay/base_config.json",
+    "history_ref": "data/config_overlay/trend_history.jsonl",
+    "overlay_ref": "data/config_overlay/overlay_config.json",
+    "resolved_ref": "data/config_overlay/resolved_config.json"
+  },
+  "failed_gates": [],
+  "mode": "preflight",
+  "overlay_contract": {
+    "deterministic_precedence": [
+      "base",
+      "env_overlay",
+      "runtime_override_allowlist"
+    ],
+    "drift_detection": true,
+    "invariant_fields_enforced": true,
+    "secret_redaction_validation": true,
+    "shared_schema": true,
+    "startup_fail_fast": true,
+    "versioned_migrations": true
+  },
+  "release_blocked": false,
+  "run_id": "local-feature-15-override-allowlist-hash-coherence",
+  "schema": "sde.scale.feature_15.config_overlay.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

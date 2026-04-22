@@ -1,0 +1,10 @@
+{
+  "adversarial_leakage_tests_present": true,
+  "cache_artifact_reuse_blocked": true,
+  "runtime_queue_storage_isolated": true,
+  "tenant_budget_profile_id": "budget-standard-v1",
+  "tenant_budgets_guardrails_enforced": true,
+  "tenant_id": "tenant-a",
+  "tenant_key_policy_version": "2026.04.1",
+  "tenant_keys_policy_controls_applied": true
+}

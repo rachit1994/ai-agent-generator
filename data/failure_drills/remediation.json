@@ -1,0 +1,16 @@
+{
+  "alert_channels": [
+    "pagerduty",
+    "slack:#reliability"
+  ],
+  "drill_quality_regression_alerting_enabled": true,
+  "drills_run_automatically_ci_nightly": true,
+  "execution_schedule": "ci-and-nightly",
+  "last_drill_run_id": "drill-23-0007",
+  "remediation_behavior_verified_under_drills": true,
+  "verified_runbook_ids": [
+    "rb-429",
+    "rb-queue-lag",
+    "rb-restart"
+  ]
+}

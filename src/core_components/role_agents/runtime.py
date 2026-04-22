@@ -19,6 +19,28 @@ def _passed(value: Any) -> bool:
     return value is True
 
 
+def execute_role_agents_runtime(*, parsed: dict[str, Any], events: list[dict[str, Any]]) -> dict[str, Any]:
+    checks = parsed.get("checks") if isinstance(parsed, dict) else []
+    checks = checks if isinstance(checks, list) else []
+    finalize_events = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
+    malformed_event_rows = len(events) - len([row for row in events if isinstance(row, dict)])
+    strict_boolean_violations: list[str] = []
+    for row in finalize_events:
+        score = row.get("score")
+        if not isinstance(score, dict):
+            strict_boolean_violations.append(str(row.get("event_id", "unknown")))
+            continue
+        passed = score.get("passed")
+        if passed is not True and passed is not False:
+            strict_boolean_violations.append(str(row.get("event_id", "unknown")))
+    return {
+        "checks_processed": len(checks),
+        "finalize_events_processed": len(finalize_events),
+        "malformed_event_rows": malformed_event_rows,
+        "strict_boolean_violations": strict_boolean_violations,
+    }
+
+
 def build_role_agents(
     *,
     run_id: str,
@@ -26,6 +48,7 @@ def build_role_agents(
     events: list[dict[str, Any]],
     skill_nodes: dict[str, Any],
 ) -> dict[str, Any]:
+    execution = execute_role_agents_runtime(parsed=parsed, events=events)
     checks = parsed.get("checks") if isinstance(parsed, dict) else []
     if not isinstance(checks, list):
         checks = []
@@ -71,6 +94,7 @@ def build_role_agents(
         "schema_version": ROLE_AGENTS_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "role_scores": {
             "planner": planner_score,
             "implementor": implementor_score,

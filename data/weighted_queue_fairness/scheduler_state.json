@@ -1,0 +1,39 @@
+{
+  "decision_log_entries": 120,
+  "dispatch_events": [
+    {
+      "event_id": "sched-001",
+      "plugin": "plugin-x",
+      "status": "scheduled",
+      "tenant": "tenant-a",
+      "wait_ms": 35
+    },
+    {
+      "event_id": "sched-002",
+      "plugin": "plugin-y",
+      "status": "scheduled",
+      "tenant": "tenant-b",
+      "wait_ms": 45
+    },
+    {
+      "event_id": "sched-003",
+      "plugin": "plugin-y",
+      "status": "dropped",
+      "tenant": "tenant-b",
+      "wait_ms": 0
+    }
+  ],
+  "plugin_weights": {
+    "plugin-x": 4,
+    "plugin-y": 2
+  },
+  "queue_backend": "memory_sim",
+  "replay_applied_decisions": 48,
+  "replay_hash": "trace-hash-008",
+  "replay_cursor": "cursor-0002",
+  "scheduler_state_version": 2,
+  "tenant_weights": {
+    "tenant-a": 5,
+    "tenant-b": 3
+  }
+}

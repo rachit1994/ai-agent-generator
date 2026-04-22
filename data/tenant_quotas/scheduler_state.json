@@ -1,0 +1,28 @@
+{
+  "fairness_policy_enforced": true,
+  "hard_limit_enforced": true,
+  "admission_events": [
+    {
+      "event_id": "quota-evt-001",
+      "reason_code": "tenant_concurrency_exhausted",
+      "requested_slots": 2,
+      "status": "admitted",
+      "tenant_id": "tenant-a"
+    },
+    {
+      "event_id": "quota-evt-002",
+      "reason_code": "tenant_quota_exhausted",
+      "requested_slots": 4,
+      "status": "rejected",
+      "tenant_id": "tenant-a"
+    }
+  ],
+  "quota_policy_version": "2026.04",
+  "refill_window_seconds": 60,
+  "rejection_reason_codes": [
+    "tenant_quota_exhausted",
+    "tenant_concurrency_exhausted"
+  ],
+  "rejection_reasons_present": true,
+  "tenant_scope": "tenant-a"
+}

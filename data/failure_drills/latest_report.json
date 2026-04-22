@@ -1,0 +1,74 @@
+{
+  "checks": {
+    "all_scenarios_executed_and_passing": true,
+    "drill_outcomes_persisted_and_trended": true,
+    "drill_quality_regression_alerting_enabled": true,
+    "drill_slo_based_pass_fail_defined": true,
+    "drills_run_automatically_ci_nightly": true,
+    "executable_reliability_drill_framework_created": true,
+    "provider_429_queue_lag_failures_simulated": true,
+    "regression_alerts_and_remediation_validated": true,
+    "remediation_behavior_verified_under_drills": true,
+    "restart_crash_recovery_behavior_simulated": true
+  },
+  "drill_execution": {
+    "failed_scenarios": [],
+    "metrics": {
+      "avg_429_error_rate_pct": 1.0,
+      "avg_queue_lag_seconds": 90.0,
+      "avg_restart_recovery_seconds": 25.0
+    },
+    "passed_scenarios": 3,
+    "regression": {
+      "alerts_emitted": false,
+      "missing_verified_runbooks": [],
+      "regression_detected": false,
+      "remediation_verified": true
+    },
+    "scenario_count": 3,
+    "timeline": [
+      {
+        "injected_at": "2026-04-22T10:00:00Z",
+        "recovered_at": "2026-04-22T10:00:20Z",
+        "scenario": "provider-openai-429",
+        "terminal_state": "pass"
+      },
+      {
+        "injected_at": "2026-04-22T10:10:00Z",
+        "recovered_at": "2026-04-22T10:10:30Z",
+        "scenario": "queue-backlog-over-5m",
+        "terminal_state": "pass"
+      },
+      {
+        "injected_at": "2026-04-22T10:20:00Z",
+        "recovered_at": "2026-04-22T10:20:35Z",
+        "scenario": "worker-restart-recovery",
+        "terminal_state": "pass"
+      }
+    ]
+  },
+  "evidence": {
+    "drills_ref": "data/failure_drills/drills.json",
+    "events_ref": "data/failure_drills/drill_events.jsonl",
+    "history_ref": "data/failure_drills/trend_history.jsonl",
+    "remediation_ref": "data/failure_drills/remediation.json",
+    "slo_ref": "data/failure_drills/slo_assertions.json"
+  },
+  "failed_gates": [],
+  "failure_drills_contract": {
+    "automatic_ci_nightly_execution": true,
+    "drill_outcomes_persisted_and_trended": true,
+    "drill_regression_alerting": true,
+    "drill_slo_pass_fail_criteria": true,
+    "executable_reliability_drill_framework": true,
+    "provider_429_and_queue_lag_simulation": true,
+    "remediation_behavior_verified": true,
+    "restart_crash_recovery_simulation": true
+  },
+  "mode": "ci",
+  "release_blocked": false,
+  "run_id": "run-feature-23-local",
+  "schema": "sde.scale.feature_23.failure_drills.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

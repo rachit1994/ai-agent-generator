@@ -1,0 +1,14 @@
+{
+  "admission_cap_enforcement": true,
+  "anomaly_burn_rate_detection": true,
+  "cap_breach_response_contracts": true,
+  "concurrency_cap_tests": true,
+  "cost_reports_audit_exports": true,
+  "hard_soft_caps": true,
+  "metering_pipeline": [
+    "per_plugin",
+    "per_tenant",
+    "normalized_units"
+  ],
+  "near_realtime_aggregation": true
+}

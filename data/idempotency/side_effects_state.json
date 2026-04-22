@@ -1,0 +1,13 @@
+{
+  "external_side_effect_deduplication_outbox": true,
+  "idempotency_metrics_alerts": true,
+  "metrics": {
+    "conflicts": 1,
+    "hits": 24,
+    "misses": 8,
+    "total_requests": 33
+  },
+  "outbox_events": [
+    "evt-1001"
+  ]
+}

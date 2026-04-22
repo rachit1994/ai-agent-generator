@@ -1,0 +1,37 @@
+{
+  "applied_policy_version": "1.2.0",
+  "cpu_limit_millis": 1500,
+  "escape_detection_kill_switch_enforced": true,
+  "escape_exhaustion_tests_present": true,
+  "fd_limit": 512,
+  "filesystem_syscall_restricted": true,
+  "kill_signal": "SIGKILL",
+  "memory_limit_mb": 512,
+  "pid_limit": 128,
+  "runtime_events": [
+    {
+      "event_id": "rt-001",
+      "host": "malicious.example",
+      "status": "denied",
+      "timestamp": "2026-04-22T10:00:10Z",
+      "type": "egress_attempt"
+    },
+    {
+      "cpu_millis": 1200,
+      "event_id": "rt-002",
+      "memory_mb": 420,
+      "status": "ok",
+      "timestamp": "2026-04-22T10:00:11Z",
+      "type": "resource_sample"
+    },
+    {
+      "event_id": "rt-003",
+      "status": "denied",
+      "timestamp": "2026-04-22T10:00:12Z",
+      "type": "escape_probe"
+    }
+  ],
+  "sandbox_isolation_runtime_present": true,
+  "timeout_ms": 30000,
+  "timeouts_hard_kill_enforced": true
+}

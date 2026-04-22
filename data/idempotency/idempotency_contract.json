@@ -1,0 +1,10 @@
+{
+  "api_key_validation_replay_semantics": true,
+  "concurrent_duplicate_write_safety": true,
+  "conflict_response_semantics": true,
+  "external_side_effect_deduplication_outbox": true,
+  "global_dedupe_ledger_services_plugins": true,
+  "idempotency_metrics_alerts": true,
+  "invocation_path_idempotency": true,
+  "ttl_replay_policy": true
+}

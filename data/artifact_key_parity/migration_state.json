@@ -1,0 +1,22 @@
+{
+  "legacy_key_layout_migration_supported": true,
+  "migration_target_prefix": "artifacts/v1",
+  "key_format_version": "v1",
+  "conflict_resolution_semantics_defined": true,
+  "conflict_resolution_policy": "block",
+  "backend_parity_integration_tests_implemented": true,
+  "legacy_key_mappings": [
+    {
+      "artifact_id": "run-001",
+      "legacy_key": "legacy/run-001",
+      "migrated_key": "artifacts/v1/run-001/hash-a",
+      "checksum": "hash-a"
+    },
+    {
+      "artifact_id": "run-002",
+      "legacy_key": "legacy/run-002",
+      "migrated_key": "artifacts/v1/run-002/hash-b",
+      "checksum": "hash-b"
+    }
+  ]
+}

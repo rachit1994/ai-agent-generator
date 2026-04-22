@@ -1,0 +1,55 @@
+{
+  "checks": {
+    "cap_breach_response_contracts_defined": true,
+    "concurrency_cap_enforcement_tested": true,
+    "cost_anomaly_burn_rate_detected": true,
+    "cost_reports_audit_exports_generated": true,
+    "hard_soft_caps_admission_enforced": true,
+    "near_realtime_attribution_aggregation": true,
+    "normalized_cost_model_billable_units": true,
+    "plugin_tenant_metering_pipeline": true,
+    "runtime_billing_exports_valid": true,
+    "runtime_cap_enforcement_consistent": true
+  },
+  "cost_contract": {
+    "admission_cap_enforcement": true,
+    "anomaly_burn_rate_detection": true,
+    "cap_breach_response_contracts": true,
+    "concurrency_cap_tests": true,
+    "cost_reports_audit_exports": true,
+    "hard_soft_caps": true,
+    "metering_pipeline": [
+      "per_plugin",
+      "per_tenant",
+      "normalized_units"
+    ],
+    "near_realtime_aggregation": true
+  },
+  "evidence": {
+    "aggregation_ref": "data/cost_attribution/aggregation.json",
+    "caps_ref": "data/cost_attribution/caps.json",
+    "events_ref": "data/cost_attribution/cost_events.jsonl",
+    "history_ref": "data/cost_attribution/trend_history.jsonl",
+    "metering_ref": "data/cost_attribution/metering.json"
+  },
+  "execution": {
+    "billing_export_violations": [],
+    "cap_violations": [],
+    "events_processed": 3,
+    "plugin_totals": {
+      "plugin-x": 120.0,
+      "plugin-y": 160.0
+    },
+    "tenant_totals": {
+      "tenant-a": 210.0,
+      "tenant-b": 70.0
+    }
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "release_blocked": false,
+  "run_id": "run-feature-20-ci",
+  "schema": "sde.scale.feature_20.cost_attribution.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

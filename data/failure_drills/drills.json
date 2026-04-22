@@ -1,0 +1,45 @@
+{
+  "executable_reliability_drill_framework_created": true,
+  "framework_version": "drill-fw-1.0",
+  "provider_429_queue_lag_failures_simulated": true,
+  "provider_429_scenarios": [
+    {
+      "name": "provider-openai-429",
+      "outcome": "fail_expected",
+      "injected_at": "2026-04-22T10:00:00Z",
+      "recovered_at": "2026-04-22T10:00:20Z",
+      "observed_429_error_rate_pct": 1.5,
+      "observed_queue_lag_seconds": 90.0,
+      "observed_restart_recovery_seconds": 20.0,
+      "remediation_applied": true,
+      "remediation_runbook_id": "rb-429"
+    }
+  ],
+  "queue_lag_scenarios": [
+    {
+      "name": "queue-backlog-over-5m",
+      "outcome": "fail_expected",
+      "injected_at": "2026-04-22T10:10:00Z",
+      "recovered_at": "2026-04-22T10:10:30Z",
+      "observed_429_error_rate_pct": 1.0,
+      "observed_queue_lag_seconds": 100.0,
+      "observed_restart_recovery_seconds": 25.0,
+      "remediation_applied": true,
+      "remediation_runbook_id": "rb-queue-lag"
+    }
+  ],
+  "restart_crash_recovery_behavior_simulated": true,
+  "restart_scenarios": [
+    {
+      "name": "worker-restart-recovery",
+      "outcome": "pass",
+      "injected_at": "2026-04-22T10:20:00Z",
+      "recovered_at": "2026-04-22T10:20:35Z",
+      "observed_429_error_rate_pct": 0.5,
+      "observed_queue_lag_seconds": 80.0,
+      "observed_restart_recovery_seconds": 30.0,
+      "remediation_applied": true,
+      "remediation_runbook_id": "rb-restart"
+    }
+  ]
+}

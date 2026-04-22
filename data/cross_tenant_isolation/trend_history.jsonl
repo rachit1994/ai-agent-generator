@@ -1,0 +1,7 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-cross-tenant-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-18-tenant-id-coherence", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-18-key-policy-version-alignment", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-18-budget-profile-coherence", "status": "pass"}
+{"events_processed": 2, "failed_gate_count": 0, "run_id": "run-feature-18-local", "status": "pass"}
+{"events_processed": 2, "failed_gate_count": 0, "run_id": "run-feature-18-local", "status": "pass"}

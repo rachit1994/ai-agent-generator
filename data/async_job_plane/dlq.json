@@ -1,0 +1,11 @@
+{
+  "dlq_policy_version": "2026.04",
+  "enabled": true,
+  "jobs": [
+    {
+      "job_id": "job-004",
+      "reason": "retry_exhausted"
+    }
+  ],
+  "replay_supported": true
+}

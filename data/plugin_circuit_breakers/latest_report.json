@@ -1,0 +1,59 @@
+{
+  "breaker_execution": {
+    "events_processed": 3,
+    "events_rejected": 0,
+    "fallback": {
+      "activations": 0,
+      "cooldown_seconds": 30,
+      "mode": "serve_cached"
+    },
+    "final_state": "closed",
+    "retry_budget": {
+      "consumed": 2,
+      "limit": 10,
+      "remaining_after": 5,
+      "remaining_before": 7,
+      "saturation": false
+    },
+    "runtime_failures": [],
+    "state_counts": {
+      "closed": 1,
+      "half_open": 1,
+      "open": 1
+    }
+  },
+  "checks": {
+    "bulkhead_blast_radius_containment": true,
+    "degraded_plugin_end_to_end_tests": true,
+    "failure_classification_for_transitions": true,
+    "fallback_behavior_for_open_circuits": true,
+    "operator_safe_breaker_controls": true,
+    "plugin_level_circuit_breaker_runtime": true,
+    "plugin_level_retry_budget_enforcement": true,
+    "state_transition_telemetry": true
+  },
+  "evidence": {
+    "events_ref": "data/plugin_circuit_breakers/transition_events.jsonl",
+    "history_ref": "data/plugin_circuit_breakers/trend_history.jsonl",
+    "policy_ref": "data/plugin_circuit_breakers/policy.json",
+    "runtime_ref": "data/plugin_circuit_breakers/runtime_state.json",
+    "telemetry_ref": "data/plugin_circuit_breakers/telemetry.json"
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "plugin_circuit_breaker_contract": {
+    "bulkhead_blast_radius_containment": true,
+    "degraded_plugin_end_to_end_tests": true,
+    "failure_classification_for_transitions": true,
+    "fallback_behavior_for_open_circuits": true,
+    "operator_safe_breaker_controls": true,
+    "plugin_level_circuit_breaker_runtime": true,
+    "plugin_level_retry_budget_enforcement": true,
+    "state_transition_telemetry": true
+  },
+  "release_blocked": false,
+  "run_id": "run-feature-09-local",
+  "schema": "sde.scale.feature_09.plugin_circuit_breakers.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

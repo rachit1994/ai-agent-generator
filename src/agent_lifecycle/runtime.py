@@ -85,6 +85,85 @@ def _prev_stage(current_stage: str) -> str:
     return LIFECYCLE_STAGES[idx - 1]
 
 
+def _stage_transition_for_score(
+    *,
+    score: float,
+    current_stage: str,
+    has_valid_prior_stage: bool,
+) -> tuple[str, list[str]]:
+    proposed_stage = current_stage
+    reasons: list[str] = []
+    if not has_valid_prior_stage:
+        return proposed_stage, ["missing_or_invalid_prior_stage"]
+    if score >= PROMOTION_THRESHOLDS.get(current_stage, 1.0):
+        next_stage = _next_stage(current_stage)
+        if next_stage != current_stage:
+            proposed_stage = next_stage
+            reasons.append("promotion_threshold_met")
+    if score < DEMOTION_FLOORS.get(current_stage, 0.0):
+        prev_stage = _prev_stage(current_stage)
+        if prev_stage != current_stage:
+            proposed_stage = prev_stage
+            reasons.append("demotion_floor_breach")
+    return proposed_stage, reasons
+
+
+def _valid_transition_event(event: Any) -> bool:
+    if not isinstance(event, dict):
+        return False
+    required = ("event_id", "from_stage", "to_stage", "reason", "approved")
+    if not all(key in event for key in required):
+        return False
+    if event.get("from_stage") not in LIFECYCLE_STAGES or event.get("to_stage") not in LIFECYCLE_STAGES:
+        return False
+    if not isinstance(event.get("reason"), str) or not event.get("reason").strip():
+        return False
+    return isinstance(event.get("approved"), bool)
+
+
+def _collect_transition_events(parsed: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = parsed.get("transition_events")
+    if not isinstance(rows, list):
+        return []
+    return [row for row in rows if _valid_transition_event(row)]
+
+
+def _evaluate_transition_event(event: dict[str, Any]) -> tuple[bool, bool]:
+    invalid_transition = event["from_stage"] == event["to_stage"] and event["reason"] in {
+        "promotion_threshold_met",
+        "demotion_floor_breach",
+    }
+    approval_violation = event["from_stage"] != event["to_stage"] and event["approved"] is not True
+    return invalid_transition, approval_violation
+
+
+def _decision_matches_transition(decision: dict[str, Any], final_event: dict[str, Any] | None) -> bool:
+    if not isinstance(final_event, dict):
+        return True
+    current_stage = decision.get("current_stage")
+    proposed_stage = decision.get("proposed_stage")
+    return final_event.get("from_stage") == current_stage and final_event.get("to_stage") == proposed_stage
+
+
+def execute_lifecycle_runtime(*, parsed: dict[str, Any], decision: dict[str, Any]) -> dict[str, Any]:
+    events = _collect_transition_events(parsed)
+    invalid_transition_events: list[str] = []
+    approval_violations: list[str] = []
+    final_event = events[-1] if events else None
+    for event in events:
+        invalid_transition, approval_violation = _evaluate_transition_event(event)
+        if invalid_transition:
+            invalid_transition_events.append(event["event_id"])
+        if approval_violation:
+            approval_violations.append(event["event_id"])
+    return {
+        "events_processed": len(events),
+        "invalid_transition_events": invalid_transition_events,
+        "approval_violations": approval_violations,
+        "decision_transition_matches": _decision_matches_transition(decision, final_event),
+    }
+
+
 def build_lifecycle_decision(
     *,
     run_id: str,
@@ -99,26 +178,16 @@ def build_lifecycle_decision(
     candidate_prior = prior_stage if isinstance(prior_stage, str) else parsed_prior
     has_valid_prior_stage = isinstance(candidate_prior, str) and candidate_prior in LIFECYCLE_STAGES
     current_stage = candidate_prior if has_valid_prior_stage else _stage_for_score(score)
-    proposed_stage = current_stage
-    reasons: list[str] = []
-    if not has_valid_prior_stage:
-        reasons.append("missing_or_invalid_prior_stage")
-    else:
-        if score >= PROMOTION_THRESHOLDS.get(current_stage, 1.0):
-            next_stage = _next_stage(current_stage)
-            if next_stage != current_stage:
-                proposed_stage = next_stage
-                reasons.append("promotion_threshold_met")
-        if score < DEMOTION_FLOORS.get(current_stage, 0.0):
-            prev_stage = _prev_stage(current_stage)
-            if prev_stage != current_stage:
-                proposed_stage = prev_stage
-                reasons.append("demotion_floor_breach")
+    proposed_stage, reasons = _stage_transition_for_score(
+        score=score,
+        current_stage=current_stage,
+        has_valid_prior_stage=has_valid_prior_stage,
+    )
     if _stagnation(score, events):
         reasons.append("stagnation_detected")
     if not reasons:
         reasons.append("steady_state")
-    return {
+    decision = {
         "schema_version": LIFECYCLE_SCHEMA_VERSION,
         "aggregate_id": run_id,
         "score": score,
@@ -127,6 +196,8 @@ def build_lifecycle_decision(
         "lifecycle_state": "watchlist" if "stagnation_detected" in reasons else "active",
         "reasons": sorted(reasons),
     }
+    decision["execution"] = execute_lifecycle_runtime(parsed=parsed, decision=decision)
+    return decision
 
 
 def build_reflection_bundle(*, run_id: str, decision: dict[str, Any], event_ref: str) -> dict[str, Any]:

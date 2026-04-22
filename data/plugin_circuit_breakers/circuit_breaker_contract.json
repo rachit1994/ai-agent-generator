@@ -1,0 +1,10 @@
+{
+  "bulkhead_blast_radius_containment": true,
+  "degraded_plugin_end_to_end_tests": true,
+  "failure_classification_for_transitions": true,
+  "fallback_behavior_for_open_circuits": true,
+  "operator_safe_breaker_controls": true,
+  "plugin_level_circuit_breaker_runtime": true,
+  "plugin_level_retry_budget_enforcement": true,
+  "state_transition_telemetry": true
+}

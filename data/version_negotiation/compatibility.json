@@ -1,0 +1,8 @@
+{
+  "deprecation_windows_enforced_tested": true,
+  "dual_version_rollback_safe": true,
+  "incompatible_rejections_deterministic": true,
+  "mixed_version_fleet_scenarios_tested": true,
+  "rollout_gated_on_compat_failures": true,
+  "version_ranges_advertised_selected": true
+}

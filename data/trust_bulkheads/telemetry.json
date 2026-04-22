@@ -1,0 +1,8 @@
+{
+  "class_event_counts": {
+    "sandboxed": 3,
+    "trusted": 4,
+    "untrusted": 1
+  },
+  "trust_class_telemetry_present": true
+}

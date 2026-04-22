@@ -1,0 +1,13 @@
+{
+  "commands": [
+    "sde --help",
+    "sde run --dry-run",
+    "sde doctor"
+  ],
+  "profiles": [
+    "cold_start",
+    "warm_start",
+    "daily_workflow"
+  ],
+  "suite": "local_non_regression_v1"
+}

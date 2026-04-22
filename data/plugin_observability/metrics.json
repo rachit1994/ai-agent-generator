@@ -1,0 +1,11 @@
+{
+  "dashboards_alerts_shipped": true,
+  "observability_continuity_tests_present": true,
+  "plugin_tenant_slis_slos_tracked": true,
+  "dashboard_ids": [
+    "dash-plugin-latency"
+  ],
+  "alert_rule_ids": [
+    "alert-plugin-errors"
+  ]
+}

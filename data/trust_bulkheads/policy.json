@@ -1,0 +1,15 @@
+{
+  "boundary_policy_audit_controls": true,
+  "class_quotas": {
+    "sandboxed": 5,
+    "trusted": 10,
+    "untrusted": 3
+  },
+  "trust_classes": [
+    "trusted",
+    "sandboxed",
+    "untrusted"
+  ],
+  "trust_classes_defined_enforced": true,
+  "trust_reclassification_safe": true
+}

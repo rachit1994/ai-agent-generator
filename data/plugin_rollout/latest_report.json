@@ -1,0 +1,35 @@
+{
+  "checks": {
+    "auto_rollback_on_slo_or_policy_breach": true,
+    "canary_and_rollback_lifecycle_tested": true,
+    "canary_cohorts_staged_traffic_supported": true,
+    "health_gated_promotion_enforced": true,
+    "pause_resume_override_operations_available": true,
+    "plugin_progressive_rollout_controller_built": true,
+    "rollout_actions_integrated_with_observability_signals": true,
+    "rollout_timeline_persisted_for_audit": true
+  },
+  "evidence": {
+    "controller_ref": "data/plugin_rollout/controller_state.json",
+    "health_ref": "data/plugin_rollout/health_signals.json",
+    "history_ref": "data/plugin_rollout/trend_history.jsonl",
+    "operations_ref": "data/plugin_rollout/operations_state.json"
+  },
+  "failed_gates": [],
+  "mode": "preflight",
+  "plugin_rollout_contract": {
+    "auto_rollback_on_slo_policy_breach": true,
+    "canary_cohorts_and_traffic_percentages": true,
+    "full_canary_rollback_lifecycle_tests": true,
+    "health_gated_promotion_logic": true,
+    "pause_resume_override_operations": true,
+    "progressive_rollout_controller": true,
+    "rollout_observability_signal_integration": true,
+    "rollout_timeline_auditability": true
+  },
+  "release_blocked": false,
+  "run_id": "local-feature-22-rollback-timeline-coherence",
+  "schema": "sde.scale.feature_22.plugin_rollout.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

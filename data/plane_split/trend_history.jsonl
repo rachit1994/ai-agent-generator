@@ -1,0 +1,6 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-plane-split-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-03-telemetry-auth-boundary", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-03-service-namespace-coherence", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-03-scaling-namespace-coherence", "status": "pass"}
+{"events_processed": 2, "failed_gate_count": 0, "run_id": "run-feature-03-ci", "status": "pass"}

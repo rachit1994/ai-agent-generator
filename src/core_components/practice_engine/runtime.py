@@ -15,6 +15,33 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def execute_practice_engine_runtime(
+    *,
+    task_spec: dict[str, Any],
+    evaluation_result: dict[str, Any],
+    reflection_bundle: dict[str, Any],
+    review: dict[str, Any],
+) -> dict[str, Any]:
+    missing_signal_sources: list[str] = []
+    if not isinstance(task_spec, dict) or not task_spec:
+        missing_signal_sources.append("task_spec")
+    if not isinstance(evaluation_result, dict) or "passed" not in evaluation_result:
+        missing_signal_sources.append("evaluation_result")
+    root_causes = reflection_bundle.get("root_causes") if isinstance(reflection_bundle, dict) else None
+    if not isinstance(root_causes, list):
+        missing_signal_sources.append("reflection_bundle")
+        root_causes = []
+    if not isinstance(review, dict) or not isinstance(review.get("status"), str):
+        missing_signal_sources.append("review")
+    malformed_root_cause_rows = len([row for row in root_causes if not isinstance(row, str)])
+    return {
+        "signals_processed": 4,
+        "root_causes_processed": len(root_causes),
+        "malformed_root_cause_rows": malformed_root_cause_rows,
+        "missing_signal_sources": missing_signal_sources,
+    }
+
+
 def build_practice_engine(
     *,
     run_id: str,
@@ -23,6 +50,12 @@ def build_practice_engine(
     reflection_bundle: dict[str, Any],
     review: dict[str, Any],
 ) -> dict[str, Any]:
+    execution = execute_practice_engine_runtime(
+        task_spec=task_spec,
+        evaluation_result=evaluation_result,
+        reflection_bundle=reflection_bundle,
+        review=review,
+    )
     _ = task_spec
     readiness_signal = 0.0
     expected_improvement = 0.0
@@ -48,6 +81,7 @@ def build_practice_engine(
         "schema_version": PRACTICE_ENGINE_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "scores": {
             "gap_severity": gap_severity,
             "readiness_signal": readiness_signal,

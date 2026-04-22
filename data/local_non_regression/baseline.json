@@ -1,0 +1,10 @@
+{
+  "cpu_peak_percent": 75.0,
+  "developer_error_rate": 0.004,
+  "memory_peak_mb": 900.0,
+  "startup_ms_cold_p95": 1000.0,
+  "startup_ms_warm_p95": 230.0,
+  "workflow_p95_ms": 1500.0,
+  "workflow_recovery_rate": 0.991,
+  "workflow_success_rate": 0.996
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core_components.objective_policy_engine import (
     build_objective_policy_engine,
+    execute_objective_policy_runtime,
     validate_objective_policy_engine_dict,
 )
 
@@ -28,6 +29,7 @@ def test_build_objective_policy_engine_is_deterministic() -> None:
     )
     assert one == two
     assert validate_objective_policy_engine_dict(one) == []
+    assert one["execution"]["signals_processed"] == 4
 
 
 def test_validate_objective_policy_engine_fail_closed() -> None:
@@ -147,3 +149,17 @@ def test_validate_objective_policy_engine_rejects_unknown_deny_reason() -> None:
     payload["policy"]["reason"] = "other_reason"
     errs = validate_objective_policy_engine_dict(payload)
     assert "objective_policy_engine_policy_reason_deny" in errs
+
+
+def test_execute_objective_policy_runtime_detects_missing_sources() -> None:
+    execution = execute_objective_policy_runtime(
+        summary={},
+        review={"status": "completed_review_pass"},
+        cto={"hard_stops": ["bad-row"]},  # type: ignore[list-item]
+        policy_bundle_rollback_errors=["err-1"],
+    )
+    assert execution["signals_processed"] == 4
+    assert execution["hard_stop_rows_processed"] == 1
+    assert execution["malformed_hard_stop_rows"] == 1
+    assert execution["rollback_error_count"] == 1
+    assert execution["missing_signal_sources"] == ["summary"]

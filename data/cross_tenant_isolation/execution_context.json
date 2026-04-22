@@ -1,0 +1,35 @@
+{
+  "adversarial_tests": [
+    {
+      "name": "cross-tenant-cache-poison",
+      "result": "blocked"
+    },
+    {
+      "name": "cross-tenant-queue-replay",
+      "result": "blocked"
+    }
+  ],
+  "execution_events": [
+    {
+      "cache_namespace": "tenant-a/cache",
+      "event_id": "evt-01",
+      "key_scope": "tenant-a:key-v1",
+      "plugin_id": "plugin-x",
+      "queue_namespace": "tenant-a/queue",
+      "storage_namespace": "tenant-a/storage",
+      "tenant_id": "tenant-a"
+    },
+    {
+      "cache_namespace": "tenant-a/cache",
+      "event_id": "evt-02",
+      "key_scope": "tenant-a:key-v1",
+      "plugin_id": "plugin-y",
+      "queue_namespace": "tenant-a/queue",
+      "storage_namespace": "tenant-a/storage",
+      "tenant_id": "tenant-a"
+    }
+  ],
+  "tenant_budget_profile_id": "budget-standard-v1",
+  "tenant_id": "tenant-a",
+  "tenant_identity_full_path": true
+}

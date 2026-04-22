@@ -4,12 +4,13 @@ from .contracts import (
     validate_career_strategy_layer_dict,
     validate_career_strategy_layer_path,
 )
-from .runtime import build_career_strategy_layer
+from .runtime import build_career_strategy_layer, execute_career_strategy_runtime
 
 __all__ = [
     "CAREER_STRATEGY_LAYER_CONTRACT",
     "CAREER_STRATEGY_LAYER_SCHEMA_VERSION",
     "build_career_strategy_layer",
+    "execute_career_strategy_runtime",
     "validate_career_strategy_layer_dict",
     "validate_career_strategy_layer_path",
 ]

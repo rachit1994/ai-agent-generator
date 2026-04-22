@@ -1,0 +1,17 @@
+{
+  "apis": [
+    "create_session",
+    "resume_session",
+    "terminate_session"
+  ],
+  "authz_required": true,
+  "lease_heartbeat": true,
+  "reconnect_resume": true,
+  "states": [
+    "created",
+    "active",
+    "idle",
+    "expired",
+    "terminated"
+  ]
+}

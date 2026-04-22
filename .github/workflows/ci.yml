@@ -46,5 +46,269 @@ jobs:
       - name: Lint
         run: uv run python -m compileall src libs
 
+      - name: Validate scale feature audit bundle
+        run: uv run python scripts/validate_scale_feature_audit.py
+
+      - name: Local non-regression gate
+        run: >
+          uv run python scripts/local_non_regression_gate.py
+          --mode ci
+          --run-id ci-local-non-regression
+          --current data/local_non_regression/current.json
+          --baseline data/local_non_regression/baseline.json
+          --out data/local_non_regression/latest_report.json
+          --history data/local_non_regression/trend_history.jsonl
+
+      - name: Local-server semantic parity gate
+        run: >
+          uv run python scripts/semantic_parity_gate.py
+          --mode ci
+          --run-id ci-semantic-parity
+          --local data/semantic_parity/local_runtime.json
+          --server data/semantic_parity/server_runtime.json
+          --out data/semantic_parity/latest_report.json
+          --history data/semantic_parity/trend_history.jsonl
+
+      - name: Control-data plane split gate
+        run: >
+          uv run python scripts/plane_split_gate.py
+          --mode ci
+          --run-id ci-plane-split
+          --control data/plane_split/control_plane.json
+          --data data/plane_split/data_plane.json
+          --out data/plane_split/latest_report.json
+          --history data/plane_split/trend_history.jsonl
+
+      - name: Async job plane gate
+        run: >
+          uv run python scripts/async_job_plane_gate.py
+          --mode ci
+          --run-id ci-async-job-plane
+          --queue data/async_job_plane/queue_state.json
+          --workers data/async_job_plane/workers.json
+          --dlq data/async_job_plane/dlq.json
+          --out data/async_job_plane/latest_report.json
+          --history data/async_job_plane/trend_history.jsonl
+
+      - name: Edge admission control gate
+        run: >
+          uv run python scripts/edge_admission_gate.py
+          --mode ci
+          --run-id ci-edge-admission
+          --policy data/edge_admission/policy.json
+          --counters data/edge_admission/counters.json
+          --traffic data/edge_admission/traffic_sample.json
+          --out data/edge_admission/latest_report.json
+          --history data/edge_admission/trend_history.jsonl
+
+      - name: Tenant quota and concurrency gate
+        run: >
+          uv run python scripts/tenant_quota_gate.py
+          --mode ci
+          --run-id ci-tenant-quotas
+          --quota data/tenant_quotas/quota_state.json
+          --scheduler data/tenant_quotas/scheduler_state.json
+          --observability data/tenant_quotas/observability.json
+          --out data/tenant_quotas/latest_report.json
+          --history data/tenant_quotas/trend_history.jsonl
+
+      - name: Idempotency gate
+        run: >
+          uv run python scripts/idempotency_gate.py
+          --mode ci
+          --run-id ci-idempotency
+          --api data/idempotency/api_state.json
+          --ledger data/idempotency/ledger_state.json
+          --effects data/idempotency/side_effects_state.json
+          --out data/idempotency/latest_report.json
+          --history data/idempotency/trend_history.jsonl
+
+      - name: Weighted queue fairness gate
+        run: >
+          uv run python scripts/weighted_queue_fairness_gate.py
+          --mode ci
+          --run-id ci-weighted-queue-fairness
+          --scheduler data/weighted_queue_fairness/scheduler_state.json
+          --telemetry data/weighted_queue_fairness/telemetry.json
+          --policy data/weighted_queue_fairness/policy.json
+          --out data/weighted_queue_fairness/latest_report.json
+          --history data/weighted_queue_fairness/trend_history.jsonl
+
+      - name: Plugin circuit breaker gate
+        run: >
+          uv run python scripts/plugin_circuit_breaker_gate.py
+          --mode ci
+          --run-id ci-plugin-circuit-breaker
+          --runtime data/plugin_circuit_breakers/runtime_state.json
+          --policy data/plugin_circuit_breakers/policy.json
+          --telemetry data/plugin_circuit_breakers/telemetry.json
+          --out data/plugin_circuit_breakers/latest_report.json
+          --history data/plugin_circuit_breakers/trend_history.jsonl
+
+      - name: MCP broker session lifecycle gate
+        run: >
+          uv run python scripts/mcp_broker_gate.py
+          --mode ci
+          --run-id ci-mcp-broker
+          --broker data/mcp_broker/broker_state.json
+          --sessions data/mcp_broker/session_state.json
+          --telemetry data/mcp_broker/telemetry.json
+          --out data/mcp_broker/latest_report.json
+          --history data/mcp_broker/trend_history.jsonl
+
+      - name: Plugin registry governance gate
+        run: >
+          uv run python scripts/plugin_registry_gate.py
+          --mode ci
+          --run-id ci-plugin-registry
+          --registry data/plugin_registry/registry_state.json
+          --compatibility data/plugin_registry/compatibility_matrix.json
+          --governance data/plugin_registry/governance.json
+          --out data/plugin_registry/latest_report.json
+          --history data/plugin_registry/trend_history.jsonl
+
+      - name: Trust bulkheads gate
+        run: >
+          uv run python scripts/trust_bulkheads_gate.py
+          --mode ci
+          --run-id ci-trust-bulkheads
+          --policy data/trust_bulkheads/policy.json
+          --runtime data/trust_bulkheads/runtime_state.json
+          --telemetry data/trust_bulkheads/telemetry.json
+          --out data/trust_bulkheads/latest_report.json
+          --history data/trust_bulkheads/trend_history.jsonl
+
+      - name: Sandbox hardening gate
+        run: >
+          uv run python scripts/sandbox_hardening_gate.py
+          --mode ci
+          --run-id ci-sandbox-hardening
+          --policy data/sandbox_hardening/policy.json
+          --runtime data/sandbox_hardening/runtime_state.json
+          --audit data/sandbox_hardening/audit_logs.json
+          --out data/sandbox_hardening/latest_report.json
+          --history data/sandbox_hardening/trend_history.jsonl
+
+      - name: Local-prod semantic parity gate
+        run: >
+          uv run python scripts/local_prod_parity_gate.py
+          --mode ci
+          --run-id ci-local-prod-parity
+          --local data/local_prod_parity/local_results.json
+          --prod data/local_prod_parity/prod_results.json
+          --diff data/local_prod_parity/diff.json
+          --out data/local_prod_parity/latest_report.json
+          --history data/local_prod_parity/trend_history.jsonl
+
+      - name: Config overlay invariant gate
+        run: >
+          uv run python scripts/config_overlay_gate.py
+          --mode ci
+          --run-id ci-config-overlay
+          --base data/config_overlay/base_config.json
+          --overlay data/config_overlay/overlay_config.json
+          --resolved data/config_overlay/resolved_config.json
+          --out data/config_overlay/latest_report.json
+          --history data/config_overlay/trend_history.jsonl
+
+      - name: Version negotiation gate
+        run: >
+          uv run python scripts/version_negotiation_gate.py
+          --mode ci
+          --run-id ci-version-negotiation
+          --handshake data/version_negotiation/handshake.json
+          --compatibility data/version_negotiation/compatibility.json
+          --telemetry data/version_negotiation/telemetry.json
+          --out data/version_negotiation/latest_report.json
+          --history data/version_negotiation/trend_history.jsonl
+
+      - name: Plugin authz gate
+        run: >
+          uv run python scripts/plugin_authz_gate.py
+          --mode ci
+          --run-id ci-plugin-authz
+          --taxonomy data/plugin_authz/taxonomy.json
+          --policy data/plugin_authz/policy_state.json
+          --audit data/plugin_authz/audit_logs.json
+          --out data/plugin_authz/latest_report.json
+          --history data/plugin_authz/trend_history.jsonl
+
+      - name: Cross-tenant isolation gate
+        run: >
+          uv run python scripts/cross_tenant_isolation_gate.py
+          --mode ci
+          --run-id ci-cross-tenant-isolation
+          --execution data/cross_tenant_isolation/execution_context.json
+          --isolation data/cross_tenant_isolation/isolation_state.json
+          --audit data/cross_tenant_isolation/audit_signals.json
+          --out data/cross_tenant_isolation/latest_report.json
+          --history data/cross_tenant_isolation/trend_history.jsonl
+
+      - name: Plugin observability gate
+        run: >
+          uv run python scripts/plugin_observability_gate.py
+          --mode ci
+          --run-id ci-plugin-observability
+          --spans data/plugin_observability/spans.jsonl
+          --metrics data/plugin_observability/metrics.json
+          --retention data/plugin_observability/retention_policy.json
+          --out data/plugin_observability/latest_report.json
+          --history data/plugin_observability/trend_history.jsonl
+
+      - name: Cost attribution gate
+        run: >
+          uv run python scripts/cost_attribution_gate.py
+          --mode ci
+          --run-id ci-cost-attribution
+          --metering data/cost_attribution/metering.json
+          --aggregation data/cost_attribution/aggregation.json
+          --caps data/cost_attribution/caps.json
+          --out data/cost_attribution/latest_report.json
+          --history data/cost_attribution/trend_history.jsonl
+
+      - name: Artifact key parity gate
+        run: >
+          uv run python scripts/artifact_key_parity_gate.py
+          --mode ci
+          --run-id ci-artifact-key-parity
+          --local-index data/artifact_key_parity/local_index.json
+          --object-index data/artifact_key_parity/object_index.json
+          --migration data/artifact_key_parity/migration_state.json
+          --out data/artifact_key_parity/latest_report.json
+          --history data/artifact_key_parity/trend_history.jsonl
+
+      - name: Plugin rollout gate
+        run: >
+          uv run python scripts/plugin_rollout_gate.py
+          --mode ci
+          --run-id ci-plugin-rollout
+          --controller data/plugin_rollout/controller_state.json
+          --health data/plugin_rollout/health_signals.json
+          --operations data/plugin_rollout/operations_state.json
+          --out data/plugin_rollout/latest_report.json
+          --history data/plugin_rollout/trend_history.jsonl
+
+      - name: Failure drills gate
+        run: >
+          uv run python scripts/failure_drills_gate.py
+          --mode ci
+          --run-id ci-failure-drills
+          --drills data/failure_drills/drills.json
+          --slo data/failure_drills/slo_assertions.json
+          --remediation data/failure_drills/remediation.json
+          --out data/failure_drills/latest_report.json
+          --history data/failure_drills/trend_history.jsonl
+
+      - name: Incident runbooks gate
+        run: >
+          uv run python scripts/incident_runbooks_gate.py
+          --mode ci
+          --run-id ci-incident-runbooks
+          --runbooks data/incident_runbooks/runbooks.json
+          --operations data/incident_runbooks/operations.json
+          --drills data/incident_runbooks/drills.json
+          --out data/incident_runbooks/latest_report.json
+          --history data/incident_runbooks/trend_history.jsonl
+
       - name: Test
         run: uv run pytest

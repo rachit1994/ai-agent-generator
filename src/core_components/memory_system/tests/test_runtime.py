@@ -5,7 +5,11 @@ import math
 
 import pytest
 
-from core_components.memory_system import build_memory_system, validate_memory_system_dict
+from core_components.memory_system import (
+    build_memory_system,
+    execute_memory_system_runtime,
+    validate_memory_system_dict,
+)
 
 
 def _healthy_payload() -> dict[str, object]:
@@ -28,6 +32,7 @@ def test_build_memory_system_is_deterministic() -> None:
     assert one == two
     assert json.dumps(one, sort_keys=True) == json.dumps(two, sort_keys=True)
     assert validate_memory_system_dict(one) == []
+    assert one["execution"]["chunks_processed"] == 1
 
 
 def test_status_threshold_boundary_is_healthy_at_quality_point_eight() -> None:
@@ -145,3 +150,15 @@ def test_build_memory_system_fails_closed_for_out_of_range_quality_metrics() -> 
     assert payload["metrics"]["contradiction_rate"] == pytest.approx(1.0)
     assert payload["metrics"]["staleness_p95_hours"] == pytest.approx(999.0)
     assert validate_memory_system_dict(payload) == []
+
+
+def test_execute_memory_system_runtime_detects_missing_quality_fields() -> None:
+    execution = execute_memory_system_runtime(
+        retrieval_bundle={"chunks": [{"text": "x"}]},
+        quality_metrics={"contradiction_rate": 0.1},
+        quarantine_rows=[{"bad": True}],  # type: ignore[list-item]
+    )
+    assert execution["chunks_processed"] == 1
+    assert execution["quarantine_rows_processed"] == 1
+    assert execution["malformed_quarantine_rows"] == 1
+    assert execution["missing_quality_fields"] == ["staleness_p95_hours"]

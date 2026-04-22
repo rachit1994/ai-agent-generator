@@ -16,6 +16,23 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["evaluation_service_execution"]
+    errs: list[str] = []
+    payloads_processed = execution.get("payloads_processed")
+    if isinstance(payloads_processed, bool) or not isinstance(payloads_processed, int) or payloads_processed < 0:
+        errs.append("evaluation_service_execution_type:payloads_processed")
+    malformed_payloads = execution.get("malformed_payloads")
+    if isinstance(malformed_payloads, bool) or not isinstance(malformed_payloads, int) or malformed_payloads < 0:
+        errs.append("evaluation_service_execution_type:malformed_payloads")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("evaluation_service_execution_type:missing_signal_sources")
+    if not isinstance(execution.get("summary_metrics_present"), bool):
+        errs.append("evaluation_service_execution_type:summary_metrics_present")
+    return errs
+
+
 def _validate_metrics(metrics: Any) -> tuple[list[str], bool | None]:
     if not isinstance(metrics, dict):
         return (["evaluation_service_metrics"], None)
@@ -66,6 +83,7 @@ def validate_evaluation_service_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("ready", "degraded"):
         errs.append("evaluation_service_status")
+    errs.extend(_validate_execution(body.get("execution")))
     metric_errs, all_checks_passed = _validate_metrics(body.get("metrics"))
     errs.extend(metric_errs)
     errs.extend(_validate_evidence(body.get("evidence")))

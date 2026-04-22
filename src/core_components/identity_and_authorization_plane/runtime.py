@@ -81,6 +81,36 @@ def _status_from_coverage(coverage: float) -> str:
     return "missing"
 
 
+def execute_identity_authz_runtime(
+    *,
+    action_audit_lines: list[str],
+    lease_table: dict[str, Any],
+) -> dict[str, Any]:
+    active_leases = _active_leases(lease_table)
+    malformed_audit_rows = 0
+    unknown_lease_rows = 0
+    for line in action_audit_lines:
+        if not isinstance(line, str) or not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            malformed_audit_rows += 1
+            continue
+        if not isinstance(row, dict):
+            malformed_audit_rows += 1
+            continue
+        lease_id = row.get("lease_id")
+        if not _has_text(lease_id) or lease_id.strip() not in active_leases:
+            unknown_lease_rows += 1
+    return {
+        "audit_rows_processed": len(action_audit_lines),
+        "active_leases": len(active_leases),
+        "malformed_audit_rows": malformed_audit_rows,
+        "unknown_lease_rows": unknown_lease_rows,
+    }
+
+
 def build_identity_authz_plane(
     *,
     run_id: str,
@@ -88,6 +118,9 @@ def build_identity_authz_plane(
     action_audit_lines: list[str],
     lease_table: dict[str, Any],
 ) -> dict[str, Any]:
+    execution = execute_identity_authz_runtime(
+        action_audit_lines=action_audit_lines, lease_table=lease_table
+    )
     controls = _initial_controls(permission_matrix)
     active_leases = _active_leases(lease_table)
     if not action_audit_lines:
@@ -116,6 +149,7 @@ def build_identity_authz_plane(
         "schema_version": IDENTITY_AUTHZ_PLANE_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "coverage": coverage,
         "controls": controls,
         "evidence": {

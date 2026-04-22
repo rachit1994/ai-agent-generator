@@ -6,17 +6,19 @@ import pytest
 
 from success_criteria.error_reduction_metrics import (
     build_error_reduction_metrics,
+    execute_error_reduction_runtime,
     validate_error_reduction_metrics_dict,
 )
 
 
 def test_build_error_reduction_metrics_is_deterministic() -> None:
     parsed = {"checks": [{"name": "a", "passed": False}, {"name": "b", "passed": True}]}
-    events = [{"stage": "finalize", "score": {"passed": True}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True}}]
     one = build_error_reduction_metrics(run_id="rid-erm", parsed=parsed, events=events, skill_nodes=None)
     two = build_error_reduction_metrics(run_id="rid-erm", parsed=parsed, events=events, skill_nodes=None)
     assert one == two
     assert validate_error_reduction_metrics_dict(one) == []
+    assert one["execution"]["events_processed"] == 1
 
 
 def test_validate_error_reduction_metrics_fail_closed() -> None:
@@ -65,7 +67,7 @@ def test_build_error_reduction_metrics_treats_truthy_non_boolean_check_pass_as_f
     payload = build_error_reduction_metrics(
         run_id="rid-check-truthy",
         parsed={"checks": [{"name": "a", "passed": "true"}]},
-        events=[{"stage": "finalize", "score": {"passed": True}}],
+        events=[{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True}}],
         skill_nodes=None,
     )
     assert payload["metrics"]["baseline_error_count"] == 1
@@ -75,7 +77,7 @@ def test_build_error_reduction_metrics_treats_truthy_non_boolean_finalize_pass_a
     payload = build_error_reduction_metrics(
         run_id="rid-finalize-truthy",
         parsed={"checks": [{"name": "a", "passed": False}]},
-        events=[{"stage": "finalize", "score": {"passed": "true"}}],
+        events=[{"event_id": "evt-2", "stage": "finalize", "score": {"passed": "true"}}],
         skill_nodes=None,
     )
     assert payload["metrics"]["candidate_error_count"] == 1
@@ -92,6 +94,12 @@ def test_validate_error_reduction_metrics_rejects_count_arithmetic_mismatch() ->
             "resolved_error_count": 2,
             "error_reduction_rate": 0.5,
             "net_error_delta": 0.0,
+        },
+        "execution": {
+            "events_processed": 1,
+            "finalize_events_processed": 1,
+            "malformed_event_rows": 0,
+            "strict_boolean_violations": [],
         },
         "evidence": {"traces_ref": "traces.jsonl", "summary_ref": "summary.json"},
     }
@@ -114,6 +122,29 @@ def test_build_error_reduction_metrics_no_finalize_events_fail_closed_to_no_impr
     assert payload["metrics"]["error_reduction_rate"] == pytest.approx(0.0)
 
 
+def test_execute_error_reduction_runtime_detects_malformed_rows() -> None:
+    execution = execute_error_reduction_runtime(
+        events=[
+            {"event_id": "evt-1", "stage": "finalize", "score": {"passed": True}},
+            {"stage": "finalize", "score": {"passed": True}},
+            {"event_id": "evt-3", "stage": "repair"},
+        ]
+    )
+    assert execution["events_processed"] == 3
+    assert execution["finalize_events_processed"] == 1
+    assert execution["malformed_event_rows"] == 2
+
+
+def test_build_error_reduction_metrics_records_boolean_violations() -> None:
+    payload = build_error_reduction_metrics(
+        run_id="rid-violations",
+        parsed={"checks": [{"name": "a", "passed": False}]},
+        events=[{"event_id": "evt-bad", "stage": "finalize", "score": {"passed": "yes"}}],
+        skill_nodes=None,
+    )
+    assert payload["execution"]["strict_boolean_violations"] == ["evt-bad"]
+
+
 def test_validate_error_reduction_metrics_accepts_runtime_rounded_rate() -> None:
     payload = {
         "schema": "sde.error_reduction_metrics.v1",
@@ -125,6 +156,12 @@ def test_validate_error_reduction_metrics_accepts_runtime_rounded_rate() -> None
             "resolved_error_count": 1,
             "error_reduction_rate": 0.3333,
             "net_error_delta": -1.0,
+        },
+        "execution": {
+            "events_processed": 1,
+            "finalize_events_processed": 1,
+            "malformed_event_rows": 0,
+            "strict_boolean_violations": [],
         },
         "evidence": {"traces_ref": "traces.jsonl", "summary_ref": "summary.json"},
     }

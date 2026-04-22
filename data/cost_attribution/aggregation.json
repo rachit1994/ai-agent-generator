@@ -1,0 +1,18 @@
+{
+  "aggregation_interval_seconds": 60,
+  "cost_anomaly_burn_rate_detected": true,
+  "cost_reports_audit_exports_generated": true,
+  "billing_exports": [
+    {
+      "cost_usd": 210.0,
+      "tenant_id": "tenant-a"
+    },
+    {
+      "cost_usd": 70.0,
+      "tenant_id": "tenant-b"
+    }
+  ],
+  "near_realtime_attribution_aggregation": true,
+  "pricing_model_version": "2026-04",
+  "staleness_budget_seconds": 120
+}

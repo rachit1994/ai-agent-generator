@@ -189,6 +189,8 @@ A **10M DAU** **full-agent** API will fail in predictable **layers** unless the 
 
 **Next:** Read the companion [solution document](./2026-04-22-10m-dau-api-choke-points-solution.md) for the target architecture, mitigations, phased rollout, and **codebase follow-ups**.
 
+**Local + production requirement:** parity must be explicit. The same API contract, idempotency semantics, and run-state transitions must hold on both local server and production server deployments; only adapters and scale limits should differ.
+
 ### Related documents
 
 | Document | Role |

@@ -1,0 +1,8 @@
+{
+  "canary_percent": 10,
+  "compatibility_matrix_version": "2026.04",
+  "deprecation_rollback_governed": true,
+  "governance_audit_history_persisted": true,
+  "publish_rollout_gated": true,
+  "rollout_strategy": "canary"
+}

@@ -23,6 +23,24 @@ _REQUIRED_EVIDENCE = (
 )
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["objective_policy_engine_execution"]
+    errs: list[str] = []
+    for key in (
+        "signals_processed",
+        "hard_stop_rows_processed",
+        "malformed_hard_stop_rows",
+        "rollback_error_count",
+    ):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"objective_policy_engine_execution_type:{key}")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("objective_policy_engine_execution_type:missing_signal_sources")
+    return errs
+
+
 def _validate_scores(scores: Any) -> list[str]:
     if not isinstance(scores, dict):
         return ["objective_policy_engine_scores"]
@@ -177,6 +195,7 @@ def validate_objective_policy_engine_dict(body: Any) -> list[str]:
     mode = body.get("mode")
     if mode not in _ALLOWED_MODES:
         errs.append("objective_policy_engine_mode")
+    errs.extend(_validate_execution(body.get("execution")))
     errs.extend(_validate_scores(body.get("scores")))
     policy = body.get("policy")
     context = body.get("context")

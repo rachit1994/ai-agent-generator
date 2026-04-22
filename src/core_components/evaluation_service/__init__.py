@@ -4,12 +4,13 @@ from .contracts import (
     validate_evaluation_service_dict,
     validate_evaluation_service_path,
 )
-from .runtime import build_evaluation_service
+from .runtime import build_evaluation_service, execute_evaluation_service_runtime
 
 __all__ = [
     "EVALUATION_SERVICE_CONTRACT",
     "EVALUATION_SERVICE_SCHEMA_VERSION",
     "build_evaluation_service",
+    "execute_evaluation_service_runtime",
     "validate_evaluation_service_dict",
     "validate_evaluation_service_path",
 ]

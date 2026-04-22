@@ -6,6 +6,7 @@ import pytest
 
 from success_criteria.capability_growth_metrics import (
     build_capability_growth_metrics,
+    execute_capability_growth_runtime,
     validate_capability_growth_metrics_dict,
 )
 
@@ -22,6 +23,7 @@ def test_build_capability_growth_metrics_is_deterministic() -> None:
     )
     assert one == two
     assert validate_capability_growth_metrics_dict(one) == []
+    assert one["execution"]["events_processed"] == 1
 
 
 def test_validate_capability_growth_metrics_fail_closed() -> None:
@@ -122,3 +124,24 @@ def test_validate_capability_growth_metrics_rejects_invalid_evidence_refs() -> N
     errs = validate_capability_growth_metrics_dict(payload)
     assert "capability_growth_metrics_evidence_ref:traces_ref" in errs
     assert "capability_growth_metrics_evidence_ref:skill_nodes_ref" in errs
+
+
+def test_execute_capability_growth_runtime_detects_malformed_rows() -> None:
+    execution = execute_capability_growth_runtime(
+        events=[{"event_id": "a", "stage": "finalize", "passed": True, "reliability": 0.8}, {"stage": "finalize"}],
+        skill_nodes={"nodes": [{"score": 0.7}, {"score": 0.8}]},
+    )
+    assert execution["events_processed"] == 2
+    assert execution["growth_events_processed"] == 1
+    assert execution["malformed_event_rows"] == 1
+    assert execution["skill_node_count"] == 2
+
+
+def test_build_capability_growth_metrics_captures_reliability_violations() -> None:
+    payload = build_capability_growth_metrics(
+        run_id="rid-cg",
+        parsed={},
+        events=[{"event_id": "e-1", "stage": "finalize", "passed": True, "reliability": 1.4}],
+        skill_nodes={"schema_version": "1.0", "nodes": [{"skill_id": "x", "score": 0.75}]},
+    )
+    assert payload["execution"]["reliability_violations"] == ["e-1"]

@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import pytest
 
-from core_components.practice_engine import build_practice_engine, validate_practice_engine_dict
+from core_components.practice_engine import (
+    build_practice_engine,
+    execute_practice_engine_runtime,
+    validate_practice_engine_dict,
+)
 
 
 def test_build_practice_engine_is_deterministic() -> None:
@@ -22,6 +26,7 @@ def test_build_practice_engine_is_deterministic() -> None:
     )
     assert one == two
     assert validate_practice_engine_dict(one) == []
+    assert one["execution"]["signals_processed"] == 4
 
 
 def test_validate_practice_engine_fail_closed() -> None:
@@ -93,4 +98,17 @@ def test_validate_practice_engine_rejects_invalid_evidence_refs() -> None:
     errs = validate_practice_engine_dict(payload)
     assert "practice_engine_evidence_ref:task_spec_ref" in errs
     assert "practice_engine_evidence_ref:evaluation_result_ref" in errs
+
+
+def test_execute_practice_engine_runtime_detects_missing_sources() -> None:
+    execution = execute_practice_engine_runtime(
+        task_spec={},
+        evaluation_result={},
+        reflection_bundle={"root_causes": ["ok", {"bad": True}]},  # type: ignore[list-item]
+        review={},
+    )
+    assert execution["signals_processed"] == 4
+    assert execution["root_causes_processed"] == 2
+    assert execution["malformed_root_cause_rows"] == 1
+    assert execution["missing_signal_sources"] == ["task_spec", "evaluation_result", "review"]
 

@@ -1,0 +1,3 @@
+{"run_id": "run-feature-03-ci", "signal": "events_processed", "value": 2}
+{"run_id": "run-feature-03-ci", "signal": "route_violations", "value": 0}
+{"run_id": "run-feature-03-ci", "signal": "dependency_violations", "value": 0}

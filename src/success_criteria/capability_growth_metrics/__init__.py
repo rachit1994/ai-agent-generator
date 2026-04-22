@@ -4,12 +4,13 @@ from .contracts import (
     validate_capability_growth_metrics_dict,
     validate_capability_growth_metrics_path,
 )
-from .runtime import build_capability_growth_metrics
+from .runtime import build_capability_growth_metrics, execute_capability_growth_runtime
 
 __all__ = [
     "CAPABILITY_GROWTH_METRICS_CONTRACT",
     "CAPABILITY_GROWTH_METRICS_SCHEMA_VERSION",
     "build_capability_growth_metrics",
+    "execute_capability_growth_runtime",
     "validate_capability_growth_metrics_dict",
     "validate_capability_growth_metrics_path",
 ]

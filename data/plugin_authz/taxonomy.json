@@ -1,0 +1,9 @@
+{
+  "scope_catalog": [
+    "read:artifacts",
+    "write:artifacts",
+    "execute:tools"
+  ],
+  "policy_model_version": "2026.04",
+  "scope_taxonomy_permission_model_defined": true
+}

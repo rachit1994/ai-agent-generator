@@ -1,0 +1,16 @@
+{
+  "heartbeat_enabled": true,
+  "lease_renewal": true,
+  "worker_heartbeat_interval_seconds": 30,
+  "worker_lease_policy_version": "2026.04",
+  "workers": [
+    {
+      "capacity": 2,
+      "worker_id": "worker-a"
+    },
+    {
+      "capacity": 1,
+      "worker_id": "worker-b"
+    }
+  ]
+}

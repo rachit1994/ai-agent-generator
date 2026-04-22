@@ -17,6 +17,25 @@ _METRIC_KEYS = (
 )
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["capability_growth_metrics_execution"]
+    errs: list[str] = []
+    int_fields = (
+        "events_processed",
+        "growth_events_processed",
+        "malformed_event_rows",
+        "skill_node_count",
+    )
+    for field in int_fields:
+        value = execution.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"capability_growth_metrics_execution_type:{field}")
+    if not isinstance(execution.get("reliability_violations"), list):
+        errs.append("capability_growth_metrics_execution_type:reliability_violations")
+    return errs
+
+
 def _metric_range_error(key: str, num: float) -> str | None:
     if key == "promotion_readiness_delta":
         if num < -1.0 or num > 1.0:
@@ -89,6 +108,7 @@ def validate_capability_growth_metrics_dict(body: Any) -> list[str]:
     run_id = body.get("run_id")
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("capability_growth_metrics_run_id")
+    errs.extend(_validate_execution(body.get("execution")))
     metric_errs, numeric_metrics = _validate_metric_values(body.get("metrics"))
     errs.extend(metric_errs)
     errs.extend(_validate_evidence_refs(body.get("evidence")))

@@ -1,0 +1,16 @@
+{
+  "failure_classes": [
+    "transient",
+    "permanent",
+    "throttle"
+  ],
+  "failure_classification_for_transitions": true,
+  "fallback_behavior_for_open_circuits": true,
+  "fallback_mode": "serve_cached",
+  "cooldown_seconds": 30,
+  "half_open_probe_count": 2,
+  "operator_approval_ticket": "CAB-2026-0177",
+  "operator_safe_breaker_controls": true,
+  "retry_budget_policy_version": "2026.04",
+  "transition_policy_version": "2026.04"
+}

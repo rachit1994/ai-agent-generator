@@ -1,0 +1,35 @@
+{
+  "integration_load_tests_present": true,
+  "load_test_profile": "burst-and-sustained-traffic",
+  "request_events": [
+    {
+      "api_key": "key-1",
+      "decision": "allow",
+      "event_id": "edge-evt-001",
+      "retry_after_seconds": 0,
+      "route": "/v1/chat",
+      "tenant_id": "tenant-a",
+      "user_id": "user-1"
+    },
+    {
+      "api_key": "key-1",
+      "decision": "throttle",
+      "event_id": "edge-evt-002",
+      "retry_after_seconds": 15,
+      "route": "/v1/chat",
+      "tenant_id": "tenant-a",
+      "user_id": "user-1"
+    },
+    {
+      "api_key": "key-2",
+      "decision": "deny",
+      "event_id": "edge-evt-003",
+      "retry_after_seconds": 30,
+      "route": "/v1/tools",
+      "tenant_id": "tenant-a",
+      "user_id": "user-2"
+    }
+  ],
+  "retry_after_compliant": true,
+  "retry_after_seconds": 15
+}

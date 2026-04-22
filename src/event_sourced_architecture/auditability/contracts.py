@@ -19,6 +19,23 @@ _EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["auditability_execution"]
+    errs: list[str] = []
+    int_fields = ("events_processed", "hashed_event_count", "malformed_event_rows")
+    for field in int_fields:
+        value = execution.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"auditability_execution_{field}")
+    if not isinstance(execution.get("chain_mismatch"), bool):
+        errs.append("auditability_execution_chain_mismatch")
+    latest_hash = execution.get("latest_hash")
+    if not isinstance(latest_hash, str) or not latest_hash.strip():
+        errs.append("auditability_execution_latest_hash")
+    return errs
+
+
 def _validate_hash_chain(hash_chain: Any) -> list[str]:
     if not isinstance(hash_chain, dict):
         return ["auditability_hash_chain"]
@@ -103,6 +120,7 @@ def validate_auditability_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in _ALLOWED_STATUS:
         errs.append("auditability_status")
+    errs.extend(_validate_execution(body.get("execution")))
     errs.extend(_validate_hash_chain(body.get("hash_chain")))
     errs.extend(_validate_integrity_operations(body.get("integrity_operations")))
     errs.extend(_validate_evidence(body.get("evidence")))

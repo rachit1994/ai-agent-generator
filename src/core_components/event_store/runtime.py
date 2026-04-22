@@ -15,6 +15,26 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
+def execute_event_store_runtime(
+    *,
+    replay_manifest: dict[str, Any],
+    run_events: list[dict[str, Any]],
+    trace_events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    malformed_run_event_rows = len([row for row in run_events if not isinstance(row, dict)])
+    malformed_trace_rows = len([row for row in trace_events if not isinstance(row, dict)])
+    missing_manifest_signal = not (
+        isinstance(replay_manifest, dict) and isinstance(replay_manifest.get("passed"), bool)
+    )
+    return {
+        "run_events_processed": len(run_events),
+        "trace_events_processed": len(trace_events),
+        "malformed_run_event_rows": malformed_run_event_rows,
+        "malformed_trace_rows": malformed_trace_rows,
+        "missing_manifest_signal": missing_manifest_signal,
+    }
+
+
 def build_event_store_component(
     *,
     run_id: str,
@@ -23,6 +43,9 @@ def build_event_store_component(
     trace_events: list[dict[str, Any]],
     kill_switch_state: dict[str, Any],
 ) -> dict[str, Any]:
+    execution = execute_event_store_runtime(
+        replay_manifest=replay_manifest, run_events=run_events, trace_events=trace_events
+    )
     trace_rows = len(trace_events)
     event_rows = len(run_events)
     append_coverage = _clamp01(event_rows / max(1, trace_rows))
@@ -38,6 +61,7 @@ def build_event_store_component(
         "schema_version": EVENT_STORE_COMPONENT_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "metrics": {
             "event_rows": event_rows,
             "trace_rows": trace_rows,

@@ -19,6 +19,19 @@ MEMORY_SYSTEM_HEALTHY_QUALITY_THRESHOLD = 0.8
 _FLOAT_ZERO_TOLERANCE = 1e-9
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["memory_system_execution"]
+    errs: list[str] = []
+    for key in ("chunks_processed", "quarantine_rows_processed", "malformed_quarantine_rows"):
+        value = execution.get(key)
+        if not _is_valid_int(value) or value < 0:
+            errs.append(f"memory_system_execution_type:{key}")
+    if not isinstance(execution.get("missing_quality_fields"), list):
+        errs.append("memory_system_execution_type:missing_quality_fields")
+    return errs
+
+
 def _is_valid_int(value: Any) -> bool:
     return isinstance(value, int) and not isinstance(value, bool)
 
@@ -126,6 +139,7 @@ def validate_memory_system_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["memory_system_not_object"]
     errs = _validate_core_fields(body)
+    errs.extend(_validate_execution(body.get("execution")))
     metrics = body.get("metrics")
     if not isinstance(metrics, dict):
         errs.append("memory_system_metrics")

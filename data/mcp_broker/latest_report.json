@@ -1,0 +1,42 @@
+{
+  "checks": {
+    "authz_boundary_enforced": true,
+    "broker_observability_present": true,
+    "broker_service_present": true,
+    "deterministic_routing_present": true,
+    "disconnect_failover_tests_present": true,
+    "heartbeat_resume_supported": true,
+    "session_lifecycle_api_present": true,
+    "session_persistence_reclaim": true
+  },
+  "evidence": {
+    "broker_ref": "data/mcp_broker/broker_state.json",
+    "history_ref": "data/mcp_broker/trend_history.jsonl",
+    "sessions_ref": "data/mcp_broker/session_state.json",
+    "telemetry_ref": "data/mcp_broker/telemetry.json"
+  },
+  "failed_gates": [],
+  "mode": "preflight",
+  "release_blocked": false,
+  "run_id": "local-feature-10-broker-telemetry-alignment",
+  "schema": "sde.scale.feature_10.mcp_broker.v1",
+  "schema_version": "1.0",
+  "session_contract": {
+    "apis": [
+      "create_session",
+      "resume_session",
+      "terminate_session"
+    ],
+    "authz_required": true,
+    "lease_heartbeat": true,
+    "reconnect_resume": true,
+    "states": [
+      "created",
+      "active",
+      "idle",
+      "expired",
+      "terminated"
+    ]
+  },
+  "status": "pass"
+}

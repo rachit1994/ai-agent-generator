@@ -44,71 +44,36 @@ def _gate_order(gate_id: str) -> int:
     return MANDATORY_GATE_IDS.index(gate_id) if gate_id in MANDATORY_GATE_IDS else len(MANDATORY_GATE_IDS)
 
 
-def build_self_learning_loop(
-    *,
-    run_id: str,
-    mode: str,
-    events: list[dict[str, Any]],
-    practice_engine: dict[str, Any],
-    transfer_learning_metrics: dict[str, Any],
-    capability_growth_metrics: dict[str, Any],
-    skill_nodes: dict[str, Any],
-) -> dict[str, Any]:
-    capability_score = 0.0
+def _capability_score(skill_nodes: dict[str, Any]) -> float:
     nodes = skill_nodes.get("nodes") if isinstance(skill_nodes, dict) else []
-    if isinstance(nodes, list):
-        valid_scores = [
-            float(node.get("score"))
-            for node in nodes
-            if isinstance(node, dict)
-            and isinstance(node.get("score"), (int, float))
-            and not isinstance(node.get("score"), bool)
-        ]
-        if valid_scores:
-            capability_score = _clamp01(max(valid_scores))
-    transfer_efficiency = 0.0
-    transfer_scores = (
-        transfer_learning_metrics.get("scores")
-        if isinstance(transfer_learning_metrics, dict)
-        else {}
-    )
-    if isinstance(transfer_scores, dict):
-        value = transfer_scores.get("transfer_efficiency")
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            transfer_efficiency = _clamp01(float(value))
-    growth_signal = 0.0
-    growth_scores = (
-        capability_growth_metrics.get("scores")
-        if isinstance(capability_growth_metrics, dict)
-        else {}
-    )
-    if isinstance(growth_scores, dict):
-        value = growth_scores.get("capability_growth_rate")
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            growth_signal = _clamp01(float(value))
-    practice_readiness = 0.0
-    practice_scores = practice_engine.get("scores") if isinstance(practice_engine, dict) else {}
-    if isinstance(practice_scores, dict):
-        value = practice_scores.get("readiness_signal")
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            practice_readiness = _clamp01(float(value))
-    eligible_examples = len([row for row in events if isinstance(row, dict)])
-    regression_rate = _clamp01(1.0 - practice_readiness)
-    novelty_score = _clamp01((transfer_efficiency + growth_signal) / 2.0)
-    contradiction_rate = _clamp01(abs(capability_score - practice_readiness))
-    signals = {
-        "finalize_pass_rate": _finalize_pass_rate(events),
-        "capability_score": capability_score,
-        "transfer_efficiency": transfer_efficiency,
-        "growth_signal": growth_signal,
-        "practice_readiness": practice_readiness,
-    }
+    if not isinstance(nodes, list):
+        return 0.0
+    valid_scores = [
+        float(node.get("score"))
+        for node in nodes
+        if isinstance(node, dict)
+        and isinstance(node.get("score"), (int, float))
+        and not isinstance(node.get("score"), bool)
+    ]
+    return _clamp01(max(valid_scores)) if valid_scores else 0.0
+
+
+def _score_from_metrics(metrics_payload: dict[str, Any], score_key: str) -> float:
+    scores = metrics_payload.get("scores") if isinstance(metrics_payload, dict) else {}
+    if not isinstance(scores, dict):
+        return 0.0
+    value = scores.get(score_key)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return _clamp01(float(value))
+    return 0.0
+
+
+def _evaluate_failed_gates(*, eligible_examples: int, verifier_pass_rate: float, regression_rate: float, novelty_score: float, contradiction_rate: float) -> tuple[list[str], list[str]]:
     failed_gates: list[str] = []
     reason_codes: list[str] = []
     if eligible_examples < MIN_ELIGIBLE_EXAMPLES:
         failed_gates.append(GATE_ID_MIN_EXAMPLES)
         reason_codes.append("self_learning_loop_contract:gate_min_examples_unmet")
-    verifier_pass_rate = signals["finalize_pass_rate"]
     if verifier_pass_rate < MIN_VERIFIER_PASS_RATE:
         failed_gates.append(GATE_ID_VERIFIER_PASS_RATE)
         reason_codes.append("self_learning_loop_contract:gate_verifier_pass_rate_below_threshold")
@@ -121,18 +86,93 @@ def build_self_learning_loop(
     if contradiction_rate > MAX_CONTRADICTION_RATE:
         failed_gates.append(GATE_ID_CONTRADICTION_RATE)
         reason_codes.append("self_learning_loop_contract:gate_contradiction_rate_exceeded")
-    failed_gates = sorted(failed_gates, key=_gate_order)
+    return sorted(failed_gates, key=_gate_order), reason_codes
+
+
+def _decision_from_failed_gates(failed_gates: list[str]) -> tuple[str, str]:
     hard_failure = GATE_ID_REGRESSION_RATE in failed_gates or GATE_ID_CONTRADICTION_RATE in failed_gates
-    decision = "promote"
-    next_action = "open_promotion_review"
-    if failed_gates:
-        decision = "reject" if hard_failure else "hold"
-        next_action = "run_practice_cycle" if decision == "hold" else "halt_and_repair"
+    if not failed_gates:
+        return "promote", "open_promotion_review"
+    if hard_failure:
+        return "reject", "halt_and_repair"
+    return "hold", "run_practice_cycle"
+
+
+def execute_self_learning_loop_runtime(
+    *,
+    events: list[dict[str, Any]],
+    practice_engine: dict[str, Any],
+    transfer_learning_metrics: dict[str, Any],
+    capability_growth_metrics: dict[str, Any],
+) -> dict[str, Any]:
+    finalize_events = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
+    malformed_event_rows = len(events) - len([row for row in events if isinstance(row, dict)])
+    missing_signal_sources: list[str] = []
+    practice_scores = practice_engine.get("scores") if isinstance(practice_engine, dict) else None
+    if not isinstance(practice_scores, dict) or "readiness_signal" not in practice_scores:
+        missing_signal_sources.append("practice_engine")
+    transfer_scores = transfer_learning_metrics.get("scores") if isinstance(transfer_learning_metrics, dict) else None
+    if not isinstance(transfer_scores, dict) or "transfer_efficiency" not in transfer_scores:
+        missing_signal_sources.append("transfer_learning_metrics")
+    growth_scores = capability_growth_metrics.get("scores") if isinstance(capability_growth_metrics, dict) else None
+    if not isinstance(growth_scores, dict) or "capability_growth_rate" not in growth_scores:
+        missing_signal_sources.append("capability_growth_metrics")
+    if len(finalize_events) == 0:
+        missing_signal_sources.append("finalize_events")
+    return {
+        "events_processed": len(events),
+        "finalize_events_processed": len(finalize_events),
+        "malformed_event_rows": malformed_event_rows,
+        "missing_signal_sources": missing_signal_sources,
+    }
+
+
+def build_self_learning_loop(
+    *,
+    run_id: str,
+    mode: str,
+    events: list[dict[str, Any]],
+    practice_engine: dict[str, Any],
+    transfer_learning_metrics: dict[str, Any],
+    capability_growth_metrics: dict[str, Any],
+    skill_nodes: dict[str, Any],
+) -> dict[str, Any]:
+    execution = execute_self_learning_loop_runtime(
+        events=events,
+        practice_engine=practice_engine,
+        transfer_learning_metrics=transfer_learning_metrics,
+        capability_growth_metrics=capability_growth_metrics,
+    )
+    capability_score = _capability_score(skill_nodes)
+    transfer_efficiency = _score_from_metrics(transfer_learning_metrics, "transfer_efficiency")
+    growth_signal = _score_from_metrics(capability_growth_metrics, "capability_growth_rate")
+    practice_readiness = _score_from_metrics(practice_engine, "readiness_signal")
+    eligible_examples = len([row for row in events if isinstance(row, dict)])
+    regression_rate = _clamp01(1.0 - practice_readiness)
+    novelty_score = _clamp01((transfer_efficiency + growth_signal) / 2.0)
+    contradiction_rate = _clamp01(abs(capability_score - practice_readiness))
+    signals = {
+        "finalize_pass_rate": _finalize_pass_rate(events),
+        "capability_score": capability_score,
+        "transfer_efficiency": transfer_efficiency,
+        "growth_signal": growth_signal,
+        "practice_readiness": practice_readiness,
+    }
+    verifier_pass_rate = signals["finalize_pass_rate"]
+    failed_gates, reason_codes = _evaluate_failed_gates(
+        eligible_examples=eligible_examples,
+        verifier_pass_rate=verifier_pass_rate,
+        regression_rate=regression_rate,
+        novelty_score=novelty_score,
+        contradiction_rate=contradiction_rate,
+    )
+    decision, next_action = _decision_from_failed_gates(failed_gates)
     return {
         "schema": SELF_LEARNING_LOOP_CONTRACT,
         "schema_version": SELF_LEARNING_LOOP_SCHEMA_VERSION,
         "run_id": run_id,
         "mode": mode,
+        "execution": execution,
         "signals": signals,
         "decision": {
             "decision": decision,

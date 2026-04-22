@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core_components.safety_controller import (
     build_safety_controller,
+    execute_safety_controller_runtime,
     validate_safety_controller_dict,
 )
 
@@ -13,6 +14,7 @@ def test_build_safety_controller_deterministic() -> None:
     assert one == two
     assert one["status"] == "allow"
     assert validate_safety_controller_dict(one) == []
+    assert one["execution"]["hard_stops_processed"] == 1
 
 
 def test_validate_safety_controller_fail_closed() -> None:
@@ -39,3 +41,13 @@ def test_validate_safety_controller_rejects_status_metrics_mismatch() -> None:
     payload["status"] = "block"
     errs = validate_safety_controller_dict(payload)
     assert "safety_controller_status_metrics_mismatch" in errs
+
+
+def test_execute_safety_controller_runtime_detects_malformed_rows() -> None:
+    execution = execute_safety_controller_runtime(
+        cto={"hard_stops": [{"id": "HS01", "passed": True}, {"id": "HS02", "passed": "true"}, "bad-row"]}
+    )
+    assert execution["hard_stops_processed"] == 3
+    assert execution["evaluated_hard_stops"] == 2
+    assert execution["malformed_hard_stop_rows"] == 1
+    assert execution["non_boolean_hard_stop_passed_ids"] == ["HS02"]

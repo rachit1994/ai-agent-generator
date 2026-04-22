@@ -5,6 +5,7 @@ import pytest
 from core_components.self_learning_loop import (
     MANDATORY_GATE_IDS,
     build_self_learning_loop,
+    execute_self_learning_loop_runtime,
     validate_self_learning_loop_dict,
 )
 
@@ -13,7 +14,7 @@ def test_build_self_learning_loop_is_deterministic() -> None:
     payload_one = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.8}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.7}},
@@ -22,7 +23,7 @@ def test_build_self_learning_loop_is_deterministic() -> None:
     payload_two = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.8}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.7}},
@@ -32,6 +33,7 @@ def test_build_self_learning_loop_is_deterministic() -> None:
     assert validate_self_learning_loop_dict(payload_one) == []
     assert payload_one["decision"]["decision"] == "promote"
     assert payload_one["decision"]["failed_gates"] == []
+    assert payload_one["execution"]["finalize_events_processed"] == 6
 
 
 def test_validate_self_learning_loop_fail_closed() -> None:
@@ -44,7 +46,7 @@ def test_self_learning_loop_hold_when_insufficient_examples() -> None:
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}}],
+        events=[{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True}}],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
@@ -58,7 +60,7 @@ def test_self_learning_loop_reject_when_regression_and_contradiction_fail() -> N
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.1}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.7}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.7}},
@@ -73,7 +75,7 @@ def test_self_learning_failed_gate_and_reason_order_is_deterministic() -> None:
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(3)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(3)],
         practice_engine={"scores": {"readiness_signal": 0.2}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.1}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.1}},
@@ -98,7 +100,7 @@ def test_self_learning_loop_treats_truthy_non_boolean_finalize_passed_as_false()
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": "true"}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": "true"}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
@@ -112,7 +114,7 @@ def test_validate_self_learning_loop_rejects_loop_state_mismatch() -> None:
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
@@ -127,7 +129,7 @@ def test_validate_self_learning_loop_rejects_primary_reason_mismatch() -> None:
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.2}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.7}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.7}},
@@ -142,7 +144,7 @@ def test_validate_self_learning_loop_rejects_next_action_mismatch() -> None:
     payload = build_self_learning_loop(
         run_id="rid-self-loop",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
@@ -157,7 +159,7 @@ def test_self_learning_loop_uses_highest_valid_skill_node_score() -> None:
     payload = build_self_learning_loop(
         run_id="rid-self-loop-skill-nodes",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
@@ -170,7 +172,7 @@ def test_validate_self_learning_loop_rejects_noncanonical_self_loop_evidence_ref
     payload = build_self_learning_loop(
         run_id="rid-self-loop-evidence",
         mode="guarded_pipeline",
-        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        events=[{"event_id": f"evt-{idx}", "stage": "finalize", "score": {"passed": True}} for idx in range(6)],
         practice_engine={"scores": {"readiness_signal": 0.9}},
         transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
         capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
@@ -179,3 +181,20 @@ def test_validate_self_learning_loop_rejects_noncanonical_self_loop_evidence_ref
     payload["evidence"]["self_learning_loop_ref"] = "learning/other_self_learning_loop.json"
     errs = validate_self_learning_loop_dict(payload)
     assert "self_learning_loop_evidence_self_learning_loop_ref" in errs
+
+
+def test_execute_self_learning_loop_runtime_detects_missing_signals() -> None:
+    execution = execute_self_learning_loop_runtime(
+        events=["bad-row"],  # type: ignore[list-item]
+        practice_engine={"scores": {}},
+        transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
+        capability_growth_metrics={"scores": {}},
+    )
+    assert execution["events_processed"] == 1
+    assert execution["finalize_events_processed"] == 0
+    assert execution["malformed_event_rows"] == 1
+    assert execution["missing_signal_sources"] == [
+        "practice_engine",
+        "capability_growth_metrics",
+        "finalize_events",
+    ]

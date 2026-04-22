@@ -10,6 +10,19 @@ SAFETY_CONTROLLER_CONTRACT = "sde.safety_controller.v1"
 SAFETY_CONTROLLER_SCHEMA_VERSION = "1.0"
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["safety_controller_execution"]
+    errs: list[str] = []
+    for key in ("hard_stops_processed", "evaluated_hard_stops", "malformed_hard_stop_rows"):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"safety_controller_execution_type:{key}")
+    if not isinstance(execution.get("non_boolean_hard_stop_passed_ids"), list):
+        errs.append("safety_controller_execution_type:non_boolean_hard_stop_passed_ids")
+    return errs
+
+
 def _validate_metrics(metrics: Any) -> tuple[list[str], tuple[bool, bool, bool] | None]:
     if not isinstance(metrics, dict):
         return (["safety_controller_metrics"], None)
@@ -40,6 +53,7 @@ def validate_safety_controller_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("allow", "block"):
         errs.append("safety_controller_status")
+    errs.extend(_validate_execution(body.get("execution")))
     metric_errs, metric_values = _validate_metrics(body.get("metrics"))
     errs.extend(metric_errs)
     if metric_values is not None and status in ("allow", "block"):

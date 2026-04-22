@@ -34,6 +34,39 @@ def _finalize_pass_rate(events: list[dict[str, Any]]) -> float:
     return _clamp01(passed / len(finals))
 
 
+def _valid_transfer_event(event: Any) -> bool:
+    if not isinstance(event, dict):
+        return False
+    required = ("event_id", "stage", "score")
+    if not all(key in event for key in required):
+        return False
+    if event.get("stage") != "finalize":
+        return False
+    score = event.get("score")
+    return isinstance(score, dict) and "passed" in score
+
+
+def execute_transfer_learning_runtime(*, events: list[dict[str, Any]], skill_nodes: dict[str, Any] | None) -> dict[str, Any]:
+    transfer_events = [event for event in events if _valid_transfer_event(event)]
+    malformed_event_rows = len(events) - len(transfer_events)
+    strict_boolean_violations: list[str] = []
+    for event in transfer_events:
+        if event["score"].get("passed") is not True and event["score"].get("passed") is not False:
+            strict_boolean_violations.append(str(event["event_id"]))
+    node_count = 0
+    if isinstance(skill_nodes, dict):
+        nodes = skill_nodes.get("nodes")
+        if isinstance(nodes, list):
+            node_count = len(nodes)
+    return {
+        "events_processed": len(events),
+        "transfer_events_processed": len(transfer_events),
+        "malformed_event_rows": malformed_event_rows,
+        "strict_boolean_violations": strict_boolean_violations,
+        "skill_node_count": node_count,
+    }
+
+
 def build_transfer_learning_metrics(
     *,
     run_id: str,
@@ -44,6 +77,7 @@ def build_transfer_learning_metrics(
     if not isinstance(run_id, str) or not run_id.strip():
         raise ValueError("transfer_learning_metrics_run_id")
     _ = parsed
+    execution = execute_transfer_learning_runtime(events=events, skill_nodes=skill_nodes)
     pass_rate = _finalize_pass_rate(events)
     capability_score = 0.0
     if isinstance(skill_nodes, dict):
@@ -64,6 +98,7 @@ def build_transfer_learning_metrics(
         "schema": TRANSFER_LEARNING_METRICS_CONTRACT,
         "schema_version": TRANSFER_LEARNING_METRICS_SCHEMA_VERSION,
         "run_id": run_id,
+        "execution": execution,
         "metrics": {
             "transfer_gain_rate": transfer_gain_rate,
             "negative_transfer_rate": negative_transfer_rate,

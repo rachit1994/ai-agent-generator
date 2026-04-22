@@ -1,0 +1,15 @@
+{
+  "admin_controls_present": true,
+  "durable_quota_state": true,
+  "quota_policy_version": "2026.04",
+  "refill_window_seconds": 60,
+  "refill_window_supported": true,
+  "tenant_limits": {
+    "tenant-a": 5
+  },
+  "tenant_scope": "tenant-a",
+  "tenant_usage": {
+    "tenant-a": 2
+  },
+  "tenant_identity_threaded": true
+}

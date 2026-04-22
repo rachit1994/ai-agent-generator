@@ -18,6 +18,20 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["career_strategy_layer_execution"]
+    errs: list[str] = []
+    signals_processed = execution.get("signals_processed")
+    if isinstance(signals_processed, bool) or not isinstance(signals_processed, int) or signals_processed < 0:
+        errs.append("career_strategy_layer_execution_type:signals_processed")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("career_strategy_layer_execution_type:missing_signal_sources")
+    if not isinstance(execution.get("has_proposed_stage"), bool):
+        errs.append("career_strategy_layer_execution_type:has_proposed_stage")
+    return errs
+
+
 def _validate_score_fields(strategy: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     for key in ("career_signal_score", "readiness_score", "risk_score"):
@@ -86,9 +100,7 @@ def _validate_status_readiness_semantics(status: Any, readiness: float) -> list[
     return []
 
 
-def validate_career_strategy_layer_dict(body: Any) -> list[str]:
-    if not isinstance(body, dict):
-        return ["career_strategy_layer_not_object"]
+def _validate_core_fields(body: dict[str, Any]) -> tuple[list[str], Any]:
     errs: list[str] = []
     if body.get("schema") != CAREER_STRATEGY_LAYER_CONTRACT:
         errs.append("career_strategy_layer_schema")
@@ -109,10 +121,13 @@ def validate_career_strategy_layer_dict(body: Any) -> list[str]:
     horizon = body.get("horizon")
     if not isinstance(horizon, str) or not horizon.strip():
         errs.append("career_strategy_layer_horizon")
-    evidence = body.get("evidence")
+    return errs, status
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
     if not isinstance(evidence, dict):
-        errs.append("career_strategy_layer_evidence")
-        evidence = {}
+        return ["career_strategy_layer_evidence"]
+    errs: list[str] = []
     for key, expected in _CANONICAL_EVIDENCE_REFS.items():
         value = evidence.get(key)
         if not isinstance(value, str) or not value.strip():
@@ -121,6 +136,15 @@ def validate_career_strategy_layer_dict(body: Any) -> list[str]:
         normalized = value.strip()
         if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
             errs.append(f"career_strategy_layer_evidence_{key}")
+    return errs
+
+
+def validate_career_strategy_layer_dict(body: Any) -> list[str]:
+    if not isinstance(body, dict):
+        return ["career_strategy_layer_not_object"]
+    errs, status = _validate_core_fields(body)
+    errs.extend(_validate_execution(body.get("execution")))
+    errs.extend(_validate_evidence(body.get("evidence")))
     strategy = body.get("strategy")
     if not isinstance(strategy, dict):
         errs.append("career_strategy_layer_strategy")

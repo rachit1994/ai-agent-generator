@@ -16,6 +16,24 @@ PRODUCTION_OBSERVABILITY_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["production_observability_execution"]
+    errs: list[str] = []
+    for key in (
+        "signals_processed",
+        "trace_rows_observed",
+        "orchestration_rows_observed",
+        "run_log_lines_observed",
+    ):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"production_observability_execution_type:{key}")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("production_observability_execution_type:missing_signal_sources")
+    return errs
+
+
 def _validate_metric_count(metrics: dict[str, Any], key: str) -> tuple[str | None, int | None]:
     value = metrics.get(key)
     if isinstance(value, bool) or not isinstance(value, int):
@@ -80,6 +98,7 @@ def validate_production_observability_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("healthy", "degraded", "missing"):
         errs.append("production_observability_status")
+    errs.extend(_validate_execution(body.get("execution")))
     metric_errs, counts = _validate_metrics(body.get("metrics"))
     errs.extend(metric_errs)
     errs.extend(_validate_evidence(body.get("evidence")))

@@ -1,0 +1,8 @@
+{
+  "auth_boundary": "service-token",
+  "control_dependency": false,
+  "owner_team": "platform-data",
+  "scaling_policy": "data-queue_depth_target",
+  "service_name": "data-plane-worker",
+  "telemetry_channel": "data-traces"
+}

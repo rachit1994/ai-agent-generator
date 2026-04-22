@@ -1,0 +1,46 @@
+{
+  "checks": {
+    "adversarial_leakage_tests_present": true,
+    "cache_artifact_reuse_blocked": true,
+    "continuous_isolation_audit_present": true,
+    "incident_containment_actions_defined": true,
+    "runtime_queue_storage_isolated": true,
+    "tenant_budget_profile_consistent": true,
+    "tenant_budgets_guardrails_enforced": true,
+    "tenant_identity_full_path": true,
+    "tenant_keys_policy_controls_applied": true
+  },
+  "evidence": {
+    "audit_ref": "data/cross_tenant_isolation/audit_signals.json",
+    "events_ref": "data/cross_tenant_isolation/isolation_events.jsonl",
+    "execution_ref": "data/cross_tenant_isolation/execution_context.json",
+    "history_ref": "data/cross_tenant_isolation/trend_history.jsonl",
+    "isolation_ref": "data/cross_tenant_isolation/isolation_state.json"
+  },
+  "execution": {
+    "adversarial_pass": true,
+    "adversarial_tests_count": 2,
+    "containment_ready": true,
+    "events_processed": 2,
+    "key_scope_violations": [],
+    "leakage_attempts": [],
+    "namespace_violations": []
+  },
+  "failed_gates": [],
+  "isolation_contract": {
+    "adversarial_leakage_tests": true,
+    "cache_artifact_reuse_blocked": true,
+    "continuous_isolation_audit": true,
+    "incident_containment_actions": true,
+    "runtime_queue_storage_isolated": true,
+    "tenant_budgets_guardrails": true,
+    "tenant_identity_required": true,
+    "tenant_keys_policy_controls": true
+  },
+  "mode": "ci",
+  "release_blocked": false,
+  "run_id": "run-feature-18-local",
+  "schema": "sde.scale.feature_18.cross_tenant_isolation.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

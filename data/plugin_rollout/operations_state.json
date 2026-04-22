@@ -1,0 +1,19 @@
+{
+  "canary_and_rollback_lifecycle_tested": true,
+  "lifecycle_test_run_id": "rollout-lifecycle-22",
+  "override_actions_count": 1,
+  "pause_resume_override_operations_available": true,
+  "rollout_timeline_persisted_for_audit": true,
+  "timeline_events": [
+    {
+      "actor": "rollout-controller",
+      "timestamp": "2026-04-22T10:01:00Z",
+      "type": "canary_start"
+    },
+    {
+      "actor": "rollout-controller",
+      "timestamp": "2026-04-22T10:11:00Z",
+      "type": "promote"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "correlation_ids_propagated_api_mcp_runtime": true,
+  "cross_boundary_trace_stitching": true,
+  "error_outcome_taxonomy_normalized": true,
+  "stage_level_spans_events_emitted": true,
+  "span_events": [
+    {
+      "event_id": "evt-01",
+      "correlation_id": "corr-1",
+      "plugin_id": "plugin-x",
+      "tenant_id": "tenant-a",
+      "stage": "api",
+      "outcome": "ok"
+    },
+    {
+      "event_id": "evt-02",
+      "correlation_id": "corr-1",
+      "plugin_id": "plugin-x",
+      "tenant_id": "tenant-a",
+      "stage": "mcp",
+      "outcome": "ok"
+    },
+    {
+      "event_id": "evt-03",
+      "correlation_id": "corr-1",
+      "plugin_id": "plugin-x",
+      "tenant_id": "tenant-a",
+      "stage": "runtime",
+      "outcome": "error"
+    }
+  ]
+}

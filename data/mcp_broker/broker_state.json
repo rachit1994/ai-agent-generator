@@ -1,0 +1,6 @@
+{
+  "authz_boundary_enforced": true,
+  "broker_instance_id": "broker-a1",
+  "broker_service_present": true,
+  "deterministic_routing_present": true
+}

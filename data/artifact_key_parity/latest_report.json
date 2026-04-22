@@ -1,0 +1,53 @@
+{
+  "artifact_key_schema_contract": {
+    "backend_parity_integration_tests": true,
+    "canonical_key_schema": true,
+    "checksum_integrity_verification": true,
+    "collision_drift_detection": true,
+    "conflict_resolution_semantics": true,
+    "legacy_key_migration": true,
+    "local_object_reconciliation": true,
+    "object_store_adapter": true
+  },
+  "checks": {
+    "backend_parity_integration_tests_implemented": true,
+    "canonical_artifact_key_schema_adopted": true,
+    "canonical_object_store_adapter_implemented": true,
+    "collision_and_key_drift_detection_enabled": true,
+    "conflict_resolution_semantics_defined": true,
+    "content_hash_integrity_checks_enforced": true,
+    "legacy_key_layout_migration_supported": true,
+    "local_object_keys_reconciled": true
+  },
+  "evidence": {
+    "history_ref": "data/artifact_key_parity/trend_history.jsonl",
+    "local_index_ref": "data/artifact_key_parity/local_index.json",
+    "migration_ref": "data/artifact_key_parity/migration_state.json",
+    "object_index_ref": "data/artifact_key_parity/object_index.json",
+    "reconciliation_ref": "data/artifact_key_parity/reconciliation_details.json"
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "reconciliation": {
+    "counts": {
+      "local_artifacts": 2,
+      "object_artifacts": 2,
+      "shared_artifacts": 2
+    },
+    "drift": {
+      "canonical_key_violations": [],
+      "checksum_mismatches": [],
+      "collisions_detected": false,
+      "key_mismatches": [],
+      "migration_failures": [],
+      "missing_in_local": [],
+      "missing_in_object": []
+    },
+    "parity_ok": true
+  },
+  "release_blocked": false,
+  "run_id": "run-feature-21-local",
+  "schema": "sde.scale.feature_21.artifact_key_parity.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

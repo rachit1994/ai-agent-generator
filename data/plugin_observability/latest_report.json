@@ -1,0 +1,56 @@
+{
+  "checks": {
+    "correlation_ids_propagated_api_mcp_runtime": true,
+    "cross_boundary_trace_stitching": true,
+    "dashboards_alerts_shipped": true,
+    "error_outcome_taxonomy_normalized": true,
+    "logs_traces_retention_policies_applied": true,
+    "observability_continuity_tests_present": true,
+    "plugin_tenant_slis_slos_tracked": true,
+    "stage_level_spans_events_emitted": true
+  },
+  "evidence": {
+    "events_ref": "data/plugin_observability/observability_events.jsonl",
+    "history_ref": "data/plugin_observability/trend_history.jsonl",
+    "metrics_ref": "data/plugin_observability/metrics.json",
+    "retention_ref": "data/plugin_observability/retention_policy.json",
+    "spans_ref": "data/plugin_observability/spans.jsonl"
+  },
+  "execution": {
+    "continuity_ok": true,
+    "correlation_count": 1,
+    "error_count": 1,
+    "event_count": 3,
+    "plugin_count": 1,
+    "retention_days": 14,
+    "sampling_rate": 0.5,
+    "stage_counts": {
+      "api": 1,
+      "mcp": 1,
+      "runtime": 1
+    },
+    "tenant_count": 1,
+    "trace_stitch_ok": true
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "observability_contract": {
+    "continuity_tests": true,
+    "correlation_id_propagation": [
+      "api",
+      "mcp",
+      "runtime"
+    ],
+    "dashboards_alerts": true,
+    "error_taxonomy_normalized": true,
+    "plugin_tenant_slis_slos": true,
+    "retention_sampling_policy": true,
+    "stage_level_spans_events": true,
+    "trace_stitching": true
+  },
+  "release_blocked": false,
+  "run_id": "run-feature-19-local",
+  "schema": "sde.scale.feature_19.plugin_observability.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

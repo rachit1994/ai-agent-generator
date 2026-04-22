@@ -1,0 +1,20 @@
+{
+  "canonical_object_store_adapter_implemented": true,
+  "canonical_key_prefix": "artifacts/v1",
+  "key_format_version": "v1",
+  "local_object_keys_reconciled": true,
+  "collision_and_key_drift_detection_enabled": true,
+  "content_hash_integrity_checks_enforced": true,
+  "artifacts": [
+    {
+      "artifact_id": "run-001",
+      "key": "artifacts/v1/run-001/hash-a",
+      "checksum": "hash-a"
+    },
+    {
+      "artifact_id": "run-002",
+      "key": "artifacts/v1/run-002/hash-b",
+      "checksum": "hash-b"
+    }
+  ]
+}

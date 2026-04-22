@@ -15,6 +15,9 @@ In plain English: this project is a structured system for building and validatin
 - The playbook describes the execution loop used to build features.
 - The DoD policy defines quality gates that must pass before claiming completion.
 - The completion tracker shows current status, what improved, and what gaps remain.
+- The scale-risk references doc maps likely future failure modes to external standards, papers, and repos.
+- The local-LLM self-fine-tuning references doc maps post-training methods to practical local workflows and risks.
+- The long-term memory references doc maps memory lifecycle patterns to research-backed agent memory design.
 
 ## Read in this order
 1. `UNDERSTANDING-THE-CODE.md`  
@@ -27,6 +30,12 @@ In plain English: this project is a structured system for building and validatin
    Read this to understand what "done" means in this repo.
 5. `master-architecture-feature-completion.md`  
    Use this as the live progress dashboard and gap log.
+6. `scale-risk-external-references.md`
+   Use this when planning scale-out features that are still missing or low-confidence.
+7. `local-llm-self-finetuning-references.md`
+   Use this when planning local model post-training or self-generated data tuning loops.
+8. `long-term-memory-and-memory-management-references.md`
+   Use this when designing memory lifecycle logic (write, retrieve, consolidate, update, forget, evaluate).
 
 ## Practical usage by role
 - If you are implementing a feature: read architecture -> playbook -> DoD policy -> relevant row in tracker.

@@ -1,0 +1,34 @@
+{
+  "checks": {
+    "deprecation_windows_enforced_tested": true,
+    "dual_version_rollback_safe": true,
+    "handshake_implemented": true,
+    "incompatible_rejections_deterministic": true,
+    "mixed_version_fleet_scenarios_tested": true,
+    "negotiated_version_telemetry_tracked": true,
+    "rollout_gated_on_compat_failures": true,
+    "version_ranges_advertised_selected": true
+  },
+  "evidence": {
+    "compatibility_ref": "data/version_negotiation/compatibility.json",
+    "handshake_ref": "data/version_negotiation/handshake.json",
+    "history_ref": "data/version_negotiation/trend_history.jsonl",
+    "telemetry_ref": "data/version_negotiation/telemetry.json"
+  },
+  "failed_gates": [],
+  "mode": "preflight",
+  "negotiation_contract": {
+    "deprecation_window_enforced": true,
+    "dual_version_rollback_safe": true,
+    "fallback_selection": true,
+    "handshake_defined": true,
+    "incompatible_hard_reject": true,
+    "telemetry_emitted": true,
+    "version_range_advertisement": true
+  },
+  "release_blocked": false,
+  "run_id": "local-version-negotiation-check",
+  "schema": "sde.scale.feature_16.version_negotiation.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

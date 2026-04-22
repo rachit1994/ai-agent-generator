@@ -1,0 +1,48 @@
+{
+  "contract_package": "sde.semantic_contracts.v1",
+  "drift": {
+    "authz": [],
+    "error_taxonomy": [],
+    "idempotency": [],
+    "state_transitions": []
+  },
+  "evidence": {
+    "history_ref": "data/semantic_parity/trend_history.jsonl",
+    "local_ref": "data/semantic_parity/local_runtime.json",
+    "parity_matrix_ref": "data/semantic_parity/parity_matrix.json",
+    "server_ref": "data/semantic_parity/server_runtime.json"
+  },
+  "failed_gates": [],
+  "matrix": {
+    "authz": [
+      "role",
+      "resource",
+      "decision",
+      "reason_code"
+    ],
+    "error_taxonomy": [
+      "operation",
+      "error_code",
+      "retryable",
+      "class"
+    ],
+    "idempotency": [
+      "operation",
+      "request_hash",
+      "result_hash",
+      "replay_safe"
+    ],
+    "state_transitions": [
+      "operation",
+      "from_state",
+      "to_state",
+      "transition_valid"
+    ]
+  },
+  "mode": "preflight",
+  "release_blocked": false,
+  "run_id": "local-semantic-parity-check",
+  "schema": "sde.scale.feature_02.semantic_parity.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

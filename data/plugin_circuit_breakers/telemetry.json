@@ -1,0 +1,35 @@
+{
+  "degraded_plugin_end_to_end_tests": true,
+  "degraded_test_run_id": "cb-degraded-09-001",
+  "plugin_id": "plugin-x",
+  "state_transition_telemetry": true,
+  "transition_policy_version": "2026.04",
+  "transition_events": [
+    {
+      "event_id": "evt-01",
+      "failure_class": "throttle",
+      "from_state": "closed",
+      "retry_attempt": 1,
+      "to_state": "open"
+    },
+    {
+      "event_id": "evt-02",
+      "failure_class": "transient",
+      "from_state": "open",
+      "retry_attempt": 1,
+      "to_state": "half_open"
+    },
+    {
+      "event_id": "evt-03",
+      "failure_class": "transient",
+      "from_state": "half_open",
+      "retry_attempt": 0,
+      "to_state": "closed"
+    }
+  ],
+  "transition_counts": {
+    "closed": 4,
+    "half_open": 3,
+    "open": 2
+  }
+}

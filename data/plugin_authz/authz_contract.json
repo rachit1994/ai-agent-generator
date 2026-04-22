@@ -1,0 +1,10 @@
+{
+  "admin_policy_controls": true,
+  "allow_deny_audit_logging": true,
+  "deny_by_default": true,
+  "invocation_scope_binding": true,
+  "least_privilege_engine": true,
+  "policy_versioning_simulation": true,
+  "privilege_escalation_tests": true,
+  "scope_taxonomy": true
+}

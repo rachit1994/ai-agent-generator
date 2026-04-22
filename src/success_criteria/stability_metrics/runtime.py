@@ -44,11 +44,46 @@ def _collect_reliability_and_retries(events: list[dict[str, Any]]) -> tuple[list
     return reliability_values, retries
 
 
+def _valid_stability_event(event: Any) -> bool:
+    if not isinstance(event, dict):
+        return False
+    required = ("event_id", "stage")
+    if not all(key in event for key in required):
+        return False
+    return isinstance(event["stage"], str) and bool(event["stage"].strip())
+
+
+def execute_stability_runtime(*, events: list[dict[str, Any]]) -> dict[str, Any]:
+    stable_events = [event for event in events if _valid_stability_event(event)]
+    malformed_event_rows = len(events) - len(stable_events)
+    reliability_violations: list[str] = []
+    for event in stable_events:
+        score = event.get("score")
+        if not isinstance(score, dict):
+            continue
+        reliability = score.get("reliability")
+        if reliability is None:
+            continue
+        if isinstance(reliability, bool) or not isinstance(reliability, (int, float)):
+            reliability_violations.append(str(event["event_id"]))
+            continue
+        numeric_reliability = float(reliability)
+        if not math.isfinite(numeric_reliability) or numeric_reliability < 0.0 or numeric_reliability > 1.0:
+            reliability_violations.append(str(event["event_id"]))
+    return {
+        "events_processed": len(events),
+        "stable_events_processed": len(stable_events),
+        "malformed_event_rows": malformed_event_rows,
+        "reliability_violations": reliability_violations,
+    }
+
+
 def build_stability_metrics(
     *,
     run_id: str,
     events: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    execution = execute_stability_runtime(events=events)
     valid_events = [row for row in events if isinstance(row, dict)]
     finals = [row for row in valid_events if row.get("stage") == "finalize"]
     pass_rate = _finalize_pass_rate(finals)
@@ -68,6 +103,7 @@ def build_stability_metrics(
         "schema_version": STABILITY_METRICS_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "metrics": {
             "finalize_pass_rate": pass_rate,
             "reliability_score": reliability_score,

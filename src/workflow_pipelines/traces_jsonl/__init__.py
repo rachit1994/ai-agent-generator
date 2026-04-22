@@ -5,7 +5,7 @@ from .contracts import (
     validate_traces_jsonl_event_row_runtime_path,
 )
 from .persist_traces import append_orchestration_run_start, append_orchestration_stage_events, persist_traces
-from .runtime import build_traces_jsonl_event_row_runtime
+from .runtime import build_traces_jsonl_event_row_runtime, execute_traces_jsonl_runtime
 from .traces_jsonl_event_contract import TRACES_JSONL_EVENT_CONTRACT, validate_traces_jsonl_event_dict
 
 __all__ = [
@@ -15,6 +15,7 @@ __all__ = [
     "append_orchestration_run_start",
     "append_orchestration_stage_events",
     "build_traces_jsonl_event_row_runtime",
+    "execute_traces_jsonl_runtime",
     "persist_traces",
     "validate_traces_jsonl_event_dict",
     "validate_traces_jsonl_event_row_runtime_dict",

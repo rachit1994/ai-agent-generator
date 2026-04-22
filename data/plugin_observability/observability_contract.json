@@ -1,0 +1,14 @@
+{
+  "continuity_tests": true,
+  "correlation_id_propagation": [
+    "api",
+    "mcp",
+    "runtime"
+  ],
+  "dashboards_alerts": true,
+  "error_taxonomy_normalized": true,
+  "plugin_tenant_slis_slos": true,
+  "retention_sampling_policy": true,
+  "stage_level_spans_events": true,
+  "trace_stitching": true
+}

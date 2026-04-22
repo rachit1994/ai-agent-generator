@@ -19,6 +19,34 @@ def _is_passed(value: Any) -> bool:
     return value is True
 
 
+def _valid_error_event(event: Any) -> bool:
+    if not isinstance(event, dict):
+        return False
+    required = ("event_id", "stage")
+    if not all(key in event for key in required):
+        return False
+    return event.get("stage") == "finalize"
+
+
+def execute_error_reduction_runtime(*, events: list[dict[str, Any]]) -> dict[str, Any]:
+    finalize_events = [event for event in events if _valid_error_event(event)]
+    malformed_event_rows = len(events) - len(finalize_events)
+    strict_boolean_violations: list[str] = []
+    for event in finalize_events:
+        score = event.get("score")
+        if not isinstance(score, dict):
+            strict_boolean_violations.append(str(event["event_id"]))
+            continue
+        if score.get("passed") is not True and score.get("passed") is not False:
+            strict_boolean_violations.append(str(event["event_id"]))
+    return {
+        "events_processed": len(events),
+        "finalize_events_processed": len(finalize_events),
+        "malformed_event_rows": malformed_event_rows,
+        "strict_boolean_violations": strict_boolean_violations,
+    }
+
+
 def build_error_reduction_metrics(
     *,
     run_id: str,
@@ -26,6 +54,7 @@ def build_error_reduction_metrics(
     events: list[dict[str, Any]],
     skill_nodes: dict[str, Any] | None,
 ) -> dict[str, Any]:
+    execution = execute_error_reduction_runtime(events=events)
     _ = skill_nodes
     checks = parsed.get("checks") if isinstance(parsed, dict) else []
     if not isinstance(checks, list):
@@ -53,6 +82,7 @@ def build_error_reduction_metrics(
         "schema": ERROR_REDUCTION_METRICS_CONTRACT,
         "schema_version": ERROR_REDUCTION_METRICS_SCHEMA_VERSION,
         "run_id": run_id,
+        "execution": execution,
         "metrics": {
             "baseline_error_count": baseline_errors,
             "candidate_error_count": candidate_errors,

@@ -1,0 +1,35 @@
+{
+  "billable_unit": "token",
+  "normalized_cost_model_billable_units": true,
+  "plugin_id_field": "plugin_id",
+  "plugin_tenant_metering_pipeline": true,
+  "pricing_model_version": "2026-04",
+  "tenant_id_field": "tenant_id",
+  "unit_scale": 1000,
+  "usage_events": [
+    {
+      "estimated_cost_usd": 120.0,
+      "event_id": "cost-evt-001",
+      "plugin_id": "plugin-x",
+      "status": "admitted",
+      "tenant_id": "tenant-a",
+      "units": 180000
+    },
+    {
+      "estimated_cost_usd": 90.0,
+      "event_id": "cost-evt-002",
+      "plugin_id": "plugin-y",
+      "status": "admitted",
+      "tenant_id": "tenant-a",
+      "units": 140000
+    },
+    {
+      "estimated_cost_usd": 70.0,
+      "event_id": "cost-evt-003",
+      "plugin_id": "plugin-y",
+      "status": "denied",
+      "tenant_id": "tenant-b",
+      "units": 110000
+    }
+  ]
+}

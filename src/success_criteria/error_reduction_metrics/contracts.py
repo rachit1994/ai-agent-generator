@@ -23,6 +23,20 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["error_reduction_metrics_execution"]
+    errs: list[str] = []
+    int_fields = ("events_processed", "finalize_events_processed", "malformed_event_rows")
+    for field in int_fields:
+        value = execution.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"error_reduction_metrics_execution_type:{field}")
+    if not isinstance(execution.get("strict_boolean_violations"), list):
+        errs.append("error_reduction_metrics_execution_type:strict_boolean_violations")
+    return errs
+
+
 def _validate_metric_semantics(metrics: Any) -> list[str]:
     if not isinstance(metrics, dict):
         return []
@@ -144,6 +158,7 @@ def validate_error_reduction_metrics_dict(body: Any) -> list[str]:
     run_id = body.get("run_id")
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("error_reduction_metrics_run_id")
+    errs.extend(_validate_execution(body.get("execution")))
     metrics = body.get("metrics")
     errs.extend(_validate_metrics(metrics))
     errs.extend(_validate_evidence(body.get("evidence")))

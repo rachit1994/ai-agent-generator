@@ -1,0 +1,5 @@
+{
+  "logs_traces_retention_policies_applied": true,
+  "retention_days": 14,
+  "sampling_rate": 0.5
+}

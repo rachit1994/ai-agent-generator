@@ -1,0 +1,13 @@
+{
+  "comparators": [
+    "semantic_outputs",
+    "state_transitions",
+    "errors",
+    "authz",
+    "idempotency"
+  ],
+  "diagnostic_hints": true,
+  "immutable_artifacts": true,
+  "release_block_on_drift": true,
+  "scheduled_regression": true
+}

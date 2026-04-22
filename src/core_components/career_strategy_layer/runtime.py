@@ -27,6 +27,39 @@ def _score_or_zero(value: Any) -> float:
     return 0.0
 
 
+def execute_career_strategy_runtime(
+    *,
+    summary: dict[str, Any],
+    review: dict[str, Any],
+    promotion_package: dict[str, Any],
+    capability_growth: dict[str, Any],
+    transfer_learning: dict[str, Any],
+    error_reduction: dict[str, Any],
+    scalability_strategy: dict[str, Any],
+) -> dict[str, Any]:
+    missing_signal_sources: list[str] = []
+    if not isinstance(summary.get("quality"), dict):
+        missing_signal_sources.append("summary")
+    if not isinstance(review.get("status"), str):
+        missing_signal_sources.append("review")
+    if not isinstance(promotion_package.get("proposed_stage"), str):
+        missing_signal_sources.append("promotion_package")
+    if not isinstance(capability_growth.get("metrics"), dict):
+        missing_signal_sources.append("capability_growth")
+    if not isinstance(transfer_learning.get("metrics"), dict):
+        missing_signal_sources.append("transfer_learning")
+    if not isinstance(error_reduction.get("metrics"), dict):
+        missing_signal_sources.append("error_reduction")
+    if not isinstance(scalability_strategy.get("scores"), dict):
+        missing_signal_sources.append("scalability_strategy")
+    return {
+        "signals_processed": 7,
+        "missing_signal_sources": missing_signal_sources,
+        "has_proposed_stage": isinstance(promotion_package.get("proposed_stage"), str)
+        and bool(str(promotion_package.get("proposed_stage")).strip()),
+    }
+
+
 def build_career_strategy_layer(
     *,
     run_id: str,
@@ -39,6 +72,15 @@ def build_career_strategy_layer(
     error_reduction: dict[str, Any],
     scalability_strategy: dict[str, Any],
 ) -> dict[str, Any]:
+    execution = execute_career_strategy_runtime(
+        summary=summary,
+        review=review,
+        promotion_package=promotion_package,
+        capability_growth=capability_growth,
+        transfer_learning=transfer_learning,
+        error_reduction=error_reduction,
+        scalability_strategy=scalability_strategy,
+    )
     capability_score = _score_or_zero(capability_growth.get("metrics", {}).get("capability_growth_rate", 0.0))
     transfer_score = _score_or_zero(transfer_learning.get("metrics", {}).get("transfer_efficiency_score", 0.0))
     error_reduction_rate = _score_or_zero(error_reduction.get("metrics", {}).get("error_reduction_rate", 0.0))
@@ -69,6 +111,7 @@ def build_career_strategy_layer(
         "run_id": run_id,
         "mode": mode,
         "status": status,
+        "execution": execution,
         "focus": focus,
         "horizon": "next_cycle",
         "strategy": {

@@ -10,6 +10,25 @@ EXTENDED_BINARY_GATES_CONTRACT = "sde.extended_binary_gates.v1"
 EXTENDED_BINARY_GATES_SCHEMA_VERSION = "1.0"
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["extended_binary_gates_execution"]
+    errs: list[str] = []
+    int_fields = (
+        "events_processed",
+        "finalize_events_processed",
+        "malformed_event_rows",
+        "checks_processed",
+    )
+    for field in int_fields:
+        value = execution.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"extended_binary_gates_execution_type:{field}")
+    if not isinstance(execution.get("strict_boolean_violations"), list):
+        errs.append("extended_binary_gates_execution_type:strict_boolean_violations")
+    return errs
+
+
 def _validate_evidence(evidence: Any) -> list[str]:
     if not isinstance(evidence, dict):
         return ["extended_binary_gates_evidence"]
@@ -59,6 +78,7 @@ def validate_extended_binary_gates_dict(body: Any) -> list[str]:
     overall_pass = body.get("overall_pass")
     if not isinstance(overall_pass, bool):
         errs.append("extended_binary_gates_overall_pass")
+    errs.extend(_validate_execution(body.get("execution")))
     errs.extend(_validate_gates(body.get("gates"), overall_pass))
     errs.extend(_validate_evidence(body.get("evidence")))
     return errs

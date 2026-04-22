@@ -15,6 +15,19 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["practice_engine_execution"]
+    errs: list[str] = []
+    for key in ("signals_processed", "root_causes_processed", "malformed_root_cause_rows"):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"practice_engine_execution_type:{key}")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("practice_engine_execution_type:missing_signal_sources")
+    return errs
+
+
 def _validate_status_score_semantics(status: Any, scores: dict[str, Any]) -> list[str]:
     readiness_signal = scores.get("readiness_signal")
     expected_improvement = scores.get("expected_improvement")
@@ -79,6 +92,7 @@ def validate_practice_engine_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("ready", "needs_practice", "blocked"):
         errs.append("practice_engine_status")
+    errs.extend(_validate_execution(body.get("execution")))
     scores = body.get("scores")
     if not isinstance(scores, dict):
         errs.append("practice_engine_scores")

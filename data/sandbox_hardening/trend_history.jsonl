@@ -1,0 +1,13 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-sandbox-hardening-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-refresh", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-structured", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-invariants", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-syscall-default-deny", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-deny-timestamp-shape", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-deny-ordering", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-policy-version-alignment", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-deny-reason-taxonomy", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-event-id-uniqueness", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-13-timeout-policy-coherence", "status": "pass"}
+{"events_processed": 3, "failed_gate_count": 0, "run_id": "run-feature-13-ci", "status": "pass"}

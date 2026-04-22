@@ -1,0 +1,2 @@
+{"developer_error_rate": 0.0035, "run_id": "baseline-seed", "status": "pass", "workflow_p95_ms": 1450.0}
+{"developer_error_rate": 0.003, "run_id": "local-preflight-check", "status": "pass", "workflow_p95_ms": 1400.0}

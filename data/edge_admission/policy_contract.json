@@ -1,0 +1,15 @@
+{
+  "budget_types": [
+    "burst",
+    "sustained"
+  ],
+  "outage_policy": "fail_closed",
+  "retry_after_header": "seconds",
+  "scope_keys": [
+    "tenant_id",
+    "user_id",
+    "api_key",
+    "route"
+  ],
+  "status_code": 429
+}

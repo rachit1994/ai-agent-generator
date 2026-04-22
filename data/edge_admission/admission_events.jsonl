@@ -1,0 +1,3 @@
+{"run_id": "run-feature-05-ci", "signal": "events_processed", "value": 3}
+{"run_id": "run-feature-05-ci", "signal": "retry_after_violations", "value": 0}
+{"run_id": "run-feature-05-ci", "signal": "scope_violations", "value": 0}

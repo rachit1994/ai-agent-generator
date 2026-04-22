@@ -5,6 +5,7 @@ from .runtime import (
     build_practice_evaluation_result,
     build_practice_task_spec,
     build_reflection_bundle,
+    execute_lifecycle_runtime,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "build_practice_evaluation_result",
     "build_practice_task_spec",
     "build_reflection_bundle",
+    "execute_lifecycle_runtime",
 ]

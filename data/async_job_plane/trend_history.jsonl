@@ -1,0 +1,7 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-async-job-plane-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-04-worker-lease-policy-coherence", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-04-dlq-policy-coherence", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-04-heartbeat-interval-coherence", "status": "pass"}
+{"failed_gate_count": 0, "failed_jobs": 1, "run_id": "run-feature-04-local", "status": "pass", "succeeded_jobs": 1}
+{"failed_gate_count": 0, "failed_jobs": 1, "run_id": "run-feature-04-local", "status": "pass", "succeeded_jobs": 1}

@@ -1,0 +1,13 @@
+{
+  "deterministic_precedence": [
+    "base",
+    "env_overlay",
+    "runtime_override_allowlist"
+  ],
+  "drift_detection": true,
+  "invariant_fields_enforced": true,
+  "secret_redaction_validation": true,
+  "shared_schema": true,
+  "startup_fail_fast": true,
+  "versioned_migrations": true
+}

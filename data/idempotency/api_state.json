@@ -1,0 +1,8 @@
+{
+  "api_key_validation_replay_semantics": true,
+  "conflict_code": "IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PAYLOAD",
+  "conflict_response_semantics": true,
+  "idempotency_key": "idem-tenant-a-order-42",
+  "invocation_path_idempotency": true,
+  "replay_status": "hit"
+}

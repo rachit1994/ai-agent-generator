@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core_components.evaluation_service import (
     build_evaluation_service,
+    execute_evaluation_service_runtime,
     validate_evaluation_service_dict,
 )
 
@@ -25,6 +26,7 @@ def test_build_evaluation_service_is_deterministic() -> None:
     assert one == two
     assert one["status"] == "ready"
     assert validate_evaluation_service_dict(one) == []
+    assert one["execution"]["payloads_processed"] == 3
 
 
 def test_validate_evaluation_service_fail_closed() -> None:
@@ -101,3 +103,15 @@ def test_validate_evaluation_service_rejects_absolute_evidence_ref() -> None:
     payload["evidence"]["summary_ref"] = "/tmp/summary.json"
     errs = validate_evaluation_service_dict(payload)
     assert "evaluation_service_evidence_ref:summary_ref" in errs
+
+
+def test_execute_evaluation_service_runtime_detects_missing_sources() -> None:
+    execution = execute_evaluation_service_runtime(
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"result": "ok"},
+        promotion_eval={"decision": "promote"},
+    )
+    assert execution["payloads_processed"] == 3
+    assert execution["missing_signal_sources"] == ["online_eval"]
+    assert execution["summary_metrics_present"] is True
+    assert execution["malformed_payloads"] == 0

@@ -1,0 +1,4 @@
+{"run_id": "run-feature-08-ci", "signal": "events_processed", "value": 3}
+{"run_id": "run-feature-08-ci", "signal": "starvation_violations", "value": 0}
+{"run_id": "run-feature-08-ci", "signal": "weighting_violations", "value": 0}
+{"run_id": "run-feature-08-ci", "signal": "max_tenant_drop_share", "value": 0.0}

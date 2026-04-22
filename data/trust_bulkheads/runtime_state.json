@@ -1,0 +1,36 @@
+{
+  "boundary_containment_tests_present": true,
+  "class_quotas_isolation_enforced": true,
+  "cross_class_leakage_blocked": true,
+  "dispatch_events": [
+    {
+      "event_id": "evt-01",
+      "plugin_id": "plugin-a",
+      "pool_id": "trusted-pool-1",
+      "resource_units": 4,
+      "trust_class": "trusted"
+    },
+    {
+      "event_id": "evt-02",
+      "plugin_id": "plugin-b",
+      "pool_id": "sandboxed-pool-1",
+      "resource_units": 3,
+      "trust_class": "sandboxed"
+    },
+    {
+      "event_id": "evt-03",
+      "plugin_id": "plugin-c",
+      "pool_id": "untrusted-pool-1",
+      "resource_units": 1,
+      "trust_class": "untrusted"
+    }
+  ],
+  "execution_pools_segmented": true,
+  "reclassifications": [
+    {
+      "approved": true,
+      "plugin_id": "plugin-b",
+      "ticket": "CAB-127"
+    }
+  ]
+}

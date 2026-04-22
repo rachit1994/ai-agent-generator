@@ -6,6 +6,7 @@ import pytest
 
 from success_criteria.hard_release_gates import (
     build_hard_release_gates,
+    execute_hard_release_runtime,
     validate_hard_release_gates_dict,
 )
 
@@ -15,11 +16,12 @@ def test_build_hard_release_gates_is_deterministic() -> None:
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     one = build_hard_release_gates(run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events)
     two = build_hard_release_gates(run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events)
     assert one == two
     assert validate_hard_release_gates_dict(one) == []
+    assert one["execution"]["events_processed"] == 1
 
 
 def test_validate_hard_release_gates_fail_closed() -> None:
@@ -33,7 +35,7 @@ def test_build_hard_release_gates_fails_closed_on_non_boolean_check_passed() -> 
         "checks": [{"name": "shape", "passed": "true"}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     result = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
@@ -47,7 +49,7 @@ def test_build_hard_release_gates_fails_closed_on_non_boolean_finalize_passed() 
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": "true", "reliability": 0.9}}]
+    events = [{"event_id": "evt-2", "stage": "finalize", "score": {"passed": "true", "reliability": 0.9}}]
     result = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
@@ -61,7 +63,7 @@ def test_build_hard_release_gates_fails_closed_on_non_boolean_hard_stop_passed()
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": "true"}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     result = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
@@ -74,7 +76,7 @@ def test_validate_hard_release_gates_rejects_gate_score_mismatch() -> None:
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     payload = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
@@ -88,7 +90,7 @@ def test_validate_hard_release_gates_rejects_status_coherence_mismatch() -> None
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     payload = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
@@ -104,7 +106,7 @@ def test_validate_hard_release_gates_rejects_invalid_evidence() -> None:
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     payload = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
@@ -120,10 +122,38 @@ def test_validate_hard_release_gates_rejects_non_finite_scores() -> None:
         "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
         "hard_stops": [{"id": "HS01", "passed": True}],
     }
-    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    events = [{"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
     payload = build_hard_release_gates(
         run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
     )
     payload["scores"]["reliability"] = math.nan
     errs = validate_hard_release_gates_dict(payload)
     assert "hard_release_gates_score_finite:reliability" in errs
+
+
+def test_execute_hard_release_runtime_detects_malformed_rows() -> None:
+    execution = execute_hard_release_runtime(
+        parsed={"checks": [{"name": "shape", "passed": True}]},
+        events=[
+            {"event_id": "evt-1", "stage": "finalize", "score": {"passed": True, "reliability": 0.9}},
+            {"stage": "finalize", "score": {"passed": True}},
+            {"event_id": "evt-3", "stage": "repair"},
+        ],
+    )
+    assert execution["events_processed"] == 3
+    assert execution["finalize_events_processed"] == 1
+    assert execution["malformed_event_rows"] == 2
+    assert execution["checks_processed"] == 1
+
+
+def test_build_hard_release_gates_records_strict_boolean_violations() -> None:
+    payload = build_hard_release_gates(
+        run_id="rid-hard-gates",
+        mode="guarded_pipeline",
+        parsed={
+            "checks": [{"name": "shape", "passed": True}],
+            "hard_stops": [{"id": "HS01", "passed": True}],
+        },
+        events=[{"event_id": "evt-bad", "stage": "finalize", "score": {"passed": "yes", "reliability": 0.9}}],
+    )
+    assert payload["execution"]["strict_boolean_violations"] == ["evt-bad"]

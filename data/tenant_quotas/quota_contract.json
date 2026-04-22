@@ -1,0 +1,12 @@
+{
+  "admin_controls": [
+    "set_quota",
+    "set_concurrency",
+    "set_refill_window"
+  ],
+  "concurrency_ceiling": "hard_limit",
+  "fairness_policy": "weighted_round_robin",
+  "quota_refill_window": "fixed_interval",
+  "quota_storage": "durable",
+  "tenant_identity_required": true
+}

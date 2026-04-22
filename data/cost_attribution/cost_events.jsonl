@@ -1,0 +1,3 @@
+{"run_id": "run-feature-20-ci", "signal": "events_processed", "value": 3}
+{"run_id": "run-feature-20-ci", "signal": "cap_violations", "value": 0}
+{"run_id": "run-feature-20-ci", "signal": "billing_export_violations", "value": 0}

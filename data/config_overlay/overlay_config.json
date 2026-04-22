@@ -1,0 +1,5 @@
+{
+  "config_schema_version": "2026.04.1",
+  "override_allowlist_hash": "sha256:allowlist-v1",
+  "override_allowlist_enforced": true
+}

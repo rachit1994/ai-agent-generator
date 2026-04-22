@@ -1,0 +1,7 @@
+{"failed_gate_count": 0, "run_id": "seed-feature-08", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-08", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-08-structured", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-08-replay-coherence", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-08-telemetry-scope-alignment", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-08-p95-coherence", "status": "pass"}
+{"events_processed": 3, "failed_gate_count": 0, "run_id": "run-feature-08-ci", "status": "pass"}

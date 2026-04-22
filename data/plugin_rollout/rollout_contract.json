@@ -1,0 +1,10 @@
+{
+  "auto_rollback_on_slo_policy_breach": true,
+  "canary_cohorts_and_traffic_percentages": true,
+  "full_canary_rollback_lifecycle_tests": true,
+  "health_gated_promotion_logic": true,
+  "pause_resume_override_operations": true,
+  "progressive_rollout_controller": true,
+  "rollout_observability_signal_integration": true,
+  "rollout_timeline_auditability": true
+}

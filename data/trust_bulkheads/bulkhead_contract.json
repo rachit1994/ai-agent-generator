@@ -1,0 +1,12 @@
+{
+  "class_resource_quotas": true,
+  "cross_class_guardrails": true,
+  "pool_isolation": true,
+  "reclassification_policy": true,
+  "routing_policy": "dispatch_by_trust_class",
+  "trust_classes": [
+    "trusted",
+    "sandboxed",
+    "untrusted"
+  ]
+}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from workflow_pipelines.traces_jsonl import (
     build_traces_jsonl_event_row_runtime,
+    execute_traces_jsonl_runtime,
     validate_traces_jsonl_event_row_runtime_dict,
 )
 
@@ -32,6 +33,7 @@ def test_build_traces_jsonl_event_row_runtime_deterministic() -> None:
     assert one == two
     assert one["status"] == "ready"
     assert validate_traces_jsonl_event_row_runtime_dict(one) == []
+    assert one["execution"]["rows_processed"] == 1
 
 
 def test_validate_traces_jsonl_event_row_runtime_fail_closed() -> None:
@@ -92,3 +94,15 @@ def test_build_traces_jsonl_event_row_runtime_degraded_with_zero_rows() -> None:
     assert payload["checks"]["all_rows_valid"] is False
     assert payload["checks"]["run_id_consistent"] is False
     assert validate_traces_jsonl_event_row_runtime_dict(payload) == []
+
+
+def test_execute_traces_jsonl_runtime_detects_run_id_mismatch_rows() -> None:
+    execution = execute_traces_jsonl_runtime(
+        run_id="rid-trace",
+        trace_rows=[
+            {"run_id": "rid-trace", "task_id": "t-1", "mode": "baseline", "model": "m", "provider": "p", "stage": "finalize", "started_at": "a", "ended_at": "b", "latency_ms": 1, "token_input": 0, "token_output": 0, "estimated_cost_usd": 0.0, "retry_count": 0, "errors": [], "score": {"passed": True, "reliability": 1.0, "validity": 1.0}, "metadata": None},
+            {"run_id": "other-run", "task_id": "t-2", "mode": "baseline", "model": "m", "provider": "p", "stage": "finalize", "started_at": "a", "ended_at": "b", "latency_ms": 1, "token_input": 0, "token_output": 0, "estimated_cost_usd": 0.0, "retry_count": 0, "errors": [], "score": {"passed": True, "reliability": 1.0, "validity": 1.0}, "metadata": None},
+        ],
+    )
+    assert execution["rows_processed"] == 2
+    assert execution["run_id_mismatch_rows"] == 1

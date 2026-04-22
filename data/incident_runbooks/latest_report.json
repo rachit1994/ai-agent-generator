@@ -1,0 +1,35 @@
+{
+  "checks": {
+    "drill_evidence_captured_for_audit": true,
+    "executable_steps_scripts_added": true,
+    "ownership_escalation_metadata_attached": true,
+    "post_incident_feedback_integrated_into_revisions": true,
+    "production_incident_runbooks_authored": true,
+    "runbooks_connected_alerts_dashboards": true,
+    "runbooks_validated_with_gameday_drills": true,
+    "runbooks_versioned_change_control_reviewed": true
+  },
+  "evidence": {
+    "drills_ref": "data/incident_runbooks/drills.json",
+    "history_ref": "data/incident_runbooks/trend_history.jsonl",
+    "ops_ref": "data/incident_runbooks/operations.json",
+    "runbooks_ref": "data/incident_runbooks/runbooks.json"
+  },
+  "failed_gates": [],
+  "incident_runbooks_contract": {
+    "alerts_dashboards_linkage": true,
+    "drill_evidence_capture_auditability": true,
+    "executable_steps_scripts_per_runbook": true,
+    "gameday_drill_validation": true,
+    "ownership_and_escalation_metadata": true,
+    "post_incident_feedback_revision_loop": true,
+    "production_runbooks_outage_saturation_auth": true,
+    "versioned_change_control_review": true
+  },
+  "mode": "preflight",
+  "release_blocked": false,
+  "run_id": "local-feature-24-escalation-policy-coherence",
+  "schema": "sde.scale.feature_24.incident_runbooks.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

@@ -1,0 +1,3 @@
+{"event_index": 0, "injected_at": "2026-04-22T10:00:00Z", "recovered_at": "2026-04-22T10:00:20Z", "run_id": "run-feature-23-local", "scenario": "provider-openai-429", "terminal_state": "pass"}
+{"event_index": 1, "injected_at": "2026-04-22T10:10:00Z", "recovered_at": "2026-04-22T10:10:30Z", "run_id": "run-feature-23-local", "scenario": "queue-backlog-over-5m", "terminal_state": "pass"}
+{"event_index": 2, "injected_at": "2026-04-22T10:20:00Z", "recovered_at": "2026-04-22T10:20:35Z", "run_id": "run-feature-23-local", "scenario": "worker-restart-recovery", "terminal_state": "pass"}

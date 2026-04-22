@@ -61,6 +61,31 @@ def _quarantine_count(rows: list[str]) -> int:
     return count
 
 
+def execute_memory_system_runtime(
+    *,
+    retrieval_bundle: dict[str, Any],
+    quality_metrics: dict[str, Any],
+    quarantine_rows: list[str],
+) -> dict[str, Any]:
+    chunks = retrieval_bundle.get("chunks") if isinstance(retrieval_bundle, dict) else []
+    chunk_count = len(chunks) if isinstance(chunks, list) else 0
+    malformed_quarantine_rows = 0
+    for row in quarantine_rows:
+        if isinstance(row, str):
+            continue
+        malformed_quarantine_rows += 1
+    missing_quality_fields: list[str] = []
+    for field in ("contradiction_rate", "staleness_p95_hours"):
+        if not isinstance(quality_metrics, dict) or field not in quality_metrics:
+            missing_quality_fields.append(field)
+    return {
+        "chunks_processed": chunk_count,
+        "quarantine_rows_processed": len(quarantine_rows),
+        "malformed_quarantine_rows": malformed_quarantine_rows,
+        "missing_quality_fields": missing_quality_fields,
+    }
+
+
 def build_memory_system(
     *,
     run_id: str,
@@ -68,6 +93,11 @@ def build_memory_system(
     quality_metrics: dict[str, Any],
     quarantine_rows: list[str],
 ) -> dict[str, Any]:
+    execution = execute_memory_system_runtime(
+        retrieval_bundle=retrieval_bundle,
+        quality_metrics=quality_metrics,
+        quarantine_rows=quarantine_rows,
+    )
     chunks = retrieval_bundle.get("chunks") if isinstance(retrieval_bundle, dict) else []
     retrieval_chunks = len(chunks) if isinstance(chunks, list) else 0
     contradiction_rate = (
@@ -99,6 +129,7 @@ def build_memory_system(
         "schema_version": MEMORY_SYSTEM_SCHEMA_VERSION,
         "run_id": run_id,
         "status": status,
+        "execution": execution,
         "metrics": {
             "retrieval_chunks": retrieval_chunks,
             "quarantine_rows": quarantine_count,

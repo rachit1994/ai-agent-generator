@@ -1,0 +1,10 @@
+{
+  "adversarial_leakage_tests": true,
+  "cache_artifact_reuse_blocked": true,
+  "continuous_isolation_audit": true,
+  "incident_containment_actions": true,
+  "runtime_queue_storage_isolated": true,
+  "tenant_budgets_guardrails": true,
+  "tenant_identity_required": true,
+  "tenant_keys_policy_controls": true
+}

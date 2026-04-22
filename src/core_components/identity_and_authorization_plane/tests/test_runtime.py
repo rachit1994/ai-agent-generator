@@ -10,6 +10,7 @@ from core_components.identity_and_authorization_plane import (
     IDENTITY_AUTHZ_PLANE_REQUIRED_EVIDENCE_KEYS,
     IDENTITY_AUTHZ_PLANE_VALID_STATUSES,
     build_identity_authz_plane,
+    execute_identity_authz_runtime,
     validate_identity_authz_plane_dict,
 )
 
@@ -34,6 +35,7 @@ def test_build_identity_authz_plane_is_deterministic() -> None:
     )
     assert one == two
     assert validate_identity_authz_plane_dict(one) == []
+    assert one["execution"]["audit_rows_processed"] == 1
 
 
 def test_build_identity_authz_plane_is_byte_serialization_deterministic() -> None:
@@ -216,3 +218,14 @@ def test_build_identity_authz_plane_missing_action_audit_fail_closes_controls() 
     assert payload["controls"]["authenticated_actor_audit"] is False  # type: ignore[index]
     assert payload["controls"]["risk_scope_fields_present"] is False  # type: ignore[index]
     assert payload["status"] == "missing"
+
+
+def test_execute_identity_authz_runtime_detects_unknown_lease_rows() -> None:
+    execution = execute_identity_authz_runtime(
+        action_audit_lines=['{"lease_id":"unknown"}', '{"lease_id":"l1"}', '{"bad-json"'],
+        lease_table={"leases": [{"lease_id": "l1", "active": True}]},
+    )
+    assert execution["audit_rows_processed"] == 3
+    assert execution["active_leases"] == 1
+    assert execution["unknown_lease_rows"] == 1
+    assert execution["malformed_audit_rows"] == 1

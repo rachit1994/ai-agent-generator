@@ -1,0 +1,3 @@
+{"run_id": "run-feature-18-local", "signal": "events_processed", "value": 2}
+{"run_id": "run-feature-18-local", "signal": "leakage_attempts", "value": 0}
+{"run_id": "run-feature-18-local", "signal": "namespace_violations", "value": 0}

@@ -1,0 +1,81 @@
+{
+  "checks": {
+    "cancel_timeout_supported": true,
+    "dlq_present": true,
+    "durable_queue_present": true,
+    "lifecycle_api_present": true,
+    "queue_metrics_present": true,
+    "retry_backoff_budgeted": true,
+    "state_recovery_enabled": true,
+    "worker_heartbeat_enabled": true
+  },
+  "evidence": {
+    "dlq_ref": "data/async_job_plane/dlq.json",
+    "events_ref": "data/async_job_plane/job_events.jsonl",
+    "history_ref": "data/async_job_plane/trend_history.jsonl",
+    "queue_ref": "data/async_job_plane/queue_state.json",
+    "workers_ref": "data/async_job_plane/workers.json"
+  },
+  "execution": {
+    "dlq_count": 1,
+    "events": [
+      {
+        "event": "ready_for_dispatch",
+        "job_id": "job-001"
+      },
+      {
+        "event": "state:running",
+        "job_id": "job-002"
+      },
+      {
+        "event": "state:succeeded",
+        "job_id": "job-003"
+      },
+      {
+        "event": "sent_to_dlq",
+        "job_id": "job-004"
+      },
+      {
+        "event": "state:cancelled",
+        "job_id": "job-005"
+      }
+    ],
+    "jobs_processed": 5,
+    "queue_depth": 2,
+    "queue_lag_breach": false,
+    "queue_lag_seconds": 90,
+    "state_counts": {
+      "cancelled": 1,
+      "failed": 1,
+      "queued": 1,
+      "running": 1,
+      "succeeded": 1
+    },
+    "total_capacity": 3,
+    "worker_count": 2
+  },
+  "failed_gates": [],
+  "lifecycle_contract": {
+    "api": [
+      "submit",
+      "get",
+      "cancel",
+      "retry"
+    ],
+    "delivery_guarantee": "at_least_once_with_idempotency_key",
+    "status_states": [
+      "queued",
+      "running",
+      "succeeded",
+      "failed",
+      "cancelled"
+    ],
+    "submit_response": "202 + job_id"
+  },
+  "mode": "ci",
+  "release_blocked": false,
+  "run_id": "run-feature-04-local",
+  "schema": "sde.scale.feature_04.async_job_plane.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

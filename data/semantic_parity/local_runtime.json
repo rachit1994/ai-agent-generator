@@ -1,0 +1,34 @@
+{
+  "authz": [
+    {
+      "decision": "allow",
+      "reason_code": "ok",
+      "resource": "tool:x",
+      "role": "dev"
+    }
+  ],
+  "error_taxonomy": [
+    {
+      "class": "ok",
+      "error_code": "none",
+      "operation": "invoke",
+      "retryable": false
+    }
+  ],
+  "idempotency": [
+    {
+      "operation": "invoke",
+      "replay_safe": true,
+      "request_hash": "a1",
+      "result_hash": "r1"
+    }
+  ],
+  "state_transitions": [
+    {
+      "from_state": "queued",
+      "operation": "run",
+      "to_state": "active",
+      "transition_valid": true
+    }
+  ]
+}

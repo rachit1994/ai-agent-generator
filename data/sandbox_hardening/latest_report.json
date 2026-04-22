@@ -1,0 +1,57 @@
+{
+  "checks": {
+    "audit_count_coherent": true,
+    "cgroup_resource_limits_enforced": true,
+    "denied_ops_logged": true,
+    "deny_audit_events_structured": true,
+    "egress_allowlist_enforced": true,
+    "escape_detection_kill_switch_enforced": true,
+    "escape_exhaustion_tests_present": true,
+    "filesystem_syscall_restricted": true,
+    "policy_versioned_validated": true,
+    "runtime_egress_isolation_enforced": true,
+    "runtime_escape_contained": true,
+    "runtime_resource_budget_enforced": true,
+    "sandbox_isolation_runtime_present": true,
+    "startup_policy_validation_enforced": true,
+    "timeouts_hard_kill_enforced": true
+  },
+  "evidence": {
+    "audit_ref": "data/sandbox_hardening/audit_logs.json",
+    "events_ref": "data/sandbox_hardening/runtime_events.jsonl",
+    "history_ref": "data/sandbox_hardening/trend_history.jsonl",
+    "policy_ref": "data/sandbox_hardening/policy.json",
+    "runtime_ref": "data/sandbox_hardening/runtime_state.json"
+  },
+  "execution": {
+    "audit_count_coherent": true,
+    "egress_violations": [],
+    "escape_violations": [],
+    "events_processed": 3,
+    "resource_violations": []
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "policy_contract": {
+    "allowlist_enforced": true,
+    "default_egress": "deny",
+    "deny_audit_schema": "sandbox.v1.deny_event",
+    "escape_kill_switch": true,
+    "filesystem_isolation": true,
+    "policy_versioned_validated": true,
+    "resource_limits": [
+      "cpu",
+      "memory",
+      "pids",
+      "fds"
+    ],
+    "startup_policy_validation": true,
+    "syscall_filtering": true,
+    "timeout_kill_semantics": true
+  },
+  "release_blocked": false,
+  "run_id": "run-feature-13-ci",
+  "schema": "sde.scale.feature_13.sandbox_hardening.v1",
+  "schema_version": "1.0",
+  "status": "pass"
+}

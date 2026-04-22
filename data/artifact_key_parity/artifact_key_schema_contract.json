@@ -1,0 +1,10 @@
+{
+  "backend_parity_integration_tests": true,
+  "canonical_key_schema": true,
+  "checksum_integrity_verification": true,
+  "collision_drift_detection": true,
+  "conflict_resolution_semantics": true,
+  "legacy_key_migration": true,
+  "local_object_reconciliation": true,
+  "object_store_adapter": true
+}

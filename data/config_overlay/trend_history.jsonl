@@ -1,0 +1,5 @@
+{"failed_gate_count": 0, "run_id": "baseline-seed", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-config-overlay-check", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-15-schema-coherence", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-15-precedence-hardening", "status": "pass"}
+{"failed_gate_count": 0, "run_id": "local-feature-15-override-allowlist-hash-coherence", "status": "pass"}

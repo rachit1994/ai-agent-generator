@@ -10,6 +10,19 @@ TRACES_JSONL_EVENT_ROW_RUNTIME_CONTRACT = "sde.traces_jsonl_event_row_runtime.v1
 TRACES_JSONL_EVENT_ROW_RUNTIME_SCHEMA_VERSION = "1.0"
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["traces_jsonl_event_row_runtime_execution"]
+    errs: list[str] = []
+    for key in ("rows_processed", "malformed_rows", "run_id_mismatch_rows"):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"traces_jsonl_event_row_runtime_execution_type:{key}")
+    if not isinstance(execution.get("invalid_row_indices"), list):
+        errs.append("traces_jsonl_event_row_runtime_execution_type:invalid_row_indices")
+    return errs
+
+
 def _validate_top_level(body: dict[str, Any]) -> list[str]:
     errs: list[str] = []
     if body.get("schema") != TRACES_JSONL_EVENT_ROW_RUNTIME_CONTRACT:
@@ -66,6 +79,7 @@ def validate_traces_jsonl_event_row_runtime_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["traces_jsonl_event_row_runtime_not_object"]
     errs = _validate_top_level(body)
+    errs.extend(_validate_execution(body.get("execution")))
     status = body.get("status")
     checks = body.get("checks")
     errs.extend(_validate_checks(status, checks))

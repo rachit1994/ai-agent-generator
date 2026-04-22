@@ -1,0 +1,23 @@
+{
+  "metadata_version_contract_enforced": true,
+  "publish_events": [
+    {
+      "compatibility_pass": true,
+      "decision": "published",
+      "event_id": "reg-evt-001",
+      "plugin_id": "plugin-x",
+      "signature_valid": true,
+      "version": "1.4.0"
+    },
+    {
+      "compatibility_pass": false,
+      "decision": "rejected",
+      "event_id": "reg-evt-002",
+      "plugin_id": "plugin-y",
+      "signature_valid": true,
+      "version": "2.0.0"
+    }
+  ],
+  "provenance_signature_verified": true,
+  "registry_service_present": true
+}

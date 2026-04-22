@@ -72,6 +72,7 @@ flowchart LR
 | 8 — Coordination | single active writer per run (lease in DB with fencing token); at-least-once delivery with idempotent stage handlers; conditional writes to object keys (ETags). |
 | 9 — Observability | OpenTelemetry end-to-end; run-stage histograms; SLO burn alerts on run success and stage latency; cost per run; structured correlation ids (run, tenant, trace). |
 | 10 — Security | egress allowlist; no raw user-supplied URLs in tools without SSRF controls; chrooted workspace roots; mining heuristics and CPU quotas; optional verified org onboarding to reduce abuse. |
+| 11 — Delegation/worker plane (vendor-neutral) | typed worker profile registry (`repo_explorer`, `docs_researcher`, `test_runner`, `security_reviewer`); explicit tool/permission scopes; bounded fan-out and runtime budgets; structured worker result contracts; deterministic timeout/retry terminal states; replayable delegation artifacts. |
 
 **Master-doc alignment:** mitigations for layers 4, 5, 8, and 9 target areas the master snapshot still describes as *out of scope* in-repo: distributed queue and backoff, horizontal control-plane capacity, central telemetry, and production-grade distributed leases (see *Scalability strategy*, *Workflow pipelines* / retry profile, *Orchestration*, *Observability* in [master-architecture-feature-completion.md](../../master-architecture-feature-completion.md)).
 
@@ -107,6 +108,12 @@ These connect master-architecture “out of scope” items to a shippable servic
 
 6. **Storage ops hardening for Postgres.** Backups, PITR, and migration runbooks for event and projection tables (master: *Storage* ~36% with *production ops hardening* missing).
 
+7. **Delegation plane hardening (vendor-neutral).**
+   - Add a worker profile registry and schema validators for context-in/result-out.
+   - Enforce per-profile tool and permission boundaries in orchestration.
+   - Add delegation budgets (max children, max wall time, max retries) and deterministic terminal states.
+   - Persist replayable delegation artifacts so incident and audit tooling can inspect worker decisions without provider-specific assumptions.
+
 In-repo completion percentages are not a substitute for the above for hosting; they describe local or narrow harness behavior ([master doc](../../master-architecture-feature-completion.md) scoring table).
 
 ---
@@ -118,3 +125,38 @@ In-repo completion percentages are not a substitute for the above for hosting; t
 | [2026-04-22-10m-dau-api-choke-points-report.md](./2026-04-22-10m-dau-api-choke-points-report.md) | where and how the system fails at scale |
 | *This file* | what to build and operate to mitigate |
 | [master-architecture-feature-completion.md](../../master-architecture-feature-completion.md) | current repo capability and explicit gaps |
+| [scale-risk-external-references.md](../../scale-risk-external-references.md) | external standards/papers/repos mapped to likely scale failure areas |
+
+---
+
+## 7. Local and production server parity (must-pass)
+
+The hosted API should run with the same contract behavior on a local server and on production servers. Differences are expected in scale, security posture, and managed services, but not in API semantics, idempotency behavior, or state transitions.
+
+| Area | Local server expectation | Production server expectation | Parity gate |
+| ---- | ------------------------ | ----------------------------- | ----------- |
+| API contract | Same routes, request/response schema, error codes | Same, versioned and backward compatible | Contract tests pass in both envs |
+| Idempotency | Duplicate create-run returns same run identity | Same behavior under retries/load balancers | Retry replay test passes in both envs |
+| Queue semantics | At-least-once queue in dev profile | At-least-once queue in HA profile | No duplicate side effects in both envs |
+| Storage layout | Same artifact key structure (or deterministic local mirror) | Durable object-store key structure | Artifact path/key snapshot diff is zero |
+| State machine | Same run/stage transitions | Same, with production observability attached | Transition audit matches expected graph |
+| Auth mode | Dev auth provider or signed test keys | Production IdP/tenant policies | Authz test matrix passes in both envs |
+| Observability | Structured logs + trace ids available locally | Centralized logs/metrics/traces with same ids | Run-level correlation id resolves end-to-end |
+| Limits and backpressure | Lower thresholds but same policy logic | Full thresholds + autoscaling + budgets | 429/Retry-After policy test passes in both envs |
+| Delegation semantics | Same worker profile selection and budget policy under local adapters | Same selection policy with production queue/sandbox adapters | Worker profile and terminal-state parity tests pass in both envs |
+
+### Environment-specific config policy
+
+- Keep one config schema with environment overlays (`local`, `staging`, `prod`) and fail startup on unknown/missing keys.
+- Keep invariant logic in shared code paths; do not fork behavior by environment except for adapter wiring (queue provider, object store backend, auth issuer, telemetry sink).
+- Require deterministic defaults for local (seeded data, fixed clocks where practical) so parity tests are reproducible.
+
+### Promotion gate for parity
+
+Before promoting any server release:
+
+1. Run the same API contract suite against local and production-like staging.
+2. Run duplicate-request/idempotency replay tests in both environments.
+3. Run failure-injection for queue delays, provider 429, and worker restarts in both environments.
+4. Compare run-level state transition logs and confirm no semantic drift.
+5. Block release on any mismatch in status transitions, error codes, or idempotency outcomes.

@@ -15,6 +15,7 @@ This folder groups code and artifacts for `src` within the repository architectu
 - `learning_evolution_engine` (folder): Groups related implementation for this subdomain boundary.
 - `memory_architecture` (folder): Implements memory handling and memory-related lifecycle logic.
 - `production_architecture` (folder): Groups related implementation for this subdomain boundary.
+- `scale_out_api_mcp_plugin_platform_features` (folder): Isolated per-feature implementation surfaces for API/MCP scale-out architecture work.
 - `scalability_strategy` (folder): Groups related implementation for this subdomain boundary.
 - `service_boundaries` (folder): Groups related implementation for this subdomain boundary.
 - `success_criteria` (folder): Groups related implementation for this subdomain boundary.

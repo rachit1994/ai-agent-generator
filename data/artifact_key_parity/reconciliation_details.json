@@ -1,0 +1,17 @@
+{
+  "counts": {
+    "local_artifacts": 2,
+    "object_artifacts": 2,
+    "shared_artifacts": 2
+  },
+  "drift": {
+    "canonical_key_violations": [],
+    "checksum_mismatches": [],
+    "collisions_detected": false,
+    "key_mismatches": [],
+    "migration_failures": [],
+    "missing_in_local": [],
+    "missing_in_object": []
+  },
+  "parity_ok": true
+}

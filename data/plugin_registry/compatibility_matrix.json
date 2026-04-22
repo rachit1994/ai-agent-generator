@@ -1,0 +1,9 @@
+{
+  "compatibility_matrix_automated": true,
+  "compatibility_matrix_version": "2026.04",
+  "incompatible_rejection_tests_present": true,
+  "tested_plugins": [
+    "plugin-x",
+    "plugin-y"
+  ]
+}

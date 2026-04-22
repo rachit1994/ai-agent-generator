@@ -17,6 +17,24 @@ _CANONICAL_EVIDENCE_REFS = {
 }
 
 
+def _validate_execution(execution: Any) -> list[str]:
+    if not isinstance(execution, dict):
+        return ["learning_service_execution"]
+    errs: list[str] = []
+    for key in (
+        "reflections_processed",
+        "canary_rows_processed",
+        "finalize_events_processed",
+        "malformed_event_rows",
+    ):
+        value = execution.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            errs.append(f"learning_service_execution_type:{key}")
+    if not isinstance(execution.get("missing_signal_sources"), list):
+        errs.append("learning_service_execution_type:missing_signal_sources")
+    return errs
+
+
 def _valid_status(status: Any) -> bool:
     return status in ("healthy", "degraded", "insufficient_signal")
 
@@ -151,6 +169,7 @@ def validate_learning_service_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["learning_service_not_object"]
     errs, status = _validate_core_fields(body)
+    errs.extend(_validate_execution(body.get("execution")))
     metrics = body.get("metrics")
     if not isinstance(metrics, dict):
         errs.append("learning_service_metrics")

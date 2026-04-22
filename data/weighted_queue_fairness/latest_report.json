@@ -1,0 +1,50 @@
+{
+  "checks": {
+    "deterministic_scheduler_tests": true,
+    "distributed_weighted_fair_queue_delivered": true,
+    "fairness_wait_time_telemetry_published": true,
+    "mixed_load_stress_validation": true,
+    "runtime_deterministic_replay_verified": true,
+    "runtime_drop_fairness_enforced": true,
+    "runtime_fairness_score_enforced": true,
+    "runtime_starvation_prevented": true,
+    "runtime_weighted_scheduling_enforced": true,
+    "safe_admin_weight_tuning_controls": true,
+    "scheduler_replay_consistency": true,
+    "scheduler_state_persistence_replay": true,
+    "starvation_prevention_aging_policy": true,
+    "tenant_plugin_priority_weighting_supported": true
+  },
+  "evidence": {
+    "events_ref": "data/weighted_queue_fairness/scheduler_events.jsonl",
+    "history_ref": "data/weighted_queue_fairness/trend_history.jsonl",
+    "policy_ref": "data/weighted_queue_fairness/policy.json",
+    "scheduler_ref": "data/weighted_queue_fairness/scheduler_state.json",
+    "telemetry_ref": "data/weighted_queue_fairness/telemetry.json"
+  },
+  "execution": {
+    "deterministic_replay_ok": true,
+    "events_processed": 3,
+    "fairness_score_ok": true,
+    "max_tenant_drop_share": 0.0,
+    "starvation_violations": [],
+    "weighting_violations": []
+  },
+  "failed_gates": [],
+  "mode": "ci",
+  "release_blocked": false,
+  "run_id": "run-feature-08-ci",
+  "schema": "sde.scale.feature_08.weighted_queue_fairness.v1",
+  "schema_version": "1.0",
+  "status": "pass",
+  "weighted_queue_fairness_contract": {
+    "deterministic_scheduler_tests": true,
+    "distributed_weighted_fair_queue_delivered": true,
+    "fairness_wait_time_telemetry_published": true,
+    "mixed_load_stress_validation": true,
+    "safe_admin_weight_tuning_controls": true,
+    "scheduler_state_persistence_replay": true,
+    "starvation_prevention_aging_policy": true,
+    "tenant_plugin_priority_weighting_supported": true
+  }
+}

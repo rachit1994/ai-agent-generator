@@ -1,0 +1,6 @@
+{
+  "deny_count": 1,
+  "deny_throttle_metrics": true,
+  "sampled_requests": 3,
+  "throttle_count": 1
+}

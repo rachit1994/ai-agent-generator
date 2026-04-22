@@ -1,0 +1,3 @@
+{"run_id": "run-feature-06-ci", "signal": "events_processed", "value": 2}
+{"run_id": "run-feature-06-ci", "signal": "cap_violations", "value": 0}
+{"run_id": "run-feature-06-ci", "signal": "missing_reason_violations", "value": 0}
