@@ -7,7 +7,7 @@ dev-mode-dirs = ["src", "src/production_architecture/local_runtime"]
 
 [project]
 name = "sde"
-version = "0.20.0"
+version = "0.21.0"
 description = "SDE: local CLI orchestrator toward full-stack, gated delivery (guarded vs baseline; see docs/ and src/guardrails_and_safety)"
 requires-python = ">=3.11"
 dependencies = []
