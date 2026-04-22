@@ -55,3 +55,49 @@ def test_validate_evaluation_service_rejects_status_metrics_mismatch() -> None:
     payload["status"] = "degraded"
     errs = validate_evaluation_service_dict(payload)
     assert "evaluation_service_status_metrics_mismatch" in errs
+
+
+def test_build_evaluation_service_accepts_decision_only_eval_payloads() -> None:
+    payload = build_evaluation_service(
+        run_id="rid-eval-decision",
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"decision": "hold"},
+        promotion_eval={"decision": "promote"},
+    )
+    assert payload["status"] == "ready"
+
+
+def test_validate_evaluation_service_rejects_invalid_evidence_refs() -> None:
+    payload = build_evaluation_service(
+        run_id="rid-eval-evidence",
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"status": "finished"},
+        promotion_eval={"status": "promote"},
+    )
+    payload["evidence"]["online_eval_ref"] = "../learning/online_evaluation_shadow_canary.json"
+    errs = validate_evaluation_service_dict(payload)
+    assert "evaluation_service_evidence_ref:online_eval_ref" in errs
+
+
+def test_validate_evaluation_service_rejects_non_object_evidence() -> None:
+    payload = build_evaluation_service(
+        run_id="rid-eval-evidence-shape",
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"status": "finished"},
+        promotion_eval={"status": "promote"},
+    )
+    payload["evidence"] = "bad"
+    errs = validate_evaluation_service_dict(payload)
+    assert "evaluation_service_evidence" in errs
+
+
+def test_validate_evaluation_service_rejects_absolute_evidence_ref() -> None:
+    payload = build_evaluation_service(
+        run_id="rid-eval-evidence-absolute",
+        summary={"metrics": {"passRate": 1.0}},
+        online_eval={"status": "finished"},
+        promotion_eval={"status": "promote"},
+    )
+    payload["evidence"]["summary_ref"] = "/tmp/summary.json"
+    errs = validate_evaluation_service_dict(payload)
+    assert "evaluation_service_evidence_ref:summary_ref" in errs

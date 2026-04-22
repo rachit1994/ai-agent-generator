@@ -17,6 +17,11 @@ _REQUIRED_CHECK_KEYS = (
     "required_artifacts_present",
     "policy_bundle_valid",
 )
+_CANONICAL_EVIDENCE_REFS = {
+    "summary_ref": "summary.json",
+    "review_ref": "review.json",
+    "readiness_ref": "program/production_readiness.json",
+}
 
 
 def _validate_checks_and_status(checks: Any, status: Any) -> list[str]:
@@ -39,6 +44,21 @@ def _validate_checks_and_status(checks: Any, status: Any) -> list[str]:
     return errs
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["production_readiness_program_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"production_readiness_program_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"production_readiness_program_evidence_ref:{key}")
+    return errs
+
+
 def validate_production_readiness_program_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["production_readiness_program_not_object"]
@@ -57,6 +77,7 @@ def validate_production_readiness_program_dict(body: Any) -> list[str]:
     if status not in ("ready", "not_ready"):
         errs.append("production_readiness_program_status")
     errs.extend(_validate_checks_and_status(body.get("checks"), status))
+    errs.extend(_validate_evidence(body.get("evidence")))
     return errs
 
 

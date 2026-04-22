@@ -55,3 +55,28 @@ def test_validate_role_agents_rejects_status_spread_mismatch() -> None:
     }
     errs = validate_role_agents_dict(payload)
     assert "role_agents_status_semantics:drifted" in errs
+
+
+def test_role_agents_governance_excludes_review_checks_from_denominator() -> None:
+    payload = build_role_agents(
+        run_id="rid-role-agents-review",
+        parsed={
+            "checks": [
+                {"name": "review", "passed": True},
+                {"name": "shape", "passed": True},
+            ]
+        },
+        events=[{"stage": "finalize", "score": {"passed": True}}],
+        skill_nodes={"nodes": [{"score": 0.8}]},
+    )
+    assert payload["role_scores"]["planner"] == pytest.approx(1.0)
+
+
+def test_role_agents_verifier_uses_highest_valid_skill_node_score() -> None:
+    payload = build_role_agents(
+        run_id="rid-role-agents-skill-nodes",
+        parsed={"checks": [{"name": "shape", "passed": True}]},
+        events=[{"stage": "finalize", "score": {"passed": True}}],
+        skill_nodes={"nodes": [{"score": "bad"}, {"score": 0.4}, {"score": 0.9}]},
+    )
+    assert payload["role_scores"]["verifier"] == pytest.approx(0.9)

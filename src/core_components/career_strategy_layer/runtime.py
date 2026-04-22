@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from .contracts import CAREER_STRATEGY_LAYER_CONTRACT, CAREER_STRATEGY_LAYER_SCHEMA_VERSION
@@ -19,7 +20,10 @@ def _score_or_zero(value: Any) -> float:
     if isinstance(value, bool):
         return 0.0
     if isinstance(value, (int, float)):
-        return _clamp01(float(value))
+        numeric = float(value)
+        if not math.isfinite(numeric):
+            return 0.0
+        return _clamp01(numeric)
     return 0.0
 
 

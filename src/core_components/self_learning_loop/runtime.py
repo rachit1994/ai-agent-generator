@@ -56,10 +56,16 @@ def build_self_learning_loop(
 ) -> dict[str, Any]:
     capability_score = 0.0
     nodes = skill_nodes.get("nodes") if isinstance(skill_nodes, dict) else []
-    if isinstance(nodes, list) and nodes and isinstance(nodes[0], dict):
-        score = nodes[0].get("score")
-        if isinstance(score, (int, float)) and not isinstance(score, bool):
-            capability_score = _clamp01(float(score))
+    if isinstance(nodes, list):
+        valid_scores = [
+            float(node.get("score"))
+            for node in nodes
+            if isinstance(node, dict)
+            and isinstance(node.get("score"), (int, float))
+            and not isinstance(node.get("score"), bool)
+        ]
+        if valid_scores:
+            capability_score = _clamp01(max(valid_scores))
     transfer_efficiency = 0.0
     transfer_scores = (
         transfer_learning_metrics.get("scores")

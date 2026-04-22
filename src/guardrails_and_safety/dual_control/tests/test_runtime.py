@@ -154,6 +154,36 @@ def test_runtime_invalid_ack_when_acknowledged_at_not_utc_timestamp_shape() -> N
     assert payload["status"] == "invalid_ack"
 
 
+def test_runtime_valid_ack_when_acknowledged_at_has_explicit_utc_offset() -> None:
+    payload = build_dual_control_runtime(
+        run_id="rid-offset-ack",
+        doc_review={"passed": True, "dual_control": {"required": True}},
+        dual_control_ack={
+            "schema_version": "1.0",
+            "implementor_actor_id": "alice",
+            "independent_reviewer_actor_id": "bob",
+            "acknowledged_at": "2026-01-01T00:00:00+00:00",
+        },
+    )
+    assert payload["status"] == "validated"
+    assert validate_dual_control_dict(payload) == []
+
+
+@pytest.mark.parametrize("non_utc_ack", ["2026-01-01T00:00:00+05:30", "2026-01-01T00:00:00-07:00"])
+def test_runtime_invalid_ack_when_acknowledged_at_is_non_utc_offset(non_utc_ack: str) -> None:
+    payload = build_dual_control_runtime(
+        run_id="rid-non-utc-ack",
+        doc_review={"passed": True, "dual_control": {"required": True}},
+        dual_control_ack={
+            "schema_version": "1.0",
+            "implementor_actor_id": "alice",
+            "independent_reviewer_actor_id": "bob",
+            "acknowledged_at": non_utc_ack,
+        },
+    )
+    assert payload["status"] == "invalid_ack"
+
+
 def test_validate_dual_control_allows_validated_when_ack_not_required_and_absent() -> None:
     payload = build_dual_control_runtime(
         run_id="rid-no-ack-needed",
@@ -173,3 +203,25 @@ def test_validate_dual_control_rejects_validated_when_ack_required_but_missing()
     payload["status"] = "validated"
     errs = validate_dual_control_dict(payload)
     assert "dual_control_semantics" in errs
+
+
+def test_validate_dual_control_rejects_noncanonical_evidence_refs() -> None:
+    payload = build_dual_control_runtime(
+        run_id="rid-bad-evidence",
+        doc_review={"passed": True, "dual_control": {"required": False}},
+        dual_control_ack={},
+    )
+    payload["evidence"]["doc_review_ref"] = "../program/doc_review.json"
+    errs = validate_dual_control_dict(payload)
+    assert "dual_control_evidence_ref:doc_review_ref" in errs
+
+
+def test_validate_dual_control_rejects_noncanonical_ack_evidence_ref() -> None:
+    payload = build_dual_control_runtime(
+        run_id="rid-bad-ack-evidence",
+        doc_review={"passed": True, "dual_control": {"required": False}},
+        dual_control_ack={},
+    )
+    payload["evidence"]["dual_control_ack_ref"] = "/tmp/dual_control_ack.json"
+    errs = validate_dual_control_dict(payload)
+    assert "dual_control_evidence_ref:dual_control_ack_ref" in errs

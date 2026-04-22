@@ -8,6 +8,10 @@ from typing import Any
 
 BENCHMARK_ORCHESTRATION_JSONL_RUNTIME_CONTRACT = "sde.benchmark_orchestration_jsonl_runtime.v1"
 BENCHMARK_ORCHESTRATION_JSONL_RUNTIME_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "orchestration_ref": "orchestration.jsonl",
+    "runtime_ref": "benchmark-orchestration-runtime.json",
+}
 
 
 def validate_benchmark_orchestration_jsonl_runtime_dict(body: Any) -> list[str]:
@@ -18,6 +22,7 @@ def validate_benchmark_orchestration_jsonl_runtime_dict(body: Any) -> list[str]:
     errs.extend(_validate_checks(checks))
     counts = body.get("counts")
     errs.extend(_validate_counts(counts))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs and isinstance(checks, dict) and isinstance(counts, dict):
         errs.extend(_validate_status_semantics(status=status, checks=checks, counts=counts))
     return errs
@@ -93,11 +98,34 @@ def _validate_status_semantics(status: Any, checks: dict[str, Any], counts: dict
     return errs
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if evidence is None:
+        return []
+    if not isinstance(evidence, dict):
+        return ["benchmark_orchestration_jsonl_runtime_evidence"]
+    if not evidence:
+        return []
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        if key not in evidence:
+            continue
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"benchmark_orchestration_jsonl_runtime_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"benchmark_orchestration_jsonl_runtime_evidence_ref:{key}")
+    return errs
+
+
 def validate_benchmark_orchestration_jsonl_runtime_path(path: Path) -> list[str]:
     if not path.is_file():
         return ["benchmark_orchestration_jsonl_runtime_file_missing"]
     try:
         body = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return ["benchmark_orchestration_jsonl_runtime_unreadable"]
     except json.JSONDecodeError:
         return ["benchmark_orchestration_jsonl_runtime_json"]
     return validate_benchmark_orchestration_jsonl_runtime_dict(body)

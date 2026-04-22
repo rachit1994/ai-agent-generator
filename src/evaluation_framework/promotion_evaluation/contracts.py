@@ -9,6 +9,12 @@ from typing import Any
 PROMOTION_EVALUATION_CONTRACT = "sde.promotion_evaluation.v1"
 PROMOTION_EVALUATION_SCHEMA_VERSION = "1.0"
 _FLOAT_TOLERANCE = 1e-4
+_CANONICAL_EVIDENCE_REFS = {
+    "promotion_package_ref": "lifecycle/promotion_package.json",
+    "review_ref": "review.json",
+    "traces_ref": "traces.jsonl",
+    "promotion_evaluation_ref": "learning/promotion_evaluation.json",
+}
 
 
 def _validate_signals(signals: Any) -> list[str]:
@@ -82,8 +88,24 @@ def validate_promotion_evaluation_dict(body: Any) -> list[str]:
         errs.append("promotion_evaluation_confidence_range")
     signals = body.get("signals")
     errs.extend(_validate_signals(signals))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs:
         errs.extend(_validate_decision_semantics(decision, confidence, signals))
+    return errs
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["promotion_evaluation_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"promotion_evaluation_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"promotion_evaluation_evidence_ref:{key}")
     return errs
 
 

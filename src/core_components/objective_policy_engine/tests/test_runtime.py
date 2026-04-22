@@ -75,3 +75,75 @@ def test_validate_objective_policy_engine_rejects_policy_context_mismatch() -> N
     payload["context"]["failed_hard_stop_count"] = 1
     errs = validate_objective_policy_engine_dict(payload)
     assert "objective_policy_engine_policy_context_mismatch" in errs
+
+
+def test_build_objective_policy_engine_denies_with_rollback_validation_failure_reason() -> None:
+    payload = build_objective_policy_engine(
+        run_id="rid-objective-policy",
+        mode="guarded_pipeline",
+        summary={"balanced_gates": {"reliability": 95, "delivery": 95, "governance": 95, "composite": 95}},
+        review={"status": "completed_review_pass"},
+        cto={"hard_stops": [{"id": "HS01", "passed": True}]},
+        policy_bundle_rollback_errors=["rollback_contract_error"],
+    )
+    assert payload["policy"]["decision"] == "deny"
+    assert payload["policy"]["reason"] == "rollback_validation_failure"
+
+
+def test_validate_objective_policy_engine_rejects_missing_evidence() -> None:
+    payload = build_objective_policy_engine(
+        run_id="rid-objective-policy",
+        mode="guarded_pipeline",
+        summary={"balanced_gates": {"reliability": 95, "delivery": 95, "governance": 95, "composite": 95}},
+        review={"status": "completed_review_pass"},
+        cto={"hard_stops": [{"id": "HS01", "passed": True}]},
+        policy_bundle_rollback_errors=[],
+    )
+    payload["evidence"] = {}
+    errs = validate_objective_policy_engine_dict(payload)
+    assert "objective_policy_engine_evidence_ref:summary_ref" in errs
+    assert "objective_policy_engine_evidence_ref:review_ref" in errs
+    assert "objective_policy_engine_evidence_ref:policy_bundle_ref" in errs
+    assert "objective_policy_engine_evidence_ref:objective_policy_ref" in errs
+
+
+def test_validate_objective_policy_engine_rejects_non_object_evidence() -> None:
+    payload = build_objective_policy_engine(
+        run_id="rid-objective-policy",
+        mode="guarded_pipeline",
+        summary={"balanced_gates": {"reliability": 95, "delivery": 95, "governance": 95, "composite": 95}},
+        review={"status": "completed_review_pass"},
+        cto={"hard_stops": [{"id": "HS01", "passed": True}]},
+        policy_bundle_rollback_errors=[],
+    )
+    payload["evidence"] = "bad"
+    errs = validate_objective_policy_engine_dict(payload)
+    assert "objective_policy_engine_evidence" in errs
+
+
+def test_validate_objective_policy_engine_rejects_deny_reason_when_rollback_is_ok() -> None:
+    payload = build_objective_policy_engine(
+        run_id="rid-objective-policy",
+        mode="guarded_pipeline",
+        summary={"balanced_gates": {"reliability": 95, "delivery": 95, "governance": 95, "composite": 95}},
+        review={"status": "completed_review_pass"},
+        cto={"hard_stops": [{"id": "HS01", "passed": True}]},
+        policy_bundle_rollback_errors=["rollback_contract_error"],
+    )
+    payload["context"]["rollback_errors"] = []
+    errs = validate_objective_policy_engine_dict(payload)
+    assert "objective_policy_engine_policy_context_mismatch" in errs
+
+
+def test_validate_objective_policy_engine_rejects_unknown_deny_reason() -> None:
+    payload = build_objective_policy_engine(
+        run_id="rid-objective-policy",
+        mode="guarded_pipeline",
+        summary={"balanced_gates": {"reliability": 95, "delivery": 95, "governance": 95, "composite": 95}},
+        review={"status": "completed_review_pass"},
+        cto={"hard_stops": [{"id": "HS01", "passed": True}]},
+        policy_bundle_rollback_errors=["rollback_contract_error"],
+    )
+    payload["policy"]["reason"] = "other_reason"
+    errs = validate_objective_policy_engine_dict(payload)
+    assert "objective_policy_engine_policy_reason_deny" in errs

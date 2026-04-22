@@ -50,3 +50,25 @@ def test_validate_benchmark_orchestration_jsonl_runtime_rejects_counts_status_mi
         }
     )
     assert "benchmark_orchestration_jsonl_runtime_counts_mismatch" in errs
+
+
+def test_validate_benchmark_orchestration_jsonl_runtime_rejects_invalid_evidence_refs() -> None:
+    payload = build_benchmark_orchestration_jsonl_runtime(run_id="rid-bench", orchestration_rows=[])
+    payload["evidence"]["orchestration_ref"] = "../orchestration.jsonl"
+    errs = validate_benchmark_orchestration_jsonl_runtime_dict(payload)
+    assert "benchmark_orchestration_jsonl_runtime_evidence_ref:orchestration_ref" in errs
+
+
+def test_validate_benchmark_orchestration_jsonl_runtime_rejects_invalid_runtime_ref() -> None:
+    payload = build_benchmark_orchestration_jsonl_runtime(run_id="rid-bench", orchestration_rows=[])
+    payload["evidence"]["runtime_ref"] = "/tmp/benchmark-orchestration-runtime.json"
+    errs = validate_benchmark_orchestration_jsonl_runtime_dict(payload)
+    assert "benchmark_orchestration_jsonl_runtime_evidence_ref:runtime_ref" in errs
+
+
+def test_build_benchmark_orchestration_runtime_unknown_row_type_marks_has_error() -> None:
+    payload = build_benchmark_orchestration_jsonl_runtime(
+        run_id="rid-bench",
+        orchestration_rows=[{"run_id": "rid-bench", "type": "unknown"}],
+    )
+    assert payload["status"] == "has_error"

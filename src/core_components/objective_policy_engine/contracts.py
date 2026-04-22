@@ -10,6 +10,17 @@ OBJECTIVE_POLICY_ENGINE_CONTRACT = "sde.objective_policy_engine.v1"
 OBJECTIVE_POLICY_ENGINE_SCHEMA_VERSION = "1.0"
 _ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
 _ALLOWED_DECISIONS = {"allow", "defer", "deny"}
+_ALLOWED_DENY_REASONS = {
+    "hard_stop_failure",
+    "score_floor_failure",
+    "rollback_validation_failure",
+}
+_REQUIRED_EVIDENCE = (
+    "summary_ref",
+    "review_ref",
+    "policy_bundle_ref",
+    "objective_policy_ref",
+)
 
 
 def _validate_scores(scores: Any) -> list[str]:
@@ -34,6 +45,9 @@ def _validate_policy(policy: Any) -> list[str]:
     decision = policy.get("decision")
     if decision not in _ALLOWED_DECISIONS:
         errs.append("objective_policy_engine_decision")
+    reason = policy.get("reason")
+    if decision == "deny" and reason not in _ALLOWED_DENY_REASONS:
+        errs.append("objective_policy_engine_policy_reason_deny")
     for key in ("reason", "next_step"):
         value = policy.get(key)
         if not isinstance(value, str) or not value.strip():
@@ -133,7 +147,20 @@ def _validate_deny_semantics(
         return ["objective_policy_engine_policy_context_mismatch"]
     if reason == "score_floor_failure" and score_floor_ok:
         return ["objective_policy_engine_policy_context_mismatch"]
+    if reason == "rollback_validation_failure" and rollback_ok:
+        return ["objective_policy_engine_policy_context_mismatch"]
     return []
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["objective_policy_engine_evidence"]
+    errs: list[str] = []
+    for key in _REQUIRED_EVIDENCE:
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"objective_policy_engine_evidence_ref:{key}")
+    return errs
 
 
 def validate_objective_policy_engine_dict(body: Any) -> list[str]:
@@ -155,6 +182,7 @@ def validate_objective_policy_engine_dict(body: Any) -> list[str]:
     context = body.get("context")
     errs.extend(_validate_policy(policy))
     errs.extend(_validate_context(context))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs:
         errs.extend(_validate_policy_context_semantics(policy, context))
     return errs

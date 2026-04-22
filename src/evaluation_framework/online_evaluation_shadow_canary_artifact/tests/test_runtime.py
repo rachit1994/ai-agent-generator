@@ -53,6 +53,7 @@ def test_build_online_evaluation_shadow_canary_enforces_min_sample_hold() -> Non
     )
     assert payload["decision"]["decision"] == "hold"
     assert payload["decision"]["failed_gates"] == [GATE_ID_MIN_SAMPLE]
+    assert validate_online_evaluation_shadow_canary_dict(payload) == []
 
 
 def test_validate_online_evaluation_shadow_canary_fail_closed() -> None:
@@ -152,6 +153,35 @@ def test_validate_online_eval_rejects_hold_with_reason_gate_mismatch() -> None:
     assert "online_evaluation_shadow_canary_hold_reasons_mismatch" in errs
 
 
+def test_validate_online_eval_accepts_hold_with_canonical_reason_mapping() -> None:
+    payload = {
+        "schema": "sde.online_evaluation_shadow_canary.v1",
+        "schema_version": "1.0",
+        "run_id": "rid",
+        "decision": {
+            "decision": "hold",
+            "failed_gates": [GATE_ID_MIN_SAMPLE],
+            "decision_reasons": ["gate_min_sample_unmet"],
+            "min_sample_met": False,
+        },
+        "metrics": {
+            "sample_size": 0,
+            "coverage": 0.0,
+            "baseline_latency_p50_ms": 0.0,
+            "baseline_latency_p95_ms": 0.0,
+            "candidate_latency_p50_ms": 0.0,
+            "candidate_latency_p95_ms": 0.0,
+            "baseline_error_rate": 0.0,
+            "candidate_error_rate": 0.0,
+            "error_rate_delta": 0.0,
+            "latency_p95_delta_ms": 0.0,
+            "quality_delta": 0.0,
+        },
+        "evidence": {"online_eval_records_ref": "learning/online_eval_records.jsonl"},
+    }
+    assert validate_online_evaluation_shadow_canary_dict(payload) == []
+
+
 def test_validate_online_eval_rejects_promote_with_decision_reasons() -> None:
     payload = {
         "schema": "sde.online_evaluation_shadow_canary.v1",
@@ -180,6 +210,38 @@ def test_validate_online_eval_rejects_promote_with_decision_reasons() -> None:
     }
     errs = validate_online_evaluation_shadow_canary_dict(payload)
     assert "online_evaluation_shadow_canary_promote_unexpected_decision_reasons" in errs
+
+
+def test_validate_online_eval_rejects_promote_when_metrics_require_hold() -> None:
+    payload = {
+        "schema": "sde.online_evaluation_shadow_canary.v1",
+        "schema_version": "1.0",
+        "run_id": "rid",
+        "decision": {
+            "decision": "promote",
+            "failed_gates": [],
+            "decision_reasons": [],
+            "min_sample_met": True,
+        },
+        "metrics": {
+            "sample_size": 0,
+            "coverage": 0.0,
+            "baseline_latency_p50_ms": 0.0,
+            "baseline_latency_p95_ms": 0.0,
+            "candidate_latency_p50_ms": 0.0,
+            "candidate_latency_p95_ms": 0.0,
+            "baseline_error_rate": 0.0,
+            "candidate_error_rate": 0.0,
+            "error_rate_delta": 0.0,
+            "latency_p95_delta_ms": 0.0,
+            "quality_delta": 0.0,
+        },
+        "evidence": {"online_eval_records_ref": "learning/online_eval_records.jsonl"},
+    }
+    errs = validate_online_evaluation_shadow_canary_dict(payload)
+    assert "online_evaluation_shadow_canary_decision_metrics_mismatch" in errs
+    assert "online_evaluation_shadow_canary_failed_gates_metrics_mismatch" in errs
+    assert "online_evaluation_shadow_canary_min_sample_metrics_mismatch" in errs
 
 
 def test_validate_online_eval_rejects_coverage_sample_mismatch() -> None:

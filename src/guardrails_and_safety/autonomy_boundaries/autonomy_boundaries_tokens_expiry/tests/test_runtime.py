@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-
+from typing import Any, cast
 import pytest
 
 from guardrails_and_safety.autonomy_boundaries.autonomy_boundaries_tokens_expiry.runtime import (
@@ -56,5 +56,15 @@ def test_runtime_payload_fails_on_run_id_mismatch() -> None:
         build_autonomy_boundaries_runtime_payload(
             run_id="rid-a",
             token_context=_token_context(),
+            now_utc=datetime(2030, 1, 1, 0, 0, tzinfo=timezone.utc),
+        )
+
+
+def test_runtime_payload_fails_when_token_context_not_object() -> None:
+    bad_token_context = cast(dict[str, Any], [])
+    with pytest.raises(ValueError, match="token_context_not_object"):
+        build_autonomy_boundaries_runtime_payload(
+            run_id="rid",
+            token_context=bad_token_context,
             now_utc=datetime(2030, 1, 1, 0, 0, tzinfo=timezone.utc),
         )

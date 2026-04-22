@@ -10,9 +10,17 @@ from .contracts import (
 )
 
 
-def _has_status(payload: dict[str, Any]) -> bool:
-    status = payload.get("status")
-    return isinstance(status, str) and bool(status.strip())
+def _has_promotion_decision(payload: dict[str, Any]) -> bool:
+    decision = payload.get("decision")
+    return isinstance(decision, str) and decision in {"promote", "hold"}
+
+
+def _has_online_decision(payload: dict[str, Any]) -> bool:
+    decision = payload.get("decision")
+    if not isinstance(decision, dict):
+        return False
+    decision_value = decision.get("decision")
+    return isinstance(decision_value, str) and decision_value in {"promote", "hold"}
 
 
 def build_regression_testing_surface(
@@ -24,8 +32,10 @@ def build_regression_testing_surface(
     summary: dict[str, Any],
 ) -> dict[str, Any]:
     anchor_validation_passed = len(anchor_errors) == 0
-    has_promotion_eval = _has_status(promotion_evaluation) if isinstance(promotion_evaluation, dict) else False
-    has_online_eval = _has_status(online_evaluation) if isinstance(online_evaluation, dict) else False
+    has_promotion_eval = (
+        _has_promotion_decision(promotion_evaluation) if isinstance(promotion_evaluation, dict) else False
+    )
+    has_online_eval = _has_online_decision(online_evaluation) if isinstance(online_evaluation, dict) else False
     has_eval_summary = isinstance(summary.get("metrics"), dict)
     all_checks = anchor_validation_passed and has_promotion_eval and has_online_eval and has_eval_summary
     status = "ready" if all_checks else "degraded"

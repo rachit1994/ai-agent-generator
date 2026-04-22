@@ -31,6 +31,11 @@ def validate_benchmark_aggregate_manifest_runtime_dict(body: Any) -> list[str]:
         for key in ("manifest_present", "checkpoint_present", "checkpoint_finished"):
             if not isinstance(checks.get(key), bool):
                 errs.append(f"benchmark_aggregate_manifest_runtime_check_type:{key}")
+        checkpoint_finished = checks.get("checkpoint_finished")
+        if status == "finished" and checkpoint_finished is False:
+            errs.append("benchmark_aggregate_manifest_runtime_status_checks_mismatch")
+        if status == "active" and checkpoint_finished is True:
+            errs.append("benchmark_aggregate_manifest_runtime_status_checks_mismatch")
     return errs
 
 
@@ -39,6 +44,8 @@ def validate_benchmark_aggregate_manifest_runtime_path(path: Path) -> list[str]:
         return ["benchmark_aggregate_manifest_runtime_file_missing"]
     try:
         body = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return ["benchmark_aggregate_manifest_runtime_unreadable"]
     except json.JSONDecodeError:
         return ["benchmark_aggregate_manifest_runtime_json"]
     return validate_benchmark_aggregate_manifest_runtime_dict(body)

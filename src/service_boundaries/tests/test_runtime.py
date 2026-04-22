@@ -54,3 +54,25 @@ def test_validate_service_boundaries_rejects_service_coverage_mismatch() -> None
     errs = validate_service_boundaries_dict(payload)
     assert "service_boundaries_coverage_mismatch:orchestrator" in errs
 
+
+def test_validate_service_boundaries_rejects_noncanonical_evidence_ref() -> None:
+    payload = build_service_boundaries(
+        run_id="rid-sb",
+        mode="guarded_pipeline",
+        artifact_manifest=[],
+    )
+    payload["evidence"]["boundaries_ref"] = "strategy/other_boundaries.json"
+    errs = validate_service_boundaries_dict(payload)
+    assert "service_boundaries_evidence_ref:boundaries_ref" in errs
+
+
+def test_validate_service_boundaries_rejects_traversal_evidence_ref() -> None:
+    payload = build_service_boundaries(
+        run_id="rid-sb",
+        mode="guarded_pipeline",
+        artifact_manifest=[],
+    )
+    payload["evidence"]["review_ref"] = "../review.json"
+    errs = validate_service_boundaries_dict(payload)
+    assert "service_boundaries_evidence_ref:review_ref" in errs
+

@@ -201,3 +201,18 @@ def test_build_identity_authz_plane_high_risk_requires_token_fields(line: str) -
         lease_table={"leases": [{"lease_id": "l1", "active": True}]},
     )
     assert payload["controls"]["high_risk_tokens_valid"] is False  # type: ignore[index]
+
+
+def test_build_identity_authz_plane_missing_action_audit_fail_closes_controls() -> None:
+    payload = build_identity_authz_plane(
+        run_id="rid",
+        permission_matrix={"roles": [{"name": "implementor"}]},
+        action_audit_lines=[],
+        lease_table={"leases": [{"lease_id": "l1", "active": True}]},
+    )
+    assert payload["controls"]["permission_matrix_present"] is False  # type: ignore[index]
+    assert payload["controls"]["lease_bound_audit"] is False  # type: ignore[index]
+    assert payload["controls"]["high_risk_tokens_valid"] is False  # type: ignore[index]
+    assert payload["controls"]["authenticated_actor_audit"] is False  # type: ignore[index]
+    assert payload["controls"]["risk_scope_fields_present"] is False  # type: ignore[index]
+    assert payload["status"] == "missing"

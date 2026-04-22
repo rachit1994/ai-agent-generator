@@ -117,12 +117,19 @@ def test_validate_production_identity_authorization_rejects_missing_evidence_ref
 
 
 def test_validate_production_identity_authorization_rejects_status_coverage_mismatch() -> None:
-    payload = _valid_payload()
-    payload["status"] = "enforced"
-    payload["coverage"] = 0.66
-    assert "production_identity_authorization_status_coverage_mismatch" in (
-        validate_production_identity_authorization_dict(payload)
+    payload = build_production_identity_authorization(
+        run_id="rid",
+        permission_matrix={"roles": {"operator": ["read"]}},
+        action_audit_lines=[
+            '{"risk":"high","approval_token_id":"tok","approval_token_expires_at":"2026","actor_id":"agent-1","approver_id":"human-1"}'
+        ],
+        strategy_proposal={"requires_promotion_package": True, "applied_autonomy": True},
     )
+    payload["status"] = "enforced"
+    payload["coverage"] = 0.75
+    payload["controls"]["high_risk_dual_control_valid"] = False  # type: ignore[index]
+    errs = validate_production_identity_authorization_dict(payload)
+    assert "production_identity_authorization_status_coverage_mismatch" in errs
 
 
 def test_validate_production_identity_authorization_rejects_status_controls_mismatch() -> None:
@@ -233,3 +240,33 @@ def test_cross_plane_high_risk_missing_token_degrades_both_planes() -> None:
     )
     assert core_payload["status"] != "enforced"
     assert prod_payload["status"] != "enforced"
+
+
+def test_validate_production_identity_authorization_rejects_coverage_controls_mismatch() -> None:
+    payload = _valid_payload()
+    payload["coverage"] = 0.75
+    payload["controls"]["high_risk_approvals_valid"] = False  # type: ignore[index]
+    payload["controls"]["high_risk_dual_control_valid"] = False  # type: ignore[index]
+    errs = validate_production_identity_authorization_dict(payload)
+    assert "production_identity_authorization_coverage_controls_mismatch" in errs
+
+
+def test_build_production_identity_authorization_missing_strategy_proposal_fails_guard() -> None:
+    payload = build_production_identity_authorization(
+        run_id="rid",
+        permission_matrix={"roles": {"operator": ["read"]}},
+        action_audit_lines=[],
+        strategy_proposal={},
+    )
+    assert payload["controls"]["strategy_self_approval_guarded"] is False  # type: ignore[index]
+
+
+@pytest.mark.parametrize("roles", ["operator", 42, True])
+def test_build_production_identity_authorization_rejects_invalid_roles_shape(roles: object) -> None:
+    payload = build_production_identity_authorization(
+        run_id="rid",
+        permission_matrix={"roles": roles},
+        action_audit_lines=[],
+        strategy_proposal={"requires_promotion_package": True, "applied_autonomy": False},
+    )
+    assert payload["controls"]["permission_matrix_present"] is False  # type: ignore[index]

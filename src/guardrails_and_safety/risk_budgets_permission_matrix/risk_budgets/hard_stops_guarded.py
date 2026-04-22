@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -62,7 +63,15 @@ def _dual_control_ack_valid(body: dict[str, Any] | None) -> bool:
     acked_at = body.get("acknowledged_at")
     if not isinstance(acked_at, str) or not acked_at.strip():
         return False
-    return True
+    normalized = acked_at.strip()
+    if normalized.endswith("Z"):
+        normalized = f"{normalized[:-1]}+00:00"
+    try:
+        parsed = datetime.fromisoformat(normalized)
+    except ValueError:
+        return False
+    offset = parsed.utcoffset()
+    return offset is not None and offset.total_seconds() == 0
 
 
 def _hs08_doc_review(output_dir: Path) -> bool:

@@ -73,3 +73,37 @@ def test_run_directory_reports_transfer_metrics_contract_when_missing(tmp_path, 
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "transfer_learning_metrics_contract:transfer_learning_metrics_file_missing" in result["errors"]
+
+
+def test_run_directory_reports_transfer_metrics_contract_when_efficiency_mismatch(
+    tmp_path, monkeypatch
+) -> None:
+    out = tmp_path / "run"
+    (out / "learning").mkdir(parents=True)
+    (out / "outputs").mkdir(parents=True)
+    (out / "outputs" / "a.txt").write_text("a", encoding="utf-8")
+    (out / "outputs" / "b.txt").write_text("b", encoding="utf-8")
+    (out / "summary.json").write_text('{"runStatus":"ok","balanced_gates":{}}', encoding="utf-8")
+    (out / "token_context.json").write_text('{"schema_version":"1.0","stages":[]}', encoding="utf-8")
+    (out / "review.json").write_text(
+        '{"schema_version":"1.1","run_id":"rid-1","status":"completed_review_pass","reasons":[],"required_fixes":[],"gate_snapshot":{},"artifact_manifest":[],"review_findings":[],"completed_at":"2026-01-01T00:00:00Z"}',
+        encoding="utf-8",
+    )
+    (out / "traces.jsonl").write_text("", encoding="utf-8")
+    (out / "learning" / "transfer_learning_metrics.json").write_text(
+        '{"schema":"sde.transfer_learning_metrics.v1","schema_version":"1.0","run_id":"rid-1","metrics":{"transfer_gain_rate":0.7,"negative_transfer_rate":0.1,"retained_success_rate":0.6,"net_transfer_points":60.0,"transfer_efficiency_score":0.1},"evidence":{"traces_ref":"traces.jsonl","skill_nodes_ref":"capability/skill_nodes.json"}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "transfer_learning_metrics_contract:transfer_learning_metrics_transfer_efficiency_score_mismatch"
+        in result["errors"]
+    )

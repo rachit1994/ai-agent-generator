@@ -55,3 +55,27 @@ def test_validate_promotion_evaluation_rejects_decision_signal_mismatch() -> Non
     errs = validate_promotion_evaluation_dict(payload)
     assert "promotion_evaluation_confidence_semantics" in errs
     assert "promotion_evaluation_decision_semantics" in errs
+
+
+def test_validate_promotion_evaluation_rejects_noncanonical_evidence_ref() -> None:
+    payload = build_promotion_evaluation(
+        run_id="rid-promotion-eval",
+        promotion_package={"readiness": {"score": 0.9}},
+        review={"status": "completed_review_pass"},
+        events=[{"stage": "finalize", "score": {"passed": True}}],
+    )
+    payload["evidence"]["promotion_evaluation_ref"] = "learning/other_promotion_evaluation.json"
+    errs = validate_promotion_evaluation_dict(payload)
+    assert "promotion_evaluation_evidence_ref:promotion_evaluation_ref" in errs
+
+
+def test_validate_promotion_evaluation_rejects_unsafe_evidence_ref_path() -> None:
+    payload = build_promotion_evaluation(
+        run_id="rid-promotion-eval",
+        promotion_package={"readiness": {"score": 0.9}},
+        review={"status": "completed_review_pass"},
+        events=[{"stage": "finalize", "score": {"passed": True}}],
+    )
+    payload["evidence"]["review_ref"] = "../review.json"
+    errs = validate_promotion_evaluation_dict(payload)
+    assert "promotion_evaluation_evidence_ref:review_ref" in errs

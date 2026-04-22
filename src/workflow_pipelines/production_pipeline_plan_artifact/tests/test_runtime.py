@@ -70,3 +70,39 @@ def test_validate_production_pipeline_plan_artifact_rejects_status_checks_mismat
     payload["status"] = "partial"
     errs = validate_production_pipeline_plan_artifact_dict(payload)
     assert "production_pipeline_plan_artifact_status_checks_mismatch" in errs
+
+
+def test_validate_production_pipeline_plan_artifact_rejects_invalid_evidence_refs() -> None:
+    payload = build_production_pipeline_plan_artifact(
+        run_id="rid-plan-artifact",
+        mode="guarded_pipeline",
+        program_manifest={
+            "project_plan": True,
+            "progress": True,
+            "work_batch": True,
+            "discovery": True,
+            "verification_bundle": True,
+        },
+        project_plan={"steps": [{"step_id": "step_planner"}]},
+    )
+    payload["evidence"]["project_plan_ref"] = "../program/project_plan.json"
+    errs = validate_production_pipeline_plan_artifact_dict(payload)
+    assert "production_pipeline_plan_artifact_evidence_ref:project_plan_ref" in errs
+
+
+def test_validate_production_pipeline_plan_artifact_rejects_checked_artifacts_mismatch() -> None:
+    payload = build_production_pipeline_plan_artifact(
+        run_id="rid-plan-artifact",
+        mode="guarded_pipeline",
+        program_manifest={
+            "project_plan": True,
+            "progress": True,
+            "work_batch": True,
+            "discovery": True,
+            "verification_bundle": True,
+        },
+        project_plan={"steps": [{"step_id": "step_planner"}]},
+    )
+    payload["metrics"]["checked_program_artifacts"] = 4
+    errs = validate_production_pipeline_plan_artifact_dict(payload)
+    assert "production_pipeline_plan_artifact_checked_program_artifacts_mismatch" in errs

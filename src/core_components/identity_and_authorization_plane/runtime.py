@@ -90,6 +90,12 @@ def build_identity_authz_plane(
 ) -> dict[str, Any]:
     controls = _initial_controls(permission_matrix)
     active_leases = _active_leases(lease_table)
+    if not action_audit_lines:
+        controls["permission_matrix_present"] = False
+        controls["lease_bound_audit"] = False
+        controls["high_risk_tokens_valid"] = False
+        controls["authenticated_actor_audit"] = False
+        controls["risk_scope_fields_present"] = False
     for line in action_audit_lines:
         if not isinstance(line, str) or not line.strip():
             continue

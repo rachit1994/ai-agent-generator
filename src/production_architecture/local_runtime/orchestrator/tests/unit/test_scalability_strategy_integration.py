@@ -23,6 +23,11 @@ def test_write_scalability_strategy_artifact_and_validate(tmp_path: Path) -> Non
         cto={"balanced_gates": {"validation_ready": True}, "hard_stops": [{"id": "HS01", "passed": True}]},
     )
     assert payload["run_id"] == run_id
+    assert payload["evidence"] == {
+        "summary_ref": "summary.json",
+        "review_ref": "review.json",
+        "scalability_ref": "strategy/scalability_strategy.json",
+    }
     assert validate_scalability_strategy_path(output_dir / "strategy" / "scalability_strategy.json") == []
 
 

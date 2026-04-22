@@ -166,3 +166,31 @@ def test_validate_self_learning_loop_path_rejects_next_action_mismatch(tmp_path:
     )
     errs = validate_self_learning_loop_path(loop_path)
     assert "self_learning_loop_next_action_mismatch" in errs
+
+
+def test_self_learning_loop_layer_degrades_on_malformed_trace_jsonl(tmp_path: Path) -> None:
+    run_id = "run-self-learning-loop-malformed-traces"
+    run_dir = tmp_path / "runs" / run_id
+    parsed = {
+        "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
+        "hard_stops": [{"id": "HS01", "passed": True}],
+    }
+    (run_dir / "traces.jsonl").parent.mkdir(parents=True, exist_ok=True)
+    (run_dir / "traces.jsonl").write_text("{not-json}\n", encoding="utf-8")
+    skill_nodes = write_memory_artifacts(
+        output_dir=run_dir, run_id=run_id, parsed=parsed, events=[]
+    )
+    write_evolution_artifacts(
+        output_dir=run_dir,
+        run_id=run_id,
+        mode="guarded_pipeline",
+        parsed=parsed,
+        events=[],
+        skill_nodes=skill_nodes,
+    )
+    write_practice_engine_artifact(output_dir=run_dir, run_id=run_id)
+    payload = write_self_learning_loop_artifact(
+        output_dir=run_dir, run_id=run_id, mode="guarded_pipeline"
+    )
+    assert payload["signals"]["finalize_pass_rate"] == pytest.approx(0.0)
+    assert validate_self_learning_loop_path(run_dir / "learning" / "self_learning_loop.json") == []

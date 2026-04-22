@@ -8,6 +8,10 @@ from typing import Any
 
 SERVICE_BOUNDARIES_CONTRACT = "sde.service_boundaries.v1"
 SERVICE_BOUNDARIES_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "review_ref": "review.json",
+    "boundaries_ref": "strategy/service_boundaries.json",
+}
 
 
 def _validate_core_fields(body: dict[str, Any]) -> tuple[list[str], Any]:
@@ -99,8 +103,24 @@ def validate_service_boundaries_dict(body: Any) -> list[str]:
     violation_errs, expected_status = _validate_violations(body.get("violations"))
     errs.extend(violation_errs)
     errs.extend(_validate_services(body.get("services")))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if expected_status != status:
         errs.append("service_boundaries_status_semantics")
+    return errs
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["service_boundaries_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"service_boundaries_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"service_boundaries_evidence_ref:{key}")
     return errs
 
 

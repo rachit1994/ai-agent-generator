@@ -41,7 +41,7 @@ def build_transfer_learning_metrics(
     events: list[dict[str, Any]],
     skill_nodes: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    if not run_id.strip():
+    if not isinstance(run_id, str) or not run_id.strip():
         raise ValueError("transfer_learning_metrics_run_id")
     _ = parsed
     pass_rate = _finalize_pass_rate(events)

@@ -8,6 +8,12 @@ from typing import Any
 
 REPLAY_FAIL_CLOSED_CONTRACT = "sde.replay_fail_closed.v1"
 REPLAY_FAIL_CLOSED_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "replay_manifest_ref": "replay_manifest.json",
+    "traces_ref": "traces.jsonl",
+    "run_events_ref": "event_store/run_events.jsonl",
+    "replay_fail_closed_ref": "replay/fail_closed.json",
+}
 
 
 def validate_replay_fail_closed_dict(body: Any) -> list[str]:
@@ -39,6 +45,22 @@ def validate_replay_fail_closed_dict(body: Any) -> list[str]:
                 errs.append(f"replay_fail_closed_check_type:{key}")
     if not errs and isinstance(checks, dict):
         errs.extend(_validate_status_semantics(status, checks))
+    errs.extend(_validate_evidence(body.get("evidence")))
+    return errs
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["replay_fail_closed_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"replay_fail_closed_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"replay_fail_closed_evidence_ref:{key}")
     return errs
 
 

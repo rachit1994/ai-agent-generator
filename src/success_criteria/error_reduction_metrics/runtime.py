@@ -34,14 +34,16 @@ def build_error_reduction_metrics(
         1 for row in checks if isinstance(row, dict) and (not _is_passed(row.get("passed")))
     )
     finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
-    candidate_errors = 0
-    for row in finals:
-        score = row.get("score")
-        if not isinstance(score, dict):
-            candidate_errors += 1
-            continue
-        if not _is_passed(score.get("passed")):
-            candidate_errors += 1
+    candidate_errors = baseline_errors
+    if finals:
+        candidate_errors = 0
+        for row in finals:
+            score = row.get("score")
+            if not isinstance(score, dict):
+                candidate_errors += 1
+                continue
+            if not _is_passed(score.get("passed")):
+                candidate_errors += 1
     resolved = baseline_errors - candidate_errors
     if resolved < 0:
         resolved = 0

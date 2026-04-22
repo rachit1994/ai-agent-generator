@@ -8,8 +8,8 @@ from evaluation_framework.regression_testing_surface import (
 
 def test_build_regression_testing_surface_is_deterministic() -> None:
     summary = {"metrics": {"passRate": 1.0}}
-    promotion_eval = {"status": "promote"}
-    online_eval = {"status": "promote"}
+    promotion_eval = {"decision": "promote"}
+    online_eval = {"decision": {"decision": "promote"}}
     one = build_regression_testing_surface(
         run_id="rid-regression-surface",
         anchor_errors=[],
@@ -48,12 +48,25 @@ def test_build_regression_testing_surface_treats_missing_status_payloads_as_degr
     assert payload["metrics"]["has_online_eval"] is False
 
 
+def test_build_regression_testing_surface_uses_contract_shaped_decisions() -> None:
+    payload = build_regression_testing_surface(
+        run_id="rid-regression-surface",
+        anchor_errors=[],
+        promotion_evaluation={"decision": "hold"},
+        online_evaluation={"decision": {"decision": "promote"}},
+        summary={"metrics": {"passRate": 1.0}},
+    )
+    assert payload["status"] == "ready"
+    assert payload["metrics"]["has_promotion_eval"] is True
+    assert payload["metrics"]["has_online_eval"] is True
+
+
 def test_validate_regression_testing_surface_rejects_status_metrics_mismatch() -> None:
     payload = build_regression_testing_surface(
         run_id="rid-regression-surface",
         anchor_errors=[],
-        promotion_evaluation={"status": "promote"},
-        online_evaluation={"status": "promote"},
+        promotion_evaluation={"decision": "promote"},
+        online_evaluation={"decision": {"decision": "promote"}},
         summary={"metrics": {"passRate": 1.0}},
     )
     payload["status"] = "degraded"

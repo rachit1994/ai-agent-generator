@@ -10,6 +10,10 @@ from typing import Any
 STABILITY_METRICS_CONTRACT = "sde.stability_metrics.v1"
 STABILITY_METRICS_SCHEMA_VERSION = "1.0"
 _FLOAT_TOLERANCE = 1e-4
+_CANONICAL_EVIDENCE_REFS = {
+    "traces_ref": "traces.jsonl",
+    "stability_metrics_ref": "learning/stability_metrics.json",
+}
 
 
 def _validate_status_score_semantics(status: Any, metrics: dict[str, Any]) -> list[str]:
@@ -92,6 +96,21 @@ def _validate_metric_fields(metrics: dict[str, Any]) -> list[str]:
     return errs
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["stability_metrics_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"stability_metrics_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"stability_metrics_evidence_ref:{key}")
+    return errs
+
+
 def validate_stability_metrics_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["stability_metrics_not_object"]
@@ -101,6 +120,7 @@ def validate_stability_metrics_dict(body: Any) -> list[str]:
         errs.append("stability_metrics_metrics")
         return errs
     errs.extend(_validate_metric_fields(metrics))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs:
         errs.extend(_validate_metric_arithmetic_semantics(metrics))
     if not errs:

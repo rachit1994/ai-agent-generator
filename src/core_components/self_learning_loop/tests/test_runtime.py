@@ -151,3 +151,31 @@ def test_validate_self_learning_loop_rejects_next_action_mismatch() -> None:
     payload["decision"]["next_action"] = "halt_and_repair"
     errs = validate_self_learning_loop_dict(payload)
     assert "self_learning_loop_next_action_mismatch" in errs
+
+
+def test_self_learning_loop_uses_highest_valid_skill_node_score() -> None:
+    payload = build_self_learning_loop(
+        run_id="rid-self-loop-skill-nodes",
+        mode="guarded_pipeline",
+        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        practice_engine={"scores": {"readiness_signal": 0.9}},
+        transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
+        capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
+        skill_nodes={"nodes": [{"score": "bad"}, {"score": 0.3}, {"score": 0.95}]},
+    )
+    assert payload["signals"]["capability_score"] == pytest.approx(0.95)
+
+
+def test_validate_self_learning_loop_rejects_noncanonical_self_loop_evidence_ref() -> None:
+    payload = build_self_learning_loop(
+        run_id="rid-self-loop-evidence",
+        mode="guarded_pipeline",
+        events=[{"stage": "finalize", "score": {"passed": True}} for _ in range(6)],
+        practice_engine={"scores": {"readiness_signal": 0.9}},
+        transfer_learning_metrics={"scores": {"transfer_efficiency": 0.9}},
+        capability_growth_metrics={"scores": {"capability_growth_rate": 0.9}},
+        skill_nodes={"nodes": [{"score": 0.9}]},
+    )
+    payload["evidence"]["self_learning_loop_ref"] = "learning/other_self_learning_loop.json"
+    errs = validate_self_learning_loop_dict(payload)
+    assert "self_learning_loop_evidence_self_learning_loop_ref" in errs

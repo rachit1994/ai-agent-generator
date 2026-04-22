@@ -29,9 +29,12 @@ def build_role_agents(
     checks = parsed.get("checks") if isinstance(parsed, dict) else []
     if not isinstance(checks, list):
         checks = []
+    scored_checks = [
+        row for row in checks if isinstance(row, dict) and row.get("name") != "review"
+    ]
     planner_score = _clamp01(
-        sum(1 for row in checks if isinstance(row, dict) and _passed(row.get("passed")))
-        / max(1, len(checks))
+        sum(1 for row in scored_checks if _passed(row.get("passed")))
+        / max(1, len(scored_checks))
     )
     finalize_rows = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
     implementor_score = _clamp01(
@@ -45,10 +48,16 @@ def build_role_agents(
     )
     verifier_score = 0.0
     nodes = skill_nodes.get("nodes") if isinstance(skill_nodes, dict) else []
-    if isinstance(nodes, list) and nodes and isinstance(nodes[0], dict):
-        raw = nodes[0].get("score")
-        if isinstance(raw, (int, float)) and not isinstance(raw, bool):
-            verifier_score = _clamp01(float(raw))
+    if isinstance(nodes, list):
+        valid_scores = [
+            float(node.get("score"))
+            for node in nodes
+            if isinstance(node, dict)
+            and isinstance(node.get("score"), (int, float))
+            and not isinstance(node.get("score"), bool)
+        ]
+        if valid_scores:
+            verifier_score = _clamp01(max(valid_scores))
     spread = max(planner_score, implementor_score, verifier_score) - min(
         planner_score, implementor_score, verifier_score
     )

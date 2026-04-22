@@ -63,6 +63,9 @@ def build_objective_policy_engine(
     if failed_hard_stops == 0 and not score_floor_ok:
         reason = "score_floor_failure"
         next_step = "improve_balanced_scores"
+    elif failed_hard_stops == 0 and not rollback_ok:
+        reason = "rollback_validation_failure"
+        next_step = "fix_policy_bundle_rollback"
     elif failed_hard_stops == 0 and review_status == "completed_review_pass" and rollback_ok:
         decision = "allow"
         reason = "policy_checks_passed"

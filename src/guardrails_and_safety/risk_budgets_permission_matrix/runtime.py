@@ -24,8 +24,11 @@ def build_risk_budgets_permission_matrix(
     validation_ready = _passed(cto.get("validation_ready"))
     hard_stops = cto.get("hard_stops")
     hard_stops_list = hard_stops if isinstance(hard_stops, list) else []
-    hard_stops_all_pass = len(hard_stops_list) > 0 and all(
-        _passed(row.get("passed")) for row in hard_stops_list if isinstance(row, dict)
+    hard_stop_rows = [row for row in hard_stops_list if isinstance(row, dict)]
+    hard_stops_all_pass = (
+        len(hard_stops_list) > 0
+        and len(hard_stop_rows) == len(hard_stops_list)
+        and all(_passed(row.get("passed")) for row in hard_stop_rows)
     )
     status = "ready" if balanced_gates_present and validation_ready and hard_stops_all_pass else "degraded"
     return {

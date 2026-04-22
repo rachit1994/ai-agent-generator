@@ -31,7 +31,7 @@ def _finalize_stats(events: list[dict[str, Any]]) -> tuple[float, float]:
         score = row.get("score")
         if not isinstance(score, dict):
             continue
-        passed += 1 if bool(score.get("passed")) else 0
+        passed += 1 if score.get("passed") is True else 0
         rel = score.get("reliability", 0.0)
         if isinstance(rel, (int, float)) and not isinstance(rel, bool):
             reliabilities.append(float(rel))

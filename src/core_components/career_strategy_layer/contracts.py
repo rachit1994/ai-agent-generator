@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
 CAREER_STRATEGY_LAYER_CONTRACT = "sde.career_strategy_layer.v1"
 CAREER_STRATEGY_LAYER_SCHEMA_VERSION = "1.0"
 _RISK_SCORE_TOLERANCE = 1e-4
+_CANONICAL_EVIDENCE_REFS = {
+    "summary_ref": "summary.json",
+    "review_ref": "review.json",
+    "promotion_package_ref": "lifecycle/promotion_package.json",
+    "career_strategy_ref": "strategy/career_strategy_layer.json",
+}
 
 
 def _validate_score_fields(strategy: dict[str, Any]) -> list[str]:
@@ -19,6 +26,9 @@ def _validate_score_fields(strategy: dict[str, Any]) -> list[str]:
             errs.append(f"career_strategy_layer_score_type:{key}")
             continue
         num = float(value)
+        if not math.isfinite(num):
+            errs.append(f"career_strategy_layer_score_finite:{key}")
+            continue
         if num < 0.0 or num > 1.0:
             errs.append(f"career_strategy_layer_score_range:{key}")
     return errs
@@ -93,6 +103,24 @@ def validate_career_strategy_layer_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("ready", "watchlist", "hold"):
         errs.append("career_strategy_layer_status")
+    focus = body.get("focus")
+    if focus not in ("promotion", "stabilization"):
+        errs.append("career_strategy_layer_focus")
+    horizon = body.get("horizon")
+    if not isinstance(horizon, str) or not horizon.strip():
+        errs.append("career_strategy_layer_horizon")
+    evidence = body.get("evidence")
+    if not isinstance(evidence, dict):
+        errs.append("career_strategy_layer_evidence")
+        evidence = {}
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"career_strategy_layer_evidence_{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"career_strategy_layer_evidence_{key}")
     strategy = body.get("strategy")
     if not isinstance(strategy, dict):
         errs.append("career_strategy_layer_strategy")

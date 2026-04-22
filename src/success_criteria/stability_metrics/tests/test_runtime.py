@@ -66,3 +66,35 @@ def test_validate_stability_metrics_rejects_stability_score_arithmetic_mismatch(
     payload["metrics"]["stability_score"] = 0.0
     errs = validate_stability_metrics_dict(payload)
     assert "stability_metrics_metric_semantics:stability_score" in errs
+
+
+def test_build_stability_metrics_non_dict_events_do_not_reduce_retry_pressure() -> None:
+    payload = build_stability_metrics(
+        run_id="rid-stability",
+        events=[
+            {"stage": "finalize", "score": {"passed": True, "reliability": 0.9}},
+            {"stage": "repair"},
+            "malformed-event",
+        ],
+    )
+    assert payload["metrics"]["retry_pressure"] == pytest.approx(0.5)
+
+
+def test_validate_stability_metrics_rejects_invalid_evidence_refs() -> None:
+    payload = build_stability_metrics(
+        run_id="rid-stability",
+        events=[{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}],
+    )
+    payload["evidence"]["traces_ref"] = "../traces.jsonl"
+    errs = validate_stability_metrics_dict(payload)
+    assert "stability_metrics_evidence_ref:traces_ref" in errs
+
+
+def test_validate_stability_metrics_rejects_invalid_stability_metrics_ref() -> None:
+    payload = build_stability_metrics(
+        run_id="rid-stability",
+        events=[{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}],
+    )
+    payload["evidence"]["stability_metrics_ref"] = "learning/other.json"
+    errs = validate_stability_metrics_dict(payload)
+    assert "stability_metrics_evidence_ref:stability_metrics_ref" in errs

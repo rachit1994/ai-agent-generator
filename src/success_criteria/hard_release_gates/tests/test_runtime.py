@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from success_criteria.hard_release_gates import (
@@ -65,3 +67,63 @@ def test_build_hard_release_gates_fails_closed_on_non_boolean_hard_stop_passed()
     )
     assert result["failed_hard_stop_ids"] == ["HS01"]
     assert result["overall_pass"] is False
+
+
+def test_validate_hard_release_gates_rejects_gate_score_mismatch() -> None:
+    parsed = {
+        "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
+        "hard_stops": [{"id": "HS01", "passed": True}],
+    }
+    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    payload = build_hard_release_gates(
+        run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
+    )
+    payload["gates"]["reliability_gate"] = False
+    errs = validate_hard_release_gates_dict(payload)
+    assert "hard_release_gates_gate_score_mismatch:reliability" in errs
+
+
+def test_validate_hard_release_gates_rejects_status_coherence_mismatch() -> None:
+    parsed = {
+        "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
+        "hard_stops": [{"id": "HS01", "passed": True}],
+    }
+    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    payload = build_hard_release_gates(
+        run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
+    )
+    payload["overall_pass"] = False
+    payload["validation_ready"] = True
+    errs = validate_hard_release_gates_dict(payload)
+    assert "hard_release_gates_overall_pass_mismatch" in errs
+    assert "hard_release_gates_validation_ready_mismatch" in errs
+
+
+def test_validate_hard_release_gates_rejects_invalid_evidence() -> None:
+    parsed = {
+        "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
+        "hard_stops": [{"id": "HS01", "passed": True}],
+    }
+    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    payload = build_hard_release_gates(
+        run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
+    )
+    payload["evidence"]["summary_ref"] = "../summary.json"
+    payload["evidence"]["traces_ref"] = ""
+    errs = validate_hard_release_gates_dict(payload)
+    assert "hard_release_gates_evidence_ref:summary_ref" in errs
+    assert "hard_release_gates_evidence_ref:traces_ref" in errs
+
+
+def test_validate_hard_release_gates_rejects_non_finite_scores() -> None:
+    parsed = {
+        "checks": [{"name": "shape", "passed": True}, {"name": "quality", "passed": True}],
+        "hard_stops": [{"id": "HS01", "passed": True}],
+    }
+    events = [{"stage": "finalize", "score": {"passed": True, "reliability": 0.9}}]
+    payload = build_hard_release_gates(
+        run_id="rid-hard-gates", mode="guarded_pipeline", parsed=parsed, events=events
+    )
+    payload["scores"]["reliability"] = math.nan
+    errs = validate_hard_release_gates_dict(payload)
+    assert "hard_release_gates_score_finite:reliability" in errs

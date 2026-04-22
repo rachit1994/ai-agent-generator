@@ -63,3 +63,37 @@ def test_run_directory_surfaces_malformed_dual_control_json(tmp_path: Path, monk
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "dual_control_contract:dual_control_json" in result["errors"]
+
+
+def test_run_directory_reports_missing_dual_control_evidence_refs(tmp_path: Path, monkeypatch) -> None:
+    out = _baseline_dir(tmp_path)
+    runtime = {
+        "schema": "sde.dual_control.v1",
+        "schema_version": "1.0",
+        "run_id": "rid-1",
+        "status": "validated",
+        "metrics": {
+            "doc_review_passed": True,
+            "dual_required": False,
+            "ack_present": False,
+            "ack_valid": False,
+            "distinct_actors": False,
+        },
+        "evidence": {
+            "doc_review_ref": "program/doc_review.json",
+            "dual_control_ack_ref": "program/dual_control_ack.json",
+            "dual_control_runtime_ref": "program/dual_control_runtime.json",
+        },
+    }
+    (out / "program" / "dual_control_runtime.json").write_text(json.dumps(runtime), encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "dual_control_contract:dual_control_evidence_ref:doc_review_ref_missing" in result["errors"]
+    assert "dual_control_contract:dual_control_evidence_ref:dual_control_ack_ref_missing" in result["errors"]

@@ -20,3 +20,20 @@ def test_validate_benchmark_aggregate_manifest_runtime_fail_closed() -> None:
     errs = validate_benchmark_aggregate_manifest_runtime_dict({"schema": "bad"})
     assert "benchmark_aggregate_manifest_runtime_schema" in errs
     assert "benchmark_aggregate_manifest_runtime_schema_version" in errs
+
+
+def test_validate_benchmark_aggregate_manifest_runtime_rejects_status_checks_mismatch() -> None:
+    errs = validate_benchmark_aggregate_manifest_runtime_dict(
+        {
+            "schema": "sde.benchmark_aggregate_manifest_runtime.v1",
+            "schema_version": "1.0",
+            "run_id": "bench-1",
+            "status": "finished",
+            "checks": {
+                "manifest_present": True,
+                "checkpoint_present": True,
+                "checkpoint_finished": False,
+            },
+        }
+    )
+    assert "benchmark_aggregate_manifest_runtime_status_checks_mismatch" in errs

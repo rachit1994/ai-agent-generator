@@ -78,6 +78,8 @@ def validate_traces_jsonl_event_row_runtime_path(path: Path) -> list[str]:
         return ["traces_jsonl_event_row_runtime_file_missing"]
     try:
         body = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return ["traces_jsonl_event_row_runtime_unreadable"]
     except json.JSONDecodeError:
         return ["traces_jsonl_event_row_runtime_json"]
     return validate_traces_jsonl_event_row_runtime_dict(body)

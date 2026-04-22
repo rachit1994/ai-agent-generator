@@ -24,6 +24,10 @@ REQUIRED_REVIEW_KEYS = (
 )
 
 
+def _is_non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
 def validate_review_payload_contract(review: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     for key in REQUIRED_REVIEW_KEYS:
@@ -31,6 +35,8 @@ def validate_review_payload_contract(review: dict[str, Any]) -> list[str]:
             errors.append(f"missing_review_key:{key}")
     if review.get("schema_version") != REVIEW_SCHEMA:
         errors.append("invalid_review_schema_version")
+    if not _is_non_empty_string(review.get("run_id")):
+        errors.append("invalid_review_run_id")
     if str(review.get("status") or "") not in REVIEW_STATUSES:
         errors.append("invalid_review_status")
     for key in ("reasons", "required_fixes"):
@@ -53,6 +59,9 @@ def validate_review_payload_contract(review: dict[str, Any]) -> list[str]:
         sev = str(item.get("severity") or "").lower()
         if sev not in REVIEW_FINDING_SEVERITIES:
             errors.append(f"review_finding_invalid_severity:{idx}:{sev}")
+        for key in ("code", "message", "evidence_ref"):
+            if not _is_non_empty_string(item.get(key)):
+                errors.append(f"review_finding_invalid_field:{idx}:{key}")
     return errors
 
 

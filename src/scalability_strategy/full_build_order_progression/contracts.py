@@ -10,6 +10,11 @@ FULL_BUILD_ORDER_PROGRESSION_CONTRACT = "sde.full_build_order_progression.v1"
 FULL_BUILD_ORDER_PROGRESSION_SCHEMA_VERSION = "1.0"
 _ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
 _ALLOWED_STATUS = {"ordered", "out_of_order", "incomplete"}
+_CANONICAL_EVIDENCE_REFS = {
+    "run_manifest_ref": "run-manifest.json",
+    "orchestration_ref": "orchestration.jsonl",
+    "progression_ref": "strategy/full_build_order_progression.json",
+}
 
 
 def _expected_required_for_mode(mode: str) -> list[str]:
@@ -132,6 +137,25 @@ def _validate_summary(summary: Any) -> list[str]:
     return []
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["full_build_order_progression_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        ref = evidence.get(key)
+        if not isinstance(ref, str) or not ref.strip():
+            errs.append(f"full_build_order_progression_evidence_ref:{key}")
+            continue
+        normalized = ref.strip()
+        if normalized != expected:
+            errs.append(f"full_build_order_progression_evidence_ref:{key}")
+            continue
+        ref_path = Path(normalized)
+        if ref_path.is_absolute() or ".." in ref_path.parts:
+            errs.append(f"full_build_order_progression_evidence_ref:{key}")
+    return errs
+
+
 def _validate_summary_sequence_semantics(
     *,
     mode: Any,
@@ -172,6 +196,30 @@ def _validate_summary_sequence_semantics(
     return []
 
 
+def _validate_order_score_semantics(summary: Any, checks: Any) -> list[str]:
+    if not isinstance(summary, dict) or not isinstance(checks, dict):
+        return []
+    typed_checks = _coerced_checks(checks)
+    score = summary.get("order_score")
+    if typed_checks is None or isinstance(score, bool) or not isinstance(score, (int, float)):
+        return []
+    expected = round(sum(1 for value in typed_checks.values() if value) / 5, 4)
+    if round(float(score), 4) != expected:
+        return ["full_build_order_progression_order_score_mismatch"]
+    return []
+
+
+def _validate_mode_entry_semantics(mode: Any, sequence: Any, checks: Any) -> list[str]:
+    if mode != "baseline" or not isinstance(sequence, list) or not isinstance(checks, dict):
+        return []
+    typed_checks = _coerced_checks(checks)
+    if typed_checks is None or not sequence:
+        return []
+    if typed_checks["starts_with_allowed_entry_stage"] and sequence[0] != "executor":
+        return ["full_build_order_progression_mode_entry_stage_mismatch"]
+    return []
+
+
 def validate_full_build_order_progression_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["full_build_order_progression_not_object"]
@@ -181,8 +229,17 @@ def validate_full_build_order_progression_dict(body: Any) -> list[str]:
     errs.extend(_validate_checks(checks))
     summary = body.get("summary")
     errs.extend(_validate_summary(summary))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs:
         errs.extend(_validate_status_semantics(status, checks))
+        errs.extend(_validate_order_score_semantics(summary, checks))
+        errs.extend(
+            _validate_mode_entry_semantics(
+                body.get("mode"),
+                body.get("stage_sequence"),
+                checks,
+            )
+        )
         errs.extend(
             _validate_summary_sequence_semantics(
                 mode=body.get("mode"),

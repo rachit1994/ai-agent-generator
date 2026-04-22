@@ -56,3 +56,46 @@ def test_run_directory_surfaces_invalid_risk_budgets_permission_matrix_contract(
     assert (
         "risk_budgets_permission_matrix_contract:risk_budgets_permission_matrix_schema" in result["errors"]
     )
+
+
+def test_run_directory_surfaces_missing_risk_budgets_permission_matrix_evidence_ref(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "safety").mkdir(parents=True, exist_ok=True)
+    (out / "safety" / "risk_budgets_permission_matrix_runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.risk_budgets_permission_matrix.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "status": "degraded",
+                "checks": {
+                    "balanced_gates_present": True,
+                    "validation_ready": False,
+                    "hard_stops_all_pass": False,
+                },
+                "counts": {"hard_stop_count": 1},
+                "evidence": {
+                    "summary_ref": "summary.json",
+                    "review_ref": "review.json",
+                    "runtime_ref": "safety/risk_budgets_permission_matrix_runtime.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (out / "review.json").unlink()
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "risk_budgets_permission_matrix_contract:"
+        "risk_budgets_permission_matrix_evidence_ref:review_ref_missing"
+    ) in result["errors"]

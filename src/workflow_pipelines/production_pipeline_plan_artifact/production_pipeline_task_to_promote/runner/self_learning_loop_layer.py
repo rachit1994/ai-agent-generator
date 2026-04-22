@@ -16,18 +16,28 @@ from production_architecture.storage.storage.storage import ensure_dir, write_js
 def _read_json_or_empty(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
-    body = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
     return body if isinstance(body, dict) else {}
 
 
 def _read_trace_events(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return []
     out: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in lines:
         if not line.strip():
             continue
-        body = json.loads(line)
+        try:
+            body = json.loads(line)
+        except json.JSONDecodeError:
+            continue
         if isinstance(body, dict):
             out.append(body)
     return out

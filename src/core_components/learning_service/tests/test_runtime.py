@@ -88,3 +88,18 @@ def test_validate_learning_service_rejects_metric_semantics_mismatch() -> None:
     payload["metrics"]["health_score"] = 0.0
     errs = validate_learning_service_dict(payload)
     assert "learning_service_metric_semantics:health_score" in errs
+
+
+def test_validate_learning_service_rejects_invalid_evidence() -> None:
+    payload = build_learning_service(
+        run_id="rid-learning-service",
+        mode="guarded_pipeline",
+        reflection_bundle={"reflections": [{"id": "r1"}]},
+        canary_report={"rows": [{"id": "c1"}]},
+        events=[{"stage": "finalize", "score": {"passed": True}}],
+    )
+    payload["evidence"]["reflection_bundle_ref"] = "../learning/reflection_bundle.json"
+    payload["evidence"]["canary_report_ref"] = ""
+    errs = validate_learning_service_dict(payload)
+    assert "learning_service_evidence_ref:reflection_bundle_ref" in errs
+    assert "learning_service_evidence_ref:canary_report_ref" in errs

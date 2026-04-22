@@ -67,6 +67,7 @@ def test_run_directory_rejects_invalid_self_learning_semantics(tmp_path: Path, m
                 },
                 "decision": {
                     "decision": "promote",
+                    "loop_state": "promote",
                     "failed_gates": ["min_examples"],
                     "decision_reasons": ["self_learning_loop_contract:gate_min_examples_unmet"],
                     "next_action": "open_promotion_review",
@@ -116,6 +117,7 @@ def test_run_directory_rejects_missing_self_learning_evidence_refs(tmp_path: Pat
                 },
                 "decision": {
                     "decision": "promote",
+                    "loop_state": "promote",
                     "failed_gates": [],
                     "decision_reasons": ["self_learning_loop_contract:all_gates_passed"],
                     "next_action": "open_promotion_review",
@@ -188,6 +190,7 @@ def test_run_directory_rejects_promote_under_active_hard_stop(tmp_path: Path, mo
                 },
                 "decision": {
                     "decision": "promote",
+                    "loop_state": "promote",
                     "failed_gates": [],
                     "decision_reasons": ["self_learning_loop_contract:all_gates_passed"],
                     "next_action": "open_promotion_review",
@@ -275,6 +278,7 @@ def test_run_directory_rejects_duplicate_self_learning_candidates(tmp_path: Path
                 },
                 "decision": {
                     "decision": "promote",
+                    "loop_state": "promote",
                     "failed_gates": [],
                     "decision_reasons": ["self_learning_loop_contract:all_gates_passed"],
                     "next_action": "open_promotion_review",
@@ -347,6 +351,7 @@ def test_run_directory_rejects_malformed_self_learning_candidate_row(
                 },
                 "decision": {
                     "decision": "promote",
+                    "loop_state": "promote",
                     "failed_gates": [],
                     "decision_reasons": ["self_learning_loop_contract:all_gates_passed"],
                     "next_action": "open_promotion_review",

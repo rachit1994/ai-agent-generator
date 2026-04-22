@@ -8,6 +8,10 @@ from typing import Any
 
 RETRY_REPEAT_PROFILE_RUNTIME_CONTRACT = "sde.retry_repeat_profile_runtime.v1"
 RETRY_REPEAT_PROFILE_RUNTIME_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "run_manifest_ref": "run-manifest.json",
+    "runtime_ref": "program/retry_repeat_profile_runtime.json",
+}
 
 
 def _validate_metrics(metrics: Any, *, repeat: Any) -> list[str]:
@@ -42,7 +46,46 @@ def validate_retry_repeat_profile_runtime_dict(body: Any) -> list[str]:
     status = body.get("status")
     if status not in ("single", "repeat_ok", "repeat_degraded"):
         errs.append("retry_repeat_profile_runtime_status")
-    errs.extend(_validate_metrics(body.get("metrics"), repeat=repeat))
+    metrics = body.get("metrics")
+    errs.extend(_validate_metrics(metrics, repeat=repeat))
+    errs.extend(_validate_status_semantics(status=status, repeat=repeat, metrics=metrics))
+    errs.extend(_validate_evidence(body.get("evidence")))
+    return errs
+
+
+def _validate_status_semantics(*, status: Any, repeat: Any, metrics: Any) -> list[str]:
+    if (
+        status not in ("single", "repeat_ok", "repeat_degraded")
+        or isinstance(repeat, bool)
+        or not isinstance(repeat, int)
+        or not isinstance(metrics, dict)
+    ):
+        return []
+    all_runs_no_pipeline_error = metrics.get("all_runs_no_pipeline_error")
+    validation_ready_all = metrics.get("validation_ready_all")
+    if not isinstance(all_runs_no_pipeline_error, bool) or not isinstance(validation_ready_all, bool):
+        return []
+    if repeat <= 1 and status != "single":
+        return ["retry_repeat_profile_runtime_status_semantics"]
+    if repeat > 1:
+        expected = "repeat_ok" if all_runs_no_pipeline_error and validation_ready_all else "repeat_degraded"
+        if status != expected:
+            return ["retry_repeat_profile_runtime_status_semantics"]
+    return []
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["retry_repeat_profile_runtime_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"retry_repeat_profile_runtime_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"retry_repeat_profile_runtime_evidence_ref:{key}")
     return errs
 
 

@@ -49,3 +49,51 @@ def test_runner_layer_fails_closed_for_malformed_jsonl(tmp_path: Path) -> None:
     records_path.write_text("{bad json", encoding="utf-8")
     with pytest.raises(ValueError, match="online_evaluation_shadow_canary_contract:online_eval_records_jsonl:1"):
         write_online_evaluation_shadow_canary_artifact(output_dir=tmp_path / "run", run_id="rid")
+
+
+def test_runner_layer_ignores_malformed_optional_canary_report(tmp_path: Path) -> None:
+    output_dir = tmp_path / "run"
+    _write_records(
+        output_dir / "learning" / "online_eval_records.jsonl",
+        [
+            {
+                "request_id": f"req-{idx}",
+                "cohort": "shadow" if idx % 2 else "canary",
+                "baseline_latency_ms": 10.0 + idx,
+                "candidate_latency_ms": 11.0 + idx,
+                "baseline_outcome": True,
+                "candidate_outcome": True,
+                "baseline_quality": 0.6,
+                "candidate_quality": 0.7,
+            }
+            for idx in range(6)
+        ],
+    )
+    (output_dir / "learning" / "canary_report.json").write_text("{bad json", encoding="utf-8")
+    payload = write_online_evaluation_shadow_canary_artifact(output_dir=output_dir, run_id="rid")
+    assert payload["schema"] == "sde.online_evaluation_shadow_canary.v1"
+
+
+def test_runner_layer_ignores_unreadable_optional_canary_report(tmp_path: Path) -> None:
+    output_dir = tmp_path / "run"
+    _write_records(
+        output_dir / "learning" / "online_eval_records.jsonl",
+        [
+            {
+                "request_id": f"req-{idx}",
+                "cohort": "shadow" if idx % 2 else "canary",
+                "baseline_latency_ms": 10.0 + idx,
+                "candidate_latency_ms": 11.0 + idx,
+                "baseline_outcome": True,
+                "candidate_outcome": True,
+                "baseline_quality": 0.6,
+                "candidate_quality": 0.7,
+            }
+            for idx in range(6)
+        ],
+    )
+    canary_path = output_dir / "learning" / "canary_report.json"
+    canary_path.parent.mkdir(parents=True, exist_ok=True)
+    canary_path.write_bytes(b"\xff\xfe\xfd")
+    payload = write_online_evaluation_shadow_canary_artifact(output_dir=output_dir, run_id="rid")
+    assert payload["schema"] == "sde.online_evaluation_shadow_canary.v1"

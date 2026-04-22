@@ -39,3 +39,16 @@ def test_production_orchestration_degraded_for_truthy_non_boolean_active_lease(
     payload = write_production_orchestration_artifact(output_dir=run_dir, run_id=run_id)
     assert payload["metrics"]["active_lease_count"] == 0
     assert payload["status"] == "degraded"
+
+
+def test_production_orchestration_fail_closes_malformed_inputs(tmp_path: Path) -> None:
+    run_id = "run-production-orchestration-malformed"
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "coordination").mkdir(parents=True, exist_ok=True)
+    (run_dir / "orchestration").mkdir(parents=True, exist_ok=True)
+    (run_dir / "coordination" / "lease_table.json").write_text("{bad", encoding="utf-8")
+    (run_dir / "orchestration" / "shard_map.json").write_text("{bad", encoding="utf-8")
+    payload = write_production_orchestration_artifact(output_dir=run_dir, run_id=run_id)
+    assert payload["status"] == "missing"
+    assert payload["metrics"]["lease_count"] == 0
+    assert payload["metrics"]["shard_count"] == 0

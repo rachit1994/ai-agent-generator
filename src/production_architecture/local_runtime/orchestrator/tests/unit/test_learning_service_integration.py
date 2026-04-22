@@ -73,3 +73,14 @@ def test_validate_learning_service_path_rejects_metric_semantics_mismatch(tmp_pa
     )
     errs = validate_learning_service_path(path)
     assert "learning_service_metric_semantics:health_score" in errs
+
+
+def test_write_learning_service_artifact_fail_closes_malformed_reflection_inputs(tmp_path: Path) -> None:
+    run_id = "run-learning-service-malformed-reflection"
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "learning").mkdir(parents=True)
+    (run_dir / "learning" / "reflection_bundle.json").write_text("{bad", encoding="utf-8")
+    (run_dir / "learning" / "canary_report.json").write_text("{bad", encoding="utf-8")
+    payload = write_learning_service_artifact(output_dir=run_dir, run_id=run_id, mode="guarded_pipeline")
+    assert payload["metrics"]["reflection_count"] == 0
+    assert payload["metrics"]["canary_count"] == 0

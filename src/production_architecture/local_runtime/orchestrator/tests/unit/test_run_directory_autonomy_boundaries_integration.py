@@ -105,3 +105,49 @@ def test_run_directory_rejects_autonomy_run_id_mismatch(tmp_path: Path, monkeypa
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "autonomy_boundaries_contract:autonomy_boundaries_run_id_mismatch" in result["errors"]
+
+
+def test_run_directory_rejects_missing_autonomy_token_context_ref_target(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "token_context.json").unlink()
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "autonomy_boundaries_contract:autonomy_boundaries_evidence_ref_missing:token_context_ref"
+        in result["errors"]
+    )
+
+
+def test_run_directory_rejects_non_canonical_autonomy_token_context_ref(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    body = json.loads((out / "safety" / "autonomy_boundaries_tokens_expiry.json").read_text(encoding="utf-8"))
+    body["evidence"]["token_context_ref"] = "./token_context.json"
+    (out / "safety" / "autonomy_boundaries_tokens_expiry.json").write_text(json.dumps(body), encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "autonomy_boundaries_contract:autonomy_boundaries_evidence_ref:token_context_ref" in result["errors"]
+
+
+def test_run_directory_rejects_autonomy_token_context_payload_mismatch(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    body = json.loads((out / "safety" / "autonomy_boundaries_tokens_expiry.json").read_text(encoding="utf-8"))
+    body["token_context"]["context_ttl_seconds"] = 7200
+    (out / "safety" / "autonomy_boundaries_tokens_expiry.json").write_text(json.dumps(body), encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "autonomy_boundaries_contract:autonomy_boundaries_token_context_mismatch" in result["errors"]

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -32,15 +33,20 @@ def _validate_metrics(metrics: Any) -> tuple[list[str], dict[str, float]]:
         if not _is_number(value):
             errs.append(f"transfer_learning_metrics_metric_type:{key}")
             continue
-        numeric_values[key] = float(value)
+        numeric = float(value)
+        if not math.isfinite(numeric):
+            errs.append(f"transfer_learning_metrics_metric_non_finite:{key}")
+            continue
+        numeric_values[key] = numeric
         if key.endswith("_rate") or key.endswith("_score"):
-            if float(value) < 0.0 or float(value) > 1.0:
+            if numeric < 0.0 or numeric > 1.0:
                 errs.append(f"transfer_learning_metrics_metric_range:{key}")
     return errs, numeric_values
 
 
 def _validate_net_transfer_coherence(numeric_values: dict[str, float], errs: list[str]) -> None:
-    if errs:
+    required_keys = {"transfer_gain_rate", "negative_transfer_rate", "net_transfer_points"}
+    if not required_keys.issubset(numeric_values):
         return
     expected = round(
         (numeric_values["transfer_gain_rate"] - numeric_values["negative_transfer_rate"]) * 100.0,
@@ -48,6 +54,25 @@ def _validate_net_transfer_coherence(numeric_values: dict[str, float], errs: lis
     )
     if abs(numeric_values["net_transfer_points"] - expected) > _NET_TRANSFER_TOLERANCE:
         errs.append("transfer_learning_metrics_net_transfer_points_mismatch")
+
+
+def _validate_transfer_efficiency_coherence(numeric_values: dict[str, float], errs: list[str]) -> None:
+    required_keys = {
+        "transfer_gain_rate",
+        "negative_transfer_rate",
+        "retained_success_rate",
+        "transfer_efficiency_score",
+    }
+    if not required_keys.issubset(numeric_values):
+        return
+    expected = round(
+        0.5 * numeric_values["transfer_gain_rate"]
+        + 0.3 * numeric_values["retained_success_rate"]
+        + 0.2 * (1.0 - numeric_values["negative_transfer_rate"]),
+        4,
+    )
+    if abs(numeric_values["transfer_efficiency_score"] - expected) > _NET_TRANSFER_TOLERANCE:
+        errs.append("transfer_learning_metrics_transfer_efficiency_score_mismatch")
 
 
 def _validate_evidence(evidence: Any) -> list[str]:
@@ -76,6 +101,7 @@ def validate_transfer_learning_metrics_dict(body: Any) -> list[str]:
     errs.extend(metric_errs)
     if numeric_values:
         _validate_net_transfer_coherence(numeric_values, errs)
+        _validate_transfer_efficiency_coherence(numeric_values, errs)
     errs.extend(_validate_evidence(body.get("evidence")))
     return errs
 

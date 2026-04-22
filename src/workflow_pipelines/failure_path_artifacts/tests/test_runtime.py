@@ -67,3 +67,44 @@ def test_validate_failure_path_artifacts_rejects_ok_status_when_contract_checks_
     }
     errs = validate_failure_path_artifacts_dict(payload)
     assert "failure_path_artifacts_status_ok_requires_valid_contracts" in errs
+
+
+def test_validate_failure_path_artifacts_rejects_missing_evidence() -> None:
+    payload = {
+        "schema": "sde.failure_path_artifacts.v1",
+        "schema_version": "1.0",
+        "run_id": "rid",
+        "status": "failed",
+        "checks": {
+            "summary_present": True,
+            "summary_contract_valid": False,
+            "replay_manifest_present": True,
+            "replay_manifest_contract_valid": True,
+        },
+    }
+    errs = validate_failure_path_artifacts_dict(payload)
+    assert "failure_path_artifacts_evidence" in errs
+
+
+def test_validate_failure_path_artifacts_rejects_bad_evidence_refs() -> None:
+    payload = {
+        "schema": "sde.failure_path_artifacts.v1",
+        "schema_version": "1.0",
+        "run_id": "rid",
+        "status": "failed",
+        "checks": {
+            "summary_present": True,
+            "summary_contract_valid": False,
+            "replay_manifest_present": True,
+            "replay_manifest_contract_valid": True,
+        },
+        "evidence": {
+            "summary_ref": "../summary.json",
+            "replay_manifest_ref": "/tmp/replay_manifest.json",
+            "failure_path_artifacts_ref": "replay/other.json",
+        },
+    }
+    errs = validate_failure_path_artifacts_dict(payload)
+    assert "failure_path_artifacts_evidence_ref:summary_ref" in errs
+    assert "failure_path_artifacts_evidence_ref:replay_manifest_ref" in errs
+    assert "failure_path_artifacts_evidence_ref:failure_path_artifacts_ref" in errs

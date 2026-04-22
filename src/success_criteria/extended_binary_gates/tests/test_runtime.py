@@ -85,3 +85,28 @@ def test_validate_extended_binary_gates_rejects_non_canonical_evidence_refs() ->
     payload["evidence"]["traces_ref"] = "learning/traces.jsonl"
     errs = validate_extended_binary_gates_dict(payload)
     assert "extended_binary_gates_evidence_ref:traces_ref_canonical" in errs
+
+
+def test_extended_binary_gates_governance_ignores_review_checks_in_denominator() -> None:
+    payload = build_extended_binary_gates(
+        run_id="rid-ebg-governance-review",
+        parsed={
+            "checks": [
+                {"name": "review", "passed": True},
+                {"name": "shape", "passed": True},
+            ]
+        },
+        events=[{"stage": "finalize", "score": {"passed": True, "reliability": 0.95}}],
+        skill_nodes={"nodes": [{"score": 0.9}]},
+    )
+    assert payload["gates"]["governance_gate"] is True
+
+
+def test_extended_binary_gates_learning_uses_highest_valid_skill_score() -> None:
+    payload = build_extended_binary_gates(
+        run_id="rid-ebg-learning-nodes",
+        parsed={"checks": [{"name": "shape", "passed": True}]},
+        events=[{"stage": "finalize", "score": {"passed": True, "reliability": 0.95}}],
+        skill_nodes={"nodes": [{"score": "bad"}, {"score": 0.7}, {"score": 0.95}]},
+    )
+    assert payload["gates"]["learning_gate"] is True

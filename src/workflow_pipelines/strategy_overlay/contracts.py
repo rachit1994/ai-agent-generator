@@ -10,6 +10,11 @@ STRATEGY_OVERLAY_RUNTIME_CONTRACT = "sde.strategy_overlay_runtime.v1"
 STRATEGY_OVERLAY_RUNTIME_SCHEMA_VERSION = "1.0"
 _ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
 _ALLOWED_STRATEGIES = {"stabilize", "accelerate", "hold"}
+_CANONICAL_EVIDENCE_REFS = {
+    "proposal_ref": "strategy/proposal.json",
+    "overlay_ref": "strategy/overlay.json",
+    "traces_ref": "traces.jsonl",
+}
 
 
 def validate_strategy_overlay_runtime_dict(body: Any) -> list[str]:
@@ -41,6 +46,18 @@ def validate_strategy_overlay_runtime_dict(body: Any) -> list[str]:
         for key in ("promotion_required", "autonomy_applied", "finalize_passed"):
             if not isinstance(gates.get(key), bool):
                 errs.append(f"strategy_overlay_runtime_gate_type:{key}")
+    evidence = body.get("evidence")
+    if not isinstance(evidence, dict):
+        errs.append("strategy_overlay_runtime_evidence")
+    else:
+        for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+            value = evidence.get(key)
+            if not isinstance(value, str) or not value.strip():
+                errs.append(f"strategy_overlay_runtime_evidence_ref:{key}")
+                continue
+            normalized = value.strip()
+            if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+                errs.append(f"strategy_overlay_runtime_evidence_ref:{key}")
     return errs
 
 

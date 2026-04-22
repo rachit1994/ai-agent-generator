@@ -16,7 +16,10 @@ from production_architecture.storage.storage.storage import ensure_dir, write_js
 def _read_json_or_empty(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
-    body = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
     return body if isinstance(body, dict) else {}
 
 

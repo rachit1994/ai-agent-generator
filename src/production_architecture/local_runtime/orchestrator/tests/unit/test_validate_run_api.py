@@ -155,7 +155,10 @@ def test_validate_run_benchmark_aggregate_ok(tmp_path: Path, monkeypatch: pytest
                     "summary_contract_valid": True,
                     "is_failed_summary": False,
                 },
-                "evidence": {},
+                "evidence": {
+                    "benchmark_summary_ref": "summary.json",
+                    "benchmark_summary_runtime_ref": "benchmark-summary-runtime.json",
+                },
             }
         ),
         encoding="utf-8",
@@ -184,12 +187,12 @@ def test_validate_run_benchmark_aggregate_ok(tmp_path: Path, monkeypatch: pytest
                 "schema": "sde.traces_jsonl_event_row_runtime.v1",
                 "schema_version": "1.0",
                 "run_id": "bench-complete",
-                "status": "ready",
+                "status": "degraded",
                 "checks": {
-                    "all_rows_valid": True,
-                    "run_id_consistent": True,
+                    "all_rows_valid": False,
+                    "run_id_consistent": False,
                 },
-                "counts": {"row_count": 1},
+                "counts": {"row_count": 0},
                 "evidence": {},
             }
         ),
@@ -220,6 +223,679 @@ def test_validate_run_benchmark_aggregate_ok(tmp_path: Path, monkeypatch: pytest
     assert result.get("execution_gates_applied") is False
     assert result.get("run_kind") == "benchmark_aggregate"
     assert result["errors"] == []
+
+
+def test_validate_run_benchmark_checkpoint_runtime_unreadable_maps_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "bench-runtime-unreadable"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps({"schema": "sde.benchmark_manifest.v1", "run_id": "bench-runtime-unreadable", "mode": "baseline"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        _validate_run_module,
+        "validate_benchmark_checkpoint_runtime_path",
+        lambda _path: ["benchmark_checkpoint_runtime_unreadable"],
+    )
+    result = validate_run("bench-runtime-unreadable", mode=None)
+    assert "benchmark_checkpoint_runtime_unreadable" in result["errors"]
+
+
+def test_validate_run_benchmark_manifest_runtime_unreadable_maps_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "bench-manifest-runtime-unreadable"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {"schema": "sde.benchmark_manifest.v1", "run_id": "bench-manifest-runtime-unreadable", "mode": "baseline"}
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        _validate_run_module,
+        "validate_benchmark_aggregate_manifest_runtime_path",
+        lambda _path: ["benchmark_aggregate_manifest_runtime_unreadable"],
+    )
+    result = validate_run("bench-manifest-runtime-unreadable", mode=None)
+    assert "benchmark_manifest_runtime_unreadable" in result["errors"]
+
+
+def test_benchmark_checkpoint_cross_contract_reports_status_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-cross-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "bench-cross-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": [],
+                "finished": False,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-cross-mismatch",
+                "status": "finished",
+                "checks": {
+                    "checkpoint_present": True,
+                    "finished": True,
+                    "has_completed_tasks": True,
+                },
+                "evidence": {
+                    "benchmark_checkpoint_ref": "benchmark-checkpoint.json",
+                    "benchmark_checkpoint_runtime_ref": "benchmark-checkpoint-runtime.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_checkpoint_cross_contract_errors(run_dir)
+    assert "benchmark_checkpoint_cross_contract:status_mismatch" in errors
+
+
+def test_benchmark_manifest_runtime_cross_contract_reports_status_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-manifest-runtime-cross-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-manifest-runtime-cross-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "bench-manifest-runtime-cross-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": [],
+                "finished": False,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-manifest-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_manifest_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-manifest-runtime-cross-mismatch",
+                "status": "finished",
+                "checks": {
+                    "manifest_present": True,
+                    "checkpoint_present": True,
+                    "checkpoint_finished": True,
+                },
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_manifest_runtime_cross_contract_errors(run_dir)
+    assert "benchmark_manifest_runtime_cross_contract:status_mismatch" in errors
+
+
+def test_benchmark_manifest_checkpoint_coherence_reports_run_id_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-manifest-checkpoint-runid-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "manifest-run",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "checkpoint-run",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": [],
+                "finished": False,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_manifest_checkpoint_coherence_errors(run_dir)
+    assert "benchmark_manifest_checkpoint_coherence:run_id_mismatch" in errors
+
+
+def test_benchmark_manifest_checkpoint_coherence_noop_when_manifest_missing(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-manifest-checkpoint-no-manifest"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "checkpoint-run",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": [],
+                "finished": False,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_manifest_checkpoint_coherence_errors(run_dir)
+    assert errors == []
+
+
+def test_benchmark_summary_runtime_cross_contract_reports_run_id_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-summary-runtime-runid-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-summary-runtime-runid-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary.v1",
+                "runId": "foreign-run-id",
+                "suitePath": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "verdict": "passed",
+                "perTaskDeltas": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-summary-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-runtime-runid-mismatch",
+                "status": "finished",
+                "checks": {
+                    "summary_present": True,
+                    "summary_contract_valid": True,
+                    "is_failed_summary": False,
+                },
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_summary_runtime_cross_contract_errors(run_dir)
+    assert "benchmark_summary_runtime_cross_contract:run_id_mismatch" in errors
+
+
+def test_benchmark_summary_runtime_cross_contract_reports_status_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-summary-runtime-status-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-summary-runtime-status-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary.v1",
+                "runId": "bench-summary-runtime-status-mismatch",
+                "suitePath": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "runStatus": "failed",
+                "perTaskDeltas": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-summary-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-runtime-status-mismatch",
+                "status": "finished",
+                "checks": {
+                    "summary_present": True,
+                    "summary_contract_valid": True,
+                    "is_failed_summary": False,
+                },
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_summary_runtime_cross_contract_errors(run_dir)
+    assert "benchmark_summary_runtime_cross_contract:status_mismatch" in errors
+
+
+def test_benchmark_checkpoint_cross_contract_reports_run_id_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-cross-runid-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "bench-cross-runid-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": [],
+                "finished": False,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "other-run-id",
+                "status": "in_progress",
+                "checks": {
+                    "checkpoint_present": True,
+                    "finished": False,
+                    "has_completed_tasks": False,
+                },
+                "evidence": {
+                    "benchmark_checkpoint_ref": "benchmark-checkpoint.json",
+                    "benchmark_checkpoint_runtime_ref": "benchmark-checkpoint-runtime.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_checkpoint_cross_contract_errors(run_dir)
+    assert "benchmark_checkpoint_cross_contract:run_id_mismatch" in errors
+
+
+def test_benchmark_checkpoint_cross_contract_reports_checks_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-cross-checks-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "bench-cross-checks-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": ["task-1"],
+                "finished": True,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-cross-checks-mismatch",
+                "status": "finished",
+                "checks": {
+                    "checkpoint_present": True,
+                    "finished": True,
+                    "has_completed_tasks": False,
+                },
+                "evidence": {
+                    "benchmark_checkpoint_ref": "benchmark-checkpoint.json",
+                    "benchmark_checkpoint_runtime_ref": "benchmark-checkpoint-runtime.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_checkpoint_cross_contract_errors(run_dir)
+    assert "benchmark_checkpoint_cross_contract:checks_mismatch" in errors
+
+
+def test_benchmark_orchestration_cross_contract_reports_counts_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-orch-counts-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-orch-counts-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "orchestration.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-orch-counts-mismatch",
+                "status": "clean",
+                "checks": {
+                    "orchestration_present": False,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 1, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_orchestration_cross_contract_errors(run_dir)
+    assert "benchmark_orchestration_cross_contract:counts_mismatch" in errors
+
+
+def test_benchmark_orchestration_cross_contract_reports_run_id_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-orch-runid-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-orch-runid-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "orchestration.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "other-run",
+                "status": "clean",
+                "checks": {
+                    "orchestration_present": False,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 0, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_orchestration_cross_contract_errors(run_dir)
+    assert "benchmark_orchestration_cross_contract:run_id_mismatch" in errors
+
+
+def test_benchmark_orchestration_cross_contract_reports_status_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-orch-status-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-orch-status-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "orchestration.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-orch-status-mismatch",
+                "status": "has_error",
+                "checks": {
+                    "orchestration_present": False,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 0, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_orchestration_cross_contract_errors(run_dir)
+    assert "benchmark_orchestration_cross_contract:status_mismatch" in errors
+
+
+def test_benchmark_orchestration_cross_contract_reports_checks_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-orch-checks-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-orch-checks-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "orchestration.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-orch-checks-mismatch",
+                "status": "clean",
+                "checks": {
+                    "orchestration_present": True,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 0, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_orchestration_cross_contract_errors(run_dir)
+    assert "benchmark_orchestration_cross_contract:checks_mismatch" in errors
+
+
+def test_benchmark_orchestration_cross_contract_reports_malformed_jsonl_line(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-orch-malformed-line"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-orch-malformed-line",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "orchestration.jsonl").write_text("{not-json\n", encoding="utf-8")
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-orch-malformed-line",
+                "status": "clean",
+                "checks": {
+                    "orchestration_present": False,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 0, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_orchestration_cross_contract_errors(run_dir)
+    assert "benchmark_orchestration_cross_contract:malformed_jsonl_line" in errors
+
+
+def test_benchmark_orchestration_cross_contract_reports_unknown_row_type(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-orch-unknown-row-type"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-orch-unknown-row-type",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "orchestration.jsonl").write_text(
+        json.dumps({"run_id": "bench-orch-unknown-row-type", "type": "foo"}) + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-orch-unknown-row-type",
+                "status": "clean",
+                "checks": {
+                    "orchestration_present": False,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 0, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._benchmark_orchestration_cross_contract_errors(run_dir)
+    assert "benchmark_orchestration_cross_contract:unknown_row_type" in errors
+
+
+def test_validate_run_traces_event_row_runtime_unreadable_maps_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "bench-traces-runtime-unreadable"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps({"schema": "sde.benchmark_manifest.v1", "run_id": "bench-traces-runtime-unreadable", "mode": "baseline"}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        _validate_run_module,
+        "validate_traces_jsonl_event_row_runtime_path",
+        lambda _path: ["traces_jsonl_event_row_runtime_unreadable"],
+    )
+    result = validate_run("bench-traces-runtime-unreadable", mode=None)
+    assert "traces_event_row_runtime_unreadable" in result["errors"]
+
+
+def test_validate_run_benchmark_orchestration_runtime_unreadable_maps_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "bench-orchestration-runtime-unreadable"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {"schema": "sde.benchmark_manifest.v1", "run_id": "bench-orchestration-runtime-unreadable", "mode": "baseline"}
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        _validate_run_module,
+        "validate_benchmark_orchestration_jsonl_runtime_path",
+        lambda _path: ["benchmark_orchestration_jsonl_runtime_unreadable"],
+    )
+    result = validate_run("bench-orchestration-runtime-unreadable", mode=None)
+    assert "benchmark_orchestration_runtime_unreadable" in result["errors"]
+
+
+def test_traces_event_row_cross_contract_reports_status_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-traces-status-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-traces-status-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "traces.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "traces-event-row-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.traces_jsonl_event_row_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-traces-status-mismatch",
+                "status": "ready",
+                "checks": {"all_rows_valid": False, "run_id_consistent": False},
+                "counts": {"row_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._traces_event_row_cross_contract_errors(run_dir)
+    assert "traces_event_row_cross_contract:status_mismatch" in errors
 
 
 def test_validate_run_benchmark_manifest_runtime_contract_error(
@@ -599,6 +1275,170 @@ def test_validate_run_benchmark_summary_runtime_contract_error(
     result = validate_run("bench-summary-runtime-bad", mode=None)
     assert result["ok"] is False
     assert "benchmark_summary_runtime_contract:benchmark_aggregate_summary_runtime_schema" in result["errors"]
+
+
+def test_validate_run_benchmark_summary_runtime_rejects_finished_status_with_invalid_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "bench-summary-status-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_manifest.v1",
+                "run_id": "bench-summary-status-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "tasks": [],
+                "max_tasks": None,
+                "continue_on_error": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-manifest-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_manifest_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-status-mismatch",
+                "status": "finished",
+                "checks": {
+                    "manifest_present": True,
+                    "checkpoint_present": True,
+                    "checkpoint_finished": True,
+                },
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint.v1",
+                "run_id": "bench-summary-status-mismatch",
+                "suite_path": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "max_tasks": None,
+                "continue_on_error": False,
+                "completed_task_ids": [],
+                "finished": True,
+                "updated_at_ms": 0,
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_checkpoint_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-status-mismatch",
+                "status": "finished",
+                "checks": {
+                    "checkpoint_present": True,
+                    "finished": True,
+                    "has_completed_tasks": False,
+                },
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "summary.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary.v1",
+                "runId": "bench-summary-status-mismatch",
+                "suitePath": "/tmp/suite.jsonl",
+                "mode": "baseline",
+                "verdict": "passed",
+                "perTaskDeltas": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-summary-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_aggregate_summary_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-status-mismatch",
+                "status": "finished",
+                "checks": {
+                    "summary_present": True,
+                    "summary_contract_valid": False,
+                    "is_failed_summary": False,
+                },
+                "evidence": {
+                    "benchmark_summary_ref": "summary.json",
+                    "benchmark_summary_runtime_ref": "benchmark-summary-runtime.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-orchestration-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.benchmark_orchestration_jsonl_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-status-mismatch",
+                "status": "clean",
+                "checks": {
+                    "orchestration_present": False,
+                    "resume_lines_valid": True,
+                    "error_lines_valid": True,
+                },
+                "counts": {"row_count": 0, "resume_count": 0, "error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "traces-event-row-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.traces_jsonl_event_row_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-status-mismatch",
+                "status": "degraded",
+                "checks": {"all_rows_valid": False, "run_id_consistent": False},
+                "counts": {"row_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "offline-evaluation-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.offline_evaluation_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-summary-status-mismatch",
+                "status": "ready",
+                "checks": {
+                    "suite_contract_valid": True,
+                    "summary_present": True,
+                    "traces_present": True,
+                    "checkpoint_finished": True,
+                },
+                "counts": {"suite_error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (run_dir / "traces.jsonl").write_text("", encoding="utf-8")
+    result = validate_run("bench-summary-status-mismatch", mode=None)
+    assert result["ok"] is False
+    assert (
+        "benchmark_summary_runtime_contract:"
+        "benchmark_aggregate_summary_runtime_status_finished_requires_valid_summary"
+        in result["errors"]
+    )
 
 
 def test_validate_run_benchmark_orchestration_runtime_contract_error(
@@ -1208,7 +2048,10 @@ def test_validate_run_accepts_degraded_traces_event_row_runtime_with_zero_rows(
                 "run_id": "bench-traces-zero-degraded",
                 "status": "finished",
                 "checks": {"summary_present": True, "summary_contract_valid": True, "is_failed_summary": False},
-                "evidence": {},
+                "evidence": {
+                    "benchmark_summary_ref": "summary.json",
+                    "benchmark_summary_runtime_ref": "benchmark-summary-runtime.json",
+                },
             }
         ),
         encoding="utf-8",
@@ -1388,6 +2231,78 @@ def test_validate_run_offline_evaluation_runtime_contract_error(
     assert "offline_evaluation_runtime_contract:offline_evaluation_runtime_schema" in result["errors"]
 
 
+def test_offline_evaluation_cross_contract_reports_status_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-offline-status-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps({"schema": "sde.benchmark_manifest.v1", "run_id": "bench-offline-status-mismatch", "mode": "baseline"}),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps({"schema": "sde.benchmark_checkpoint.v1", "run_id": "bench-offline-status-mismatch", "finished": False}),
+        encoding="utf-8",
+    )
+    (run_dir / "summary.json").write_text("{}", encoding="utf-8")
+    (run_dir / "traces.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "offline-evaluation-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.offline_evaluation_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "bench-offline-status-mismatch",
+                "status": "ready",
+                "checks": {
+                    "suite_contract_valid": True,
+                    "summary_present": True,
+                    "traces_present": True,
+                    "checkpoint_finished": True,
+                },
+                "counts": {"suite_error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._offline_evaluation_cross_contract_errors(run_dir)
+    assert "offline_evaluation_cross_contract:status_mismatch" in errors
+
+
+def test_offline_evaluation_cross_contract_reports_run_id_mismatch(tmp_path: Path) -> None:
+    run_dir = tmp_path / "runs" / "bench-offline-runid-mismatch"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text(
+        json.dumps({"schema": "sde.benchmark_manifest.v1", "run_id": "bench-offline-runid-mismatch", "mode": "baseline"}),
+        encoding="utf-8",
+    )
+    (run_dir / "benchmark-checkpoint.json").write_text(
+        json.dumps({"schema": "sde.benchmark_checkpoint.v1", "run_id": "bench-offline-runid-mismatch", "finished": True}),
+        encoding="utf-8",
+    )
+    (run_dir / "summary.json").write_text("{}", encoding="utf-8")
+    (run_dir / "traces.jsonl").write_text("", encoding="utf-8")
+    (run_dir / "offline-evaluation-runtime.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.offline_evaluation_runtime.v1",
+                "schema_version": "1.0",
+                "run_id": "other-run-id",
+                "status": "ready",
+                "checks": {
+                    "suite_contract_valid": True,
+                    "summary_present": True,
+                    "traces_present": True,
+                    "checkpoint_finished": True,
+                },
+                "counts": {"suite_error_count": 0},
+                "evidence": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    errors = _validate_run_module._offline_evaluation_cross_contract_errors(run_dir)
+    assert "offline_evaluation_cross_contract:run_id_mismatch" in errors
+
+
 def test_validate_run_single_task_prefers_run_manifest_over_benchmark(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """If both manifests exist, treat as single-task (execution gates), not benchmark-only."""
     monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
@@ -1418,3 +2333,45 @@ def test_validate_run_benchmark_mode_both_requires_override(tmp_path: Path, monk
     assert result["ok"] is False
     assert result["validation_ready"] is False
     assert result["errors"] == ["benchmark_manifest_mode_both_requires_mode_override"]
+
+
+def test_validate_run_unreadable_run_manifest_degrades_to_baseline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "run-unreadable-manifest"
+    run_dir.mkdir(parents=True)
+    (run_dir / "run-manifest.json").write_text("{}", encoding="utf-8")
+
+    original_read_text = Path.read_text
+
+    def _raise_for_run_manifest(self: Path, encoding: str = "utf-8") -> str:
+        if self == run_dir / "run-manifest.json":
+            raise OSError("unreadable")
+        return original_read_text(self, encoding=encoding)
+
+    monkeypatch.setattr(Path, "read_text", _raise_for_run_manifest)
+    result = validate_run("run-unreadable-manifest", mode=None)
+    assert "errors" in result
+    assert isinstance(result.get("hard_stops"), list)
+
+
+def test_validate_run_unreadable_benchmark_manifest_degrades_to_baseline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(_validate_run_module, "outputs_base", lambda: tmp_path)
+    run_dir = tmp_path / "runs" / "bench-unreadable-manifest"
+    run_dir.mkdir(parents=True)
+    (run_dir / "benchmark-manifest.json").write_text("{}", encoding="utf-8")
+
+    original_read_text = Path.read_text
+
+    def _raise_for_benchmark_manifest(self: Path, encoding: str = "utf-8") -> str:
+        if self == run_dir / "benchmark-manifest.json":
+            raise OSError("unreadable")
+        return original_read_text(self, encoding=encoding)
+
+    monkeypatch.setattr(Path, "read_text", _raise_for_benchmark_manifest)
+    result = validate_run("bench-unreadable-manifest", mode=None)
+    assert "errors" in result
+    assert isinstance(result.get("hard_stops"), list)

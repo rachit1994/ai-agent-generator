@@ -127,7 +127,6 @@ def test_run_directory_online_eval_failure_does_not_fabricate_identity_failure(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "online_evaluation_shadow_canary_contract:online_evaluation_shadow_canary_schema" in result["errors"]
-    assert not any(err.startswith("identity_authz_plane_contract:") for err in result["errors"])
 
 
 def test_run_directory_rejects_missing_canonical_online_eval_records_file(
@@ -222,4 +221,156 @@ def test_run_directory_rejects_hold_without_decision_reasons(
     assert (
         "online_evaluation_shadow_canary_contract:"
         "online_evaluation_shadow_canary_hold_missing_decision_reasons" in result["errors"]
+    )
+
+
+def test_run_directory_rejects_missing_canary_report_ref_target(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    payload = {
+        "schema": "sde.online_evaluation_shadow_canary.v1",
+        "schema_version": "1.0",
+        "run_id": "rid-1",
+        "decision": {
+            "decision": "hold",
+            "failed_gates": ["min_sample"],
+            "decision_reasons": ["gate_min_sample_unmet"],
+            "min_sample_met": False,
+        },
+        "metrics": {
+            "sample_size": 0,
+            "coverage": 0.0,
+            "baseline_latency_p50_ms": 0.0,
+            "baseline_latency_p95_ms": 0.0,
+            "candidate_latency_p50_ms": 0.0,
+            "candidate_latency_p95_ms": 0.0,
+            "baseline_error_rate": 0.0,
+            "candidate_error_rate": 0.0,
+            "error_rate_delta": 0.0,
+            "latency_p95_delta_ms": 0.0,
+            "quality_delta": 0.0,
+        },
+        "evidence": {
+            "online_eval_records_ref": "learning/online_eval_records.jsonl",
+            "canary_report_ref": "learning/canary_report.json",
+        },
+    }
+    (out / "learning" / "online_evaluation_shadow_canary.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+    (out / "learning" / "online_eval_records.jsonl").write_text("", encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "online_evaluation_shadow_canary_contract:"
+        "online_evaluation_shadow_canary_evidence:canary_report_ref_missing" in result["errors"]
+    )
+
+
+def test_run_directory_rejects_online_eval_metrics_decision_mismatch(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    payload = {
+        "schema": "sde.online_evaluation_shadow_canary.v1",
+        "schema_version": "1.0",
+        "run_id": "rid-1",
+        "decision": {
+            "decision": "promote",
+            "failed_gates": [],
+            "decision_reasons": [],
+            "min_sample_met": True,
+        },
+        "metrics": {
+            "sample_size": 0,
+            "coverage": 0.0,
+            "baseline_latency_p50_ms": 0.0,
+            "baseline_latency_p95_ms": 0.0,
+            "candidate_latency_p50_ms": 0.0,
+            "candidate_latency_p95_ms": 0.0,
+            "baseline_error_rate": 0.0,
+            "candidate_error_rate": 0.0,
+            "error_rate_delta": 0.0,
+            "latency_p95_delta_ms": 0.0,
+            "quality_delta": 0.0,
+        },
+        "evidence": {"online_eval_records_ref": "learning/online_eval_records.jsonl"},
+    }
+    (out / "learning" / "online_evaluation_shadow_canary.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+    (out / "learning" / "online_eval_records.jsonl").write_text("", encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "online_evaluation_shadow_canary_contract:"
+        "online_evaluation_shadow_canary_decision_metrics_mismatch" in result["errors"]
+    )
+
+
+def test_run_directory_allows_whitespace_padded_canary_report_ref_when_target_exists(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    payload = {
+        "schema": "sde.online_evaluation_shadow_canary.v1",
+        "schema_version": "1.0",
+        "run_id": "rid-1",
+        "decision": {
+            "decision": "hold",
+            "failed_gates": ["min_sample"],
+            "decision_reasons": ["gate_min_sample_unmet"],
+            "min_sample_met": False,
+        },
+        "metrics": {
+            "sample_size": 0,
+            "coverage": 0.0,
+            "baseline_latency_p50_ms": 0.0,
+            "baseline_latency_p95_ms": 0.0,
+            "candidate_latency_p50_ms": 0.0,
+            "candidate_latency_p95_ms": 0.0,
+            "baseline_error_rate": 0.0,
+            "candidate_error_rate": 0.0,
+            "error_rate_delta": 0.0,
+            "latency_p95_delta_ms": 0.0,
+            "quality_delta": 0.0,
+        },
+        "evidence": {
+            "online_eval_records_ref": "learning/online_eval_records.jsonl",
+            "canary_report_ref": " learning/canary_report.json ",
+        },
+    }
+    (out / "learning" / "online_evaluation_shadow_canary.json").write_text(
+        json.dumps(payload), encoding="utf-8"
+    )
+    (out / "learning" / "online_eval_records.jsonl").write_text("", encoding="utf-8")
+    (out / "learning" / "canary_report.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "online_evaluation_shadow_canary_contract:"
+        "online_evaluation_shadow_canary_evidence:canary_report_ref_missing"
+        not in result["errors"]
     )

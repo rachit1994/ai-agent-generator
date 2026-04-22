@@ -18,27 +18,20 @@ def _clamp01(value: float) -> float:
     return round(value, 4)
 
 
-def build_stability_metrics(
-    *,
-    run_id: str,
-    events: list[dict[str, Any]],
-) -> dict[str, Any]:
-    finals = [row for row in events if isinstance(row, dict) and row.get("stage") == "finalize"]
-    if finals:
-        pass_rate = _clamp01(
-            sum(
-                1 for row in finals
-                if isinstance(row.get("score"), dict) and bool(row.get("score", {}).get("passed"))
-            )
-            / len(finals)
-        )
-    else:
-        pass_rate = 0.0
+def _finalize_pass_rate(finals: list[dict[str, Any]]) -> float:
+    if not finals:
+        return 0.0
+    passed = sum(
+        1 for row in finals
+        if isinstance(row.get("score"), dict) and bool(row.get("score", {}).get("passed"))
+    )
+    return _clamp01(passed / len(finals))
+
+
+def _collect_reliability_and_retries(events: list[dict[str, Any]]) -> tuple[list[float], int]:
     reliability_values: list[float] = []
     retries = 0
     for row in events:
-        if not isinstance(row, dict):
-            continue
         score = row.get("score")
         if isinstance(score, dict):
             reliability = score.get("reliability")
@@ -48,10 +41,22 @@ def build_stability_metrics(
                     reliability_values.append(numeric_reliability)
         if row.get("stage") in {"repair", "executor_fix", "verifier_fix"}:
             retries += 1
+    return reliability_values, retries
+
+
+def build_stability_metrics(
+    *,
+    run_id: str,
+    events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    valid_events = [row for row in events if isinstance(row, dict)]
+    finals = [row for row in valid_events if row.get("stage") == "finalize"]
+    pass_rate = _finalize_pass_rate(finals)
+    reliability_values, retries = _collect_reliability_and_retries(valid_events)
     reliability_score = _clamp01(
         (sum(reliability_values) / len(reliability_values)) if reliability_values else 0.0
     )
-    retry_pressure = _clamp01(retries / max(1, len(events)))
+    retry_pressure = _clamp01(retries / max(1, len(valid_events)))
     stability_score = _clamp01((0.55 * pass_rate) + (0.35 * reliability_score) + (0.10 * (1.0 - retry_pressure)))
     status = "unstable"
     if stability_score >= 0.8:

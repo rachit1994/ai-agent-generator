@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from success_criteria.error_reduction_metrics import validate_error_reduction_metrics_path
 from workflow_pipelines.production_pipeline_plan_artifact.production_pipeline_task_to_promote.runner.evolution_layer import (
     write_evolution_artifacts,
@@ -56,4 +58,23 @@ def test_validate_error_reduction_metrics_path_rejects_count_arithmetic_mismatch
     )
     errs = validate_error_reduction_metrics_path(metrics_path)
     assert "error_reduction_metrics_semantics:resolved_error_count" in errs
+
+
+def test_error_reduction_metrics_no_finalize_events_fail_close_to_no_improvement(tmp_path: Path) -> None:
+    run_id = "run-error-reduction-no-finalize"
+    run_dir = tmp_path / "runs" / run_id
+    parsed = {"checks": [{"name": "shape", "passed": False}]}
+    events: list[dict[str, object]] = []
+    skill_nodes = write_memory_artifacts(
+        output_dir=run_dir, run_id=run_id, parsed=parsed, events=events
+    )
+    write_evolution_artifacts(
+        output_dir=run_dir, run_id=run_id, parsed=parsed, events=events, skill_nodes=skill_nodes
+    )
+    metrics_path = run_dir / "learning" / "error_reduction_metrics.json"
+    payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert payload["metrics"]["baseline_error_count"] == 1
+    assert payload["metrics"]["candidate_error_count"] == 1
+    assert payload["metrics"]["resolved_error_count"] == 0
+    assert payload["metrics"]["error_reduction_rate"] == pytest.approx(0.0)
 

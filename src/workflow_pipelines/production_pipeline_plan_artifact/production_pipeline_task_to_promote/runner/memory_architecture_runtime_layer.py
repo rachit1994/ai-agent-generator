@@ -16,14 +16,21 @@ from production_architecture.storage.storage.storage import ensure_dir, write_js
 def _read_json_or_empty(path: Path) -> dict[str, Any]:
     if not path.is_file():
         return {}
-    body = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        body = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
     return body if isinstance(body, dict) else {}
 
 
 def _read_lines(path: Path) -> list[str]:
     if not path.is_file():
         return []
-    return [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return []
+    return [line for line in lines if line.strip()]
 
 
 def write_memory_architecture_in_runtime_artifact(

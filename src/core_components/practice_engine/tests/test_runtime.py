@@ -66,3 +66,31 @@ def test_validate_practice_engine_rejects_status_scores_mismatch() -> None:
     errs = validate_practice_engine_dict(payload)
     assert "practice_engine_status_scores_mismatch" in errs
 
+
+def test_validate_practice_engine_rejects_result_status_mismatch() -> None:
+    payload = build_practice_engine(
+        run_id="rid-practice-mismatch",
+        task_spec={"task": "x"},
+        evaluation_result={"passed": False},
+        reflection_bundle={"root_causes": []},
+        review={"status": "completed_review_pass"},
+    )
+    payload["result"]["passed"] = True
+    errs = validate_practice_engine_dict(payload)
+    assert "practice_engine_result_status_mismatch" in errs
+
+
+def test_validate_practice_engine_rejects_invalid_evidence_refs() -> None:
+    payload = build_practice_engine(
+        run_id="rid-practice-evidence",
+        task_spec={"task": "x"},
+        evaluation_result={"passed": False},
+        reflection_bundle={"root_causes": []},
+        review={"status": "completed_review_pass"},
+    )
+    payload["evidence"]["task_spec_ref"] = "../practice/task_spec.json"
+    payload["evidence"]["evaluation_result_ref"] = ""
+    errs = validate_practice_engine_dict(payload)
+    assert "practice_engine_evidence_ref:task_spec_ref" in errs
+    assert "practice_engine_evidence_ref:evaluation_result_ref" in errs
+

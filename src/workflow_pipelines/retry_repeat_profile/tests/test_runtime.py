@@ -50,3 +50,32 @@ def test_validate_retry_repeat_profile_runtime_attempt_count_mismatch_fails_clos
     payload["metrics"]["attempt_count"] = 1
     errs = validate_retry_repeat_profile_runtime_dict(payload)
     assert "retry_repeat_profile_runtime_attempt_count_mismatch" in errs
+
+
+def test_validate_retry_repeat_profile_runtime_rejects_status_semantics_mismatch() -> None:
+    payload = build_retry_repeat_profile_runtime(
+        run_id="r1",
+        repeat=1,
+        attempts=[{"run_id": "r1", "output_dir": "/tmp/r1", "output": "{}"}],
+        all_runs_no_pipeline_error=True,
+        validation_ready_all=True,
+    )
+    payload["status"] = "repeat_ok"
+    errs = validate_retry_repeat_profile_runtime_dict(payload)
+    assert "retry_repeat_profile_runtime_status_semantics" in errs
+
+
+def test_validate_retry_repeat_profile_runtime_rejects_noncanonical_evidence_ref() -> None:
+    payload = build_retry_repeat_profile_runtime(
+        run_id="r1",
+        repeat=2,
+        attempts=[
+            {"run_id": "r1", "output_dir": "/tmp/r1", "output": "{}"},
+            {"run_id": "r2", "output_dir": "/tmp/r2", "output": "{}"},
+        ],
+        all_runs_no_pipeline_error=True,
+        validation_ready_all=True,
+    )
+    payload["evidence"]["runtime_ref"] = "program/other_runtime.json"
+    errs = validate_retry_repeat_profile_runtime_dict(payload)
+    assert "retry_repeat_profile_runtime_evidence_ref:runtime_ref" in errs

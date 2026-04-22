@@ -14,6 +14,15 @@ SELF_LEARNING_LOOP_SCHEMA_VERSION = "1.0"
 _ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
 _ALLOWED_DECISIONS = {"promote", "hold", "reject"}
 _REASON_PREFIX = "self_learning_loop_contract:"
+_CANONICAL_EVIDENCE_REFS = {
+    "traces_ref": "traces.jsonl",
+    "skill_nodes_ref": "capability/skill_nodes.json",
+    "practice_engine_ref": "practice/practice_engine.json",
+    "transfer_learning_metrics_ref": "learning/transfer_learning_metrics.json",
+    "capability_growth_metrics_ref": "learning/capability_growth_metrics.json",
+    "self_learning_candidates_ref": "learning/self_learning_candidates.jsonl",
+    "self_learning_loop_ref": "learning/self_learning_loop.json",
+}
 
 
 def _validate_failed_gates(failed_gates: Any) -> tuple[list[str], list[str]]:
@@ -153,18 +162,13 @@ def validate_self_learning_loop_dict(body: Any) -> list[str]:
     if not isinstance(evidence, dict):
         errs.append("self_learning_loop_evidence")
         evidence = {}
-    if evidence.get("self_learning_candidates_ref") != "learning/self_learning_candidates.jsonl":
-        errs.append("self_learning_loop_evidence_self_learning_candidates_ref")
-    for key in (
-        "traces_ref",
-        "skill_nodes_ref",
-        "practice_engine_ref",
-        "transfer_learning_metrics_ref",
-        "capability_growth_metrics_ref",
-        "self_learning_loop_ref",
-    ):
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
         value = evidence.get(key)
         if not isinstance(value, str) or not value.strip():
+            errs.append(f"self_learning_loop_evidence_{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
             errs.append(f"self_learning_loop_evidence_{key}")
     return errs
 

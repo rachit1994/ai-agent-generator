@@ -70,3 +70,88 @@ def test_validate_full_build_order_progression_rejects_summary_sequence_mismatch
     errs = validate_full_build_order_progression_dict(payload)
     assert "full_build_order_progression_summary_sequence_mismatch" in errs
 
+
+def test_validate_full_build_order_progression_rejects_evidence_ref_mismatch() -> None:
+    payload = build_full_build_order_progression(
+        run_id="rid-fbop",
+        mode="guarded_pipeline",
+        orchestration_events=[
+            {"type": "stage_event", "stage": "planner_doc"},
+            {"type": "stage_event", "stage": "planner_prompt"},
+            {"type": "stage_event", "stage": "executor"},
+            {"type": "stage_event", "stage": "finalize"},
+        ],
+    )
+    payload["evidence"]["orchestration_ref"] = "/tmp/orchestration.jsonl"
+    errs = validate_full_build_order_progression_dict(payload)
+    assert "full_build_order_progression_evidence_ref:orchestration_ref" in errs
+
+
+def test_validate_full_build_order_progression_rejects_other_evidence_ref_mismatches() -> None:
+    payload = build_full_build_order_progression(
+        run_id="rid-fbop",
+        mode="guarded_pipeline",
+        orchestration_events=[
+            {"type": "stage_event", "stage": "planner_doc"},
+            {"type": "stage_event", "stage": "planner_prompt"},
+            {"type": "stage_event", "stage": "executor"},
+            {"type": "stage_event", "stage": "finalize"},
+        ],
+    )
+    payload["evidence"]["run_manifest_ref"] = "../run-manifest.json"
+    payload["evidence"]["progression_ref"] = "strategy/other.json"
+    errs = validate_full_build_order_progression_dict(payload)
+    assert "full_build_order_progression_evidence_ref:run_manifest_ref" in errs
+    assert "full_build_order_progression_evidence_ref:progression_ref" in errs
+
+
+def test_validate_full_build_order_progression_rejects_order_score_mismatch() -> None:
+    payload = build_full_build_order_progression(
+        run_id="rid-fbop",
+        mode="guarded_pipeline",
+        orchestration_events=[
+            {"type": "stage_event", "stage": "planner_doc"},
+            {"type": "stage_event", "stage": "planner_prompt"},
+            {"type": "stage_event", "stage": "executor"},
+            {"type": "stage_event", "stage": "finalize"},
+        ],
+    )
+    payload["summary"]["order_score"] = 0.4
+    errs = validate_full_build_order_progression_dict(payload)
+    assert "full_build_order_progression_order_score_mismatch" in errs
+
+
+def test_validate_full_build_order_progression_rejects_baseline_entry_stage_mismatch() -> None:
+    payload = build_full_build_order_progression(
+        run_id="rid-fbop",
+        mode="baseline",
+        orchestration_events=[
+            {"type": "stage_event", "stage": "executor"},
+            {"type": "stage_event", "stage": "finalize"},
+        ],
+    )
+    payload["stage_sequence"] = ["planner_doc", "finalize"]
+    payload["checks"]["starts_with_allowed_entry_stage"] = True
+    payload["checks"]["required_stages_present"] = False
+    payload["status"] = "incomplete"
+    payload["summary"]["observed_stage_count"] = 2
+    payload["summary"]["distinct_stage_count"] = 2
+    payload["summary"]["required_stage_count"] = 2
+    payload["summary"]["required_stage_present_count"] = 1
+    payload["summary"]["order_score"] = 0.8
+    errs = validate_full_build_order_progression_dict(payload)
+    assert "full_build_order_progression_mode_entry_stage_mismatch" in errs
+
+
+def test_validate_full_build_order_progression_accepts_valid_baseline_entry_stage() -> None:
+    payload = build_full_build_order_progression(
+        run_id="rid-fbop",
+        mode="baseline",
+        orchestration_events=[
+            {"type": "stage_event", "stage": "executor"},
+            {"type": "stage_event", "stage": "finalize"},
+        ],
+    )
+    errs = validate_full_build_order_progression_dict(payload)
+    assert "full_build_order_progression_mode_entry_stage_mismatch" not in errs
+

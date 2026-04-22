@@ -47,6 +47,19 @@ def _append_status_mismatch_error(status: Any, coverage: Any, errs: list[str]) -
         errs.append("production_identity_authorization_status_coverage_mismatch")
 
 
+def _append_coverage_controls_mismatch_error(coverage: Any, controls: Any, errs: list[str]) -> None:
+    if not isinstance(controls, dict):
+        return
+    if isinstance(coverage, bool) or not isinstance(coverage, (int, float)):
+        return
+    values = [controls.get(key) for key in PRODUCTION_IDENTITY_AUTHORIZATION_REQUIRED_CONTROL_KEYS]
+    if any(not isinstance(value, bool) for value in values):
+        return
+    expected_coverage = round(sum(1 for value in values if value) / len(values), 4)
+    if abs(float(coverage) - expected_coverage) > _COVERAGE_ENFORCED_EPSILON:
+        errs.append("production_identity_authorization_coverage_controls_mismatch")
+
+
 def _append_status_controls_mismatch_error(status: Any, controls: Any, errs: list[str]) -> None:
     if not isinstance(controls, dict) or status not in PRODUCTION_IDENTITY_AUTHORIZATION_VALID_STATUSES:
         return
@@ -92,6 +105,7 @@ def validate_production_identity_authorization_dict(body: Any) -> list[str]:
     elif float(coverage) < 0.0 or float(coverage) > 1.0:
         errs.append("production_identity_authorization_coverage_range")
     _append_evidence_errors(body.get("evidence"), errs)
+    _append_coverage_controls_mismatch_error(coverage, controls, errs)
     _append_status_mismatch_error(status, coverage, errs)
     _append_status_controls_mismatch_error(status, controls, errs)
     return errs

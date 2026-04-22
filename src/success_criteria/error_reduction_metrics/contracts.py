@@ -17,6 +17,10 @@ _REQUIRED_METRICS = (
     "error_reduction_rate",
     "net_error_delta",
 )
+_CANONICAL_EVIDENCE_REFS = {
+    "traces_ref": "traces.jsonl",
+    "summary_ref": "summary.json",
+}
 
 
 def _validate_metric_semantics(metrics: Any) -> list[str]:
@@ -29,7 +33,7 @@ def _validate_metric_semantics(metrics: Any) -> list[str]:
     errs: list[str] = []
     expected_resolved = max(0, baseline - candidate)
     errs.extend(_validate_resolved_semantics(resolved, expected_resolved))
-    expected_rate = (expected_resolved / baseline) if baseline > 0 else 0.0
+    expected_rate = round((expected_resolved / baseline), 4) if baseline > 0 else 0.0
     errs.extend(_validate_rate_semantics(float(reduction_rate), expected_rate))
     expected_net_delta = float(candidate - baseline)
     errs.extend(_validate_net_delta_semantics(float(net_delta), expected_net_delta))
@@ -83,6 +87,21 @@ def _validate_net_delta_semantics(net_delta: float, expected_net_delta: float) -
     return []
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["error_reduction_metrics_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"error_reduction_metrics_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"error_reduction_metrics_evidence_ref:{key}")
+    return errs
+
+
 def _validate_metrics(metrics: Any) -> list[str]:
     if not isinstance(metrics, dict):
         return ["error_reduction_metrics_metrics"]
@@ -127,6 +146,7 @@ def validate_error_reduction_metrics_dict(body: Any) -> list[str]:
         errs.append("error_reduction_metrics_run_id")
     metrics = body.get("metrics")
     errs.extend(_validate_metrics(metrics))
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs:
         errs.extend(_validate_metric_semantics(metrics))
     return errs

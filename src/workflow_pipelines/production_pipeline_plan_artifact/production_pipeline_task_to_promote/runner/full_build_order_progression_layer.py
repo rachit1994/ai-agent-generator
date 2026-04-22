@@ -17,12 +17,20 @@ def _read_orchestration_events(path: Path) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
     out: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for index, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
         if not line.strip():
             continue
-        row = json.loads(line)
-        if isinstance(row, dict):
-            out.append(row)
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"full_build_order_progression_orchestration_jsonl:line_{index}:invalid_json"
+            ) from exc
+        if not isinstance(row, dict):
+            raise ValueError(
+                f"full_build_order_progression_orchestration_jsonl:line_{index}:non_object"
+            )
+        out.append(row)
     return out
 
 

@@ -9,6 +9,12 @@ from typing import Any
 LEARNING_SERVICE_CONTRACT = "sde.learning_service.v1"
 LEARNING_SERVICE_SCHEMA_VERSION = "1.0"
 _FLOAT_TOLERANCE = 1e-4
+_CANONICAL_EVIDENCE_REFS = {
+    "reflection_bundle_ref": "learning/reflection_bundle.json",
+    "canary_report_ref": "learning/canary_report.json",
+    "traces_ref": "traces.jsonl",
+    "learning_service_ref": "learning/learning_service.json",
+}
 
 
 def _valid_status(status: Any) -> bool:
@@ -126,6 +132,21 @@ def _validate_metric_semantics(metrics: dict[str, Any]) -> list[str]:
     return errs
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["learning_service_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"learning_service_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"learning_service_evidence_ref:{key}")
+    return errs
+
+
 def validate_learning_service_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["learning_service_not_object"]
@@ -140,6 +161,7 @@ def validate_learning_service_dict(body: Any) -> list[str]:
             errs.extend(_validate_metric_semantics(metrics))
         if not errs:
             errs.extend(_validate_status_semantics(metrics, status))
+    errs.extend(_validate_evidence(body.get("evidence")))
     return errs
 
 

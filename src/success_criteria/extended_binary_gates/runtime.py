@@ -50,19 +50,28 @@ def build_extended_binary_gates(
     checks = parsed.get("checks") if isinstance(parsed, dict) else []
     if not isinstance(checks, list):
         checks = []
-    total_checks = len(checks)
+    governance_checks = [
+        row for row in checks if isinstance(row, dict) and row.get("name") != "review"
+    ]
+    total_checks = len(governance_checks)
     passed_checks = sum(
-        1 for row in checks if isinstance(row, dict) and _is_passed(row.get("passed")) and row.get("name") != "review"
+        1 for row in governance_checks if _is_passed(row.get("passed"))
     )
     governance_rate = _clamp01((passed_checks / total_checks) if total_checks else 0.0)
     pass_rate, reliability_rate = _finalize_signals(events)
     learning_score = 0.0
     if isinstance(skill_nodes, dict):
         nodes = skill_nodes.get("nodes")
-        if isinstance(nodes, list) and nodes and isinstance(nodes[0], dict):
-            raw = nodes[0].get("score")
-            if isinstance(raw, (int, float)) and not isinstance(raw, bool):
-                learning_score = float(raw)
+        if isinstance(nodes, list):
+            valid_scores = [
+                float(node.get("score"))
+                for node in nodes
+                if isinstance(node, dict)
+                and isinstance(node.get("score"), (int, float))
+                and not isinstance(node.get("score"), bool)
+            ]
+            if valid_scores:
+                learning_score = max(valid_scores)
     learning_score = _clamp01(learning_score)
     gates = {
         "reliability_gate": reliability_rate >= 0.85,

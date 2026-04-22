@@ -164,3 +164,37 @@ def test_hs08_fails_when_acknowledged_at_missing(tmp_path: Path) -> None:
     )
     hs = {h["id"]: h["passed"] for h in evaluate_guarded_hard_stops(tmp_path, [])}
     assert hs["HS08"] is False
+
+
+def test_hs08_fails_when_acknowledged_at_non_utc_offset(tmp_path: Path) -> None:
+    _minimal_guarded_doc_review(tmp_path, dual_required=True)
+    (tmp_path / "program" / "dual_control_ack.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "implementor_actor_id": "alice",
+                "independent_reviewer_actor_id": "bob",
+                "acknowledged_at": "2026-01-01T00:00:00+05:30",
+            }
+        ),
+        encoding="utf-8",
+    )
+    hs = {h["id"]: h["passed"] for h in evaluate_guarded_hard_stops(tmp_path, [])}
+    assert hs["HS08"] is False
+
+
+def test_hs08_fails_when_acknowledged_at_not_iso8601(tmp_path: Path) -> None:
+    _minimal_guarded_doc_review(tmp_path, dual_required=True)
+    (tmp_path / "program" / "dual_control_ack.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "implementor_actor_id": "alice",
+                "independent_reviewer_actor_id": "bob",
+                "acknowledged_at": "2026-01-01 00:00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+    hs = {h["id"]: h["passed"] for h in evaluate_guarded_hard_stops(tmp_path, [])}
+    assert hs["HS08"] is False

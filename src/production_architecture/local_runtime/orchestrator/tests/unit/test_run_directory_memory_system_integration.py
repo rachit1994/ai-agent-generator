@@ -62,3 +62,49 @@ def test_run_directory_requires_memory_system_path(tmp_path: Path, monkeypatch) 
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "missing:memory/memory_system.json" in result["errors"]
+
+
+def test_run_directory_surfaces_missing_memory_system_evidence_refs(
+    tmp_path: Path, monkeypatch
+) -> None:
+    out = _baseline_dir(tmp_path)
+    (out / "memory").mkdir(parents=True)
+    (out / "memory" / "quality_metrics.json").write_text("{}", encoding="utf-8")
+    (out / "memory" / "quarantine.jsonl").write_text("", encoding="utf-8")
+    (out / "memory" / "memory_system.json").write_text(
+        json.dumps(
+            {
+                "schema": "sde.memory_system.v1",
+                "schema_version": "1.0",
+                "run_id": "rid-1",
+                "status": "missing",
+                "metrics": {
+                    "retrieval_chunks": 0,
+                    "quarantine_rows": 0,
+                    "quality_score": 0.0,
+                    "contradiction_rate": 0.0,
+                    "staleness_p95_hours": 0.0,
+                },
+                "evidence": {
+                    "retrieval_bundle_ref": "memory/retrieval_bundle.json",
+                    "quality_metrics_ref": "memory/quality_metrics.json",
+                    "quarantine_ref": "memory/quarantine.jsonl",
+                    "memory_system_ref": "memory/memory_system.json",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.all_required_execution_paths",
+        lambda mode, output_dir: [],
+    )
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert (
+        "memory_system_contract:memory_system_evidence_ref:retrieval_bundle_ref_missing"
+        in result["errors"]
+    )

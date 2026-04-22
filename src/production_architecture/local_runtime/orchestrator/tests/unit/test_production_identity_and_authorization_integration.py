@@ -142,3 +142,15 @@ def test_production_identity_writer_fails_closed_for_malformed_strategy_json(tmp
         match="^production_identity_authorization_contract:invalid_json:strategy/proposal.json$",
     ):
         write_production_identity_authorization_artifact(output_dir=run_dir, run_id=run_id)
+
+
+def test_production_identity_writer_missing_strategy_file_degrades_strategy_guard(tmp_path: Path) -> None:
+    run_id = "run-prod-identity-missing-strategy-file"
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "iam").mkdir(parents=True)
+    (run_dir / "iam" / "permission_matrix.json").write_text(
+        json.dumps({"roles": {"operator": ["read"]}}),
+        encoding="utf-8",
+    )
+    payload = write_production_identity_authorization_artifact(output_dir=run_dir, run_id=run_id)
+    assert payload["controls"]["strategy_self_approval_guarded"] is False

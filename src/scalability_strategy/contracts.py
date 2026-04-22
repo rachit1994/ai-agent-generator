@@ -3,12 +3,19 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
 SCALABILITY_STRATEGY_CONTRACT = "sde.scalability_strategy.v1"
 SCALABILITY_STRATEGY_SCHEMA_VERSION = "1.0"
 _OVERALL_SCORE_TOLERANCE = 1e-4
+_ALLOWED_MODES = {"baseline", "guarded_pipeline", "phased_pipeline"}
+_CANONICAL_EVIDENCE_REFS = {
+    "summary_ref": "summary.json",
+    "review_ref": "review.json",
+    "scalability_ref": "strategy/scalability_strategy.json",
+}
 
 
 def _validate_scores(scores: Any) -> tuple[list[str], float | None]:
@@ -28,6 +35,9 @@ def _validate_scores(scores: Any) -> tuple[list[str], float | None]:
             errs.append(f"scalability_strategy_score_type:{key}")
             continue
         num = float(value)
+        if not math.isfinite(num):
+            errs.append(f"scalability_strategy_score_range:{key}")
+            continue
         if num < 0.0 or num > 1.0:
             errs.append(f"scalability_strategy_score_range:{key}")
     if errs:
@@ -47,6 +57,24 @@ def _has_weighted_score_mismatch(scores: dict[str, Any]) -> bool:
     return abs(weighted - overall) > _OVERALL_SCORE_TOLERANCE
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["scalability_strategy_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"scalability_strategy_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/"):
+            errs.append(f"scalability_strategy_evidence_ref:{key}")
+            continue
+        if normalized != expected:
+            errs.append(f"scalability_strategy_evidence_ref:{key}")
+    return errs
+
+
 def validate_scalability_strategy_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["scalability_strategy_not_object"]
@@ -59,7 +87,7 @@ def validate_scalability_strategy_dict(body: Any) -> list[str]:
     if not isinstance(run_id, str) or not run_id.strip():
         errs.append("scalability_strategy_run_id")
     mode = body.get("mode")
-    if not isinstance(mode, str) or not mode.strip():
+    if mode not in _ALLOWED_MODES:
         errs.append("scalability_strategy_mode")
     status = body.get("status")
     if status not in ("scalable", "constrained"):
@@ -73,6 +101,7 @@ def validate_scalability_strategy_dict(body: Any) -> list[str]:
     scores = body.get("scores")
     if not score_errs and isinstance(scores, dict) and _has_weighted_score_mismatch(scores):
         errs.append("scalability_strategy_overall_score_mismatch")
+    errs.extend(_validate_evidence(body.get("evidence")))
     return errs
 
 

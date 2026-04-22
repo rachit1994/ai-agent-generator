@@ -61,3 +61,31 @@ def test_high_risk_row_rejects_whitespace_token_id() -> None:
         now_utc=_now(),
     )
     assert "approval_token_id" in errs
+
+
+def test_high_risk_row_rejects_token_expiring_exactly_now() -> None:
+    now = _now()
+    errs = validate_high_risk_approval_token_row(
+        {
+            "risk": "high",
+            "approval_token_id": "tok-1",
+            "approval_token_expires_at": now.isoformat(),
+        },
+        now_utc=now,
+    )
+    assert "approval_token_expired" in errs
+
+
+def test_token_context_rejects_expiry_exactly_now() -> None:
+    now = _now()
+    errs = validate_token_context_payload(
+        {
+            "run_id": "rid",
+            "stages": [],
+            "context_ttl_seconds": 60,
+            "autonomy_anchor_at": "2030-01-01T00:00:00+00:00",
+            "context_expires_at": now.isoformat(),
+        },
+        now_utc=now,
+    )
+    assert "token_context_expired" in errs

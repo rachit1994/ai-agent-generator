@@ -76,3 +76,16 @@ def test_validate_practice_engine_path_rejects_status_scores_mismatch(tmp_path: 
     errs = validate_practice_engine_path(path)
     assert "practice_engine_status_scores_mismatch" in errs
 
+
+def test_write_practice_engine_artifact_fail_closes_malformed_upstream_json(tmp_path: Path) -> None:
+    run_id = "run-practice-engine-malformed-upstream"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir / "practice")
+    ensure_dir(output_dir / "learning")
+    (output_dir / "practice" / "task_spec.json").write_text("{bad", encoding="utf-8")
+    (output_dir / "practice" / "evaluation_result.json").write_text("{bad", encoding="utf-8")
+    (output_dir / "learning" / "reflection_bundle.json").write_text("{bad", encoding="utf-8")
+    (output_dir / "review.json").write_text("{bad", encoding="utf-8")
+    payload = write_practice_engine_artifact(output_dir=output_dir, run_id=run_id)
+    assert payload["result"]["passed"] is False
+

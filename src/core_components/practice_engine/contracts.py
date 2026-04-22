@@ -8,6 +8,11 @@ from typing import Any
 
 PRACTICE_ENGINE_CONTRACT = "sde.practice_engine.v1"
 PRACTICE_ENGINE_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "task_spec_ref": "practice/task_spec.json",
+    "evaluation_result_ref": "practice/evaluation_result.json",
+    "practice_engine_ref": "practice/practice_engine.json",
+}
 
 
 def _validate_status_score_semantics(status: Any, scores: dict[str, Any]) -> list[str]:
@@ -30,6 +35,34 @@ def _validate_status_score_semantics(status: Any, scores: dict[str, Any]) -> lis
     if status == "blocked" and readiness >= 0.35:
         return ["practice_engine_status_scores_mismatch"]
     return []
+
+
+def _validate_result_status_coherence(status: Any, result: Any) -> list[str]:
+    if status not in ("ready", "needs_practice", "blocked"):
+        return []
+    if not isinstance(result, dict):
+        return ["practice_engine_result"]
+    passed = result.get("passed")
+    if not isinstance(passed, bool):
+        return ["practice_engine_result_passed"]
+    if passed is not (status == "ready"):
+        return ["practice_engine_result_status_mismatch"]
+    return []
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["practice_engine_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"practice_engine_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"practice_engine_evidence_ref:{key}")
+    return errs
 
 
 def validate_practice_engine_dict(body: Any) -> list[str]:
@@ -60,6 +93,8 @@ def validate_practice_engine_dict(body: Any) -> list[str]:
             errs.append(f"practice_engine_score_range:{key}")
     if not errs:
         errs.extend(_validate_status_score_semantics(status, scores))
+    errs.extend(_validate_result_status_coherence(status, body.get("result")))
+    errs.extend(_validate_evidence(body.get("evidence")))
     return errs
 
 

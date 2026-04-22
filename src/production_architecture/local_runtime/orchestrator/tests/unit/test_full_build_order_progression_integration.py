@@ -101,10 +101,63 @@ def test_validate_full_build_order_progression_path_rejects_summary_sequence_mis
                     "required_stage_present_count": 0,
                     "order_score": 1.0,
                 },
+                "evidence": {
+                    "run_manifest_ref": "run-manifest.json",
+                    "orchestration_ref": "orchestration.jsonl",
+                    "progression_ref": "strategy/full_build_order_progression.json",
+                },
             }
         ),
         encoding="utf-8",
     )
     errs = validate_full_build_order_progression_path(path)
     assert "full_build_order_progression_summary_sequence_mismatch" in errs
+
+
+def test_write_full_build_order_progression_fails_on_malformed_orchestration_jsonl(
+    tmp_path: Path,
+) -> None:
+    run_id = "run-fbop-malformed-jsonl"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir)
+    (output_dir / "orchestration.jsonl").write_text(
+        '{"type":"stage_event","stage":"planner_doc"}\n'
+        '{"type":"stage_event","stage":"executor"\n',
+        encoding="utf-8",
+    )
+    try:
+        write_full_build_order_progression_artifact(
+            output_dir=output_dir,
+            run_id=run_id,
+            mode="guarded_pipeline",
+        )
+        assert False, "expected ValueError for malformed orchestration JSONL"
+    except ValueError as exc:
+        message = str(exc)
+        assert "full_build_order_progression_orchestration_jsonl:" in message
+        assert "line_2:invalid_json" in message
+
+
+def test_write_full_build_order_progression_fails_on_non_object_orchestration_row(
+    tmp_path: Path,
+) -> None:
+    run_id = "run-fbop-non-object-jsonl"
+    output_dir = tmp_path / "runs" / run_id
+    ensure_dir(output_dir)
+    (output_dir / "orchestration.jsonl").write_text(
+        '{"type":"stage_event","stage":"planner_doc"}\n'
+        '"bad-row"\n',
+        encoding="utf-8",
+    )
+    try:
+        write_full_build_order_progression_artifact(
+            output_dir=output_dir,
+            run_id=run_id,
+            mode="guarded_pipeline",
+        )
+        assert False, "expected ValueError for non-object orchestration JSONL row"
+    except ValueError as exc:
+        message = str(exc)
+        assert "full_build_order_progression_orchestration_jsonl:" in message
+        assert "line_2:non_object" in message
 

@@ -10,6 +10,12 @@ ROLE_AGENTS_CONTRACT = "sde.role_agents.v1"
 ROLE_AGENTS_SCHEMA_VERSION = "1.0"
 _DRIFT_THRESHOLD = 0.35
 _FLOAT_TOLERANCE = 1e-9
+_CANONICAL_EVIDENCE_REFS = {
+    "summary_ref": "summary.json",
+    "traces_ref": "traces.jsonl",
+    "skill_nodes_ref": "capability/skill_nodes.json",
+    "role_agents_ref": "capability/role_agents.json",
+}
 
 
 def validate_role_agents_dict(body: Any) -> list[str]:
@@ -18,6 +24,7 @@ def validate_role_agents_dict(body: Any) -> list[str]:
     errs = _validate_core_fields(body)
     role_scores = body.get("role_scores")
     errs.extend(_validate_role_scores(role_scores))
+    errs.extend(_validate_evidence(body.get("evidence")))
     status = body.get("status")
     errs.extend(_validate_status(status))
     if not errs and isinstance(role_scores, dict):
@@ -102,6 +109,21 @@ def _validate_insufficient_signal_status(status: Any, scores: tuple[float, float
     ):
         return ["role_agents_status_semantics:insufficient_signal"]
     return []
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["role_agents_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"role_agents_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"role_agents_evidence_ref:{key}")
+    return errs
 
 
 def validate_role_agents_path(path: Path) -> list[str]:

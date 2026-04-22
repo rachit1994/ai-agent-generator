@@ -133,3 +133,19 @@ def test_validate_production_readiness_rejects_unknown_mode() -> None:
     errs = validate_production_readiness_program_dict(payload)
     assert "production_readiness_program_mode" in errs
 
+
+def test_validate_production_readiness_rejects_invalid_evidence_refs() -> None:
+    payload = build_production_readiness_program(
+        run_id="run-readiness",
+        mode="guarded_pipeline",
+        summary={"runId": "run-readiness", "mode": "guarded_pipeline", "balanced_gates": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        hard_stops=[{"id": "HS01", "passed": True}],
+        artifact_paths=[{"path": "summary.json", "present": True}],
+    )
+    payload["evidence"]["summary_ref"] = "../summary.json"
+    payload["evidence"]["review_ref"] = ""
+    errs = validate_production_readiness_program_dict(payload)
+    assert "production_readiness_program_evidence_ref:summary_ref" in errs
+    assert "production_readiness_program_evidence_ref:review_ref" in errs
+

@@ -29,3 +29,21 @@ def test_validate_strategy_overlay_runtime_fail_closed() -> None:
     errs = validate_strategy_overlay_runtime_dict({"schema": "bad"})
     assert "strategy_overlay_runtime_schema" in errs
     assert "strategy_overlay_runtime_schema_version" in errs
+
+
+def test_validate_strategy_overlay_runtime_rejects_invalid_evidence_refs() -> None:
+    payload = build_strategy_overlay_runtime(
+        run_id="rid-strategy-overlay",
+        mode="guarded_pipeline",
+        proposal={
+            "schema_version": "1.0",
+            "actor_id": "strategy-agent-harness",
+            "requires_promotion_package": True,
+            "applied_autonomy": False,
+            "proposal_ref": "lifecycle/promotion_package.json",
+        },
+        events=[{"stage": "finalize", "score": {"passed": True}}],
+    )
+    payload["evidence"]["proposal_ref"] = "../strategy/proposal.json"
+    errs = validate_strategy_overlay_runtime_dict(payload)
+    assert "strategy_overlay_runtime_evidence_ref:proposal_ref" in errs

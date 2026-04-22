@@ -55,6 +55,23 @@ def _status_from_coverage(coverage: float) -> str:
     return "missing"
 
 
+def _has_valid_roles(permission_matrix: dict[str, Any]) -> bool:
+    roles = permission_matrix.get("roles")
+    if isinstance(roles, list):
+        return len(roles) > 0
+    if isinstance(roles, dict):
+        return len(roles) > 0
+    return False
+
+
+def _strategy_guarded(strategy_proposal: dict[str, Any]) -> bool:
+    applied_autonomy = strategy_proposal.get("applied_autonomy")
+    requires_promotion = strategy_proposal.get("requires_promotion_package")
+    if not isinstance(applied_autonomy, bool) or not isinstance(requires_promotion, bool):
+        return False
+    return (not applied_autonomy) or requires_promotion
+
+
 def build_production_identity_authorization(
     *,
     run_id: str,
@@ -63,7 +80,9 @@ def build_production_identity_authorization(
     strategy_proposal: dict[str, Any],
 ) -> dict[str, Any]:
     controls = {
-        "permission_matrix_present": isinstance(permission_matrix, dict) and bool(permission_matrix.get("roles")),
+        "permission_matrix_present": (
+            isinstance(permission_matrix, dict) and _has_valid_roles(permission_matrix)
+        ),
         "high_risk_approvals_valid": True,
         "high_risk_dual_control_valid": True,
     }
@@ -76,10 +95,9 @@ def build_production_identity_authorization(
             controls["high_risk_dual_control_valid"] = False
             continue
         _apply_high_risk_controls(row, controls)
-    requires_promotion = bool(strategy_proposal.get("requires_promotion_package")) if isinstance(strategy_proposal, dict) else False
-    applied_autonomy = bool(strategy_proposal.get("applied_autonomy")) if isinstance(strategy_proposal, dict) else False
-    strategy_guarded = (not applied_autonomy) or requires_promotion
-    controls["strategy_self_approval_guarded"] = strategy_guarded
+    controls["strategy_self_approval_guarded"] = (
+        _strategy_guarded(strategy_proposal) if isinstance(strategy_proposal, dict) else False
+    )
     coverage = _clamp01(sum(1 for ok in controls.values() if ok) / len(controls))
     status = _status_from_coverage(coverage)
     return {

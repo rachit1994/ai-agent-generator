@@ -8,6 +8,12 @@ from typing import Any
 
 EVALUATION_SERVICE_CONTRACT = "sde.evaluation_service.v1"
 EVALUATION_SERVICE_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "summary_ref": "summary.json",
+    "online_eval_ref": "learning/online_evaluation_shadow_canary.json",
+    "promotion_eval_ref": "learning/promotion_evaluation.json",
+    "evaluation_service_ref": "evaluation/service_runtime.json",
+}
 
 
 def _validate_metrics(metrics: Any) -> tuple[list[str], bool | None]:
@@ -31,6 +37,21 @@ def _validate_metrics(metrics: Any) -> tuple[list[str], bool | None]:
     return ([], all_checks_passed)
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["evaluation_service_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"evaluation_service_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"evaluation_service_evidence_ref:{key}")
+    return errs
+
+
 def validate_evaluation_service_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["evaluation_service_not_object"]
@@ -47,6 +68,7 @@ def validate_evaluation_service_dict(body: Any) -> list[str]:
         errs.append("evaluation_service_status")
     metric_errs, all_checks_passed = _validate_metrics(body.get("metrics"))
     errs.extend(metric_errs)
+    errs.extend(_validate_evidence(body.get("evidence")))
     if all_checks_passed is not None and status in ("ready", "degraded"):
         expected_status = "ready" if all_checks_passed else "degraded"
         if status != expected_status:
@@ -59,6 +81,8 @@ def validate_evaluation_service_path(path: Path) -> list[str]:
         return ["evaluation_service_file_missing"]
     try:
         body = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return ["evaluation_service_unreadable"]
     except json.JSONDecodeError:
         return ["evaluation_service_json"]
     return validate_evaluation_service_dict(body)

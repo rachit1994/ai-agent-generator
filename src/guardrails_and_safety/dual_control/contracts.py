@@ -25,6 +25,11 @@ DUAL_CONTROL_REQUIRED_EVIDENCE_REFS = (
     "dual_control_ack_ref",
     "dual_control_runtime_ref",
 )
+DUAL_CONTROL_CANONICAL_EVIDENCE_REFS = {
+    "doc_review_ref": "program/doc_review.json",
+    "dual_control_ack_ref": "program/dual_control_ack.json",
+    "dual_control_runtime_ref": "program/dual_control_runtime.json",
+}
 
 
 def _validate_semantics(status: str, metrics: dict[str, Any]) -> list[str]:
@@ -61,6 +66,11 @@ def _validate_evidence(evidence: Any) -> list[str]:
     for key in DUAL_CONTROL_REQUIRED_EVIDENCE_REFS:
         value = evidence.get(key)
         if not isinstance(value, str) or not value.strip():
+            errs.append(f"dual_control_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        expected = DUAL_CONTROL_CANONICAL_EVIDENCE_REFS[key]
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
             errs.append(f"dual_control_evidence_ref:{key}")
     return errs
 

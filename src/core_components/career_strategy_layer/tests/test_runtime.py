@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from core_components.career_strategy_layer import (
     build_career_strategy_layer,
     validate_career_strategy_layer_dict,
@@ -145,4 +147,53 @@ def test_validate_career_strategy_layer_rejects_status_readiness_mismatch() -> N
     payload["status"] = "hold"
     errs = validate_career_strategy_layer_dict(payload)
     assert "career_strategy_layer_status_readiness_mismatch" in errs
+
+
+def test_build_career_strategy_layer_fail_closed_for_non_finite_metrics() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career-non-finite",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": math.nan}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": math.inf}},
+        error_reduction={"metrics": {"error_reduction_rate": -math.inf}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.9}},
+    )
+    assert payload["strategy"]["career_signal_score"] < 0.3
+
+
+def test_validate_career_strategy_layer_rejects_non_finite_strategy_scores() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career-non-finite-contract",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 0.8}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 0.8}},
+        error_reduction={"metrics": {"error_reduction_rate": 0.8}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.8}},
+    )
+    payload["strategy"]["career_signal_score"] = math.nan
+    errs = validate_career_strategy_layer_dict(payload)
+    assert "career_strategy_layer_score_finite:career_signal_score" in errs
+
+
+def test_validate_career_strategy_layer_rejects_noncanonical_evidence_ref() -> None:
+    payload = build_career_strategy_layer(
+        run_id="rid-career-evidence",
+        mode="guarded_pipeline",
+        summary={"quality": {"validation_ready": True}},
+        review={"status": "completed_review_pass"},
+        promotion_package={"proposed_stage": "senior"},
+        capability_growth={"metrics": {"capability_growth_rate": 0.8}},
+        transfer_learning={"metrics": {"transfer_efficiency_score": 0.8}},
+        error_reduction={"metrics": {"error_reduction_rate": 0.8}},
+        scalability_strategy={"scores": {"overall_scaling_score": 0.8}},
+    )
+    payload["evidence"]["career_strategy_ref"] = "strategy/career_strategy.json"
+    errs = validate_career_strategy_layer_dict(payload)
+    assert "career_strategy_layer_evidence_career_strategy_ref" in errs
 

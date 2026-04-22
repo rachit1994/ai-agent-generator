@@ -8,6 +8,15 @@ from typing import Any
 
 PRODUCTION_PIPELINE_PLAN_ARTIFACT_CONTRACT = "sde.production_pipeline_plan_artifact.v1"
 PRODUCTION_PIPELINE_PLAN_ARTIFACT_SCHEMA_VERSION = "1.0"
+_REQUIRED_CHECK_COUNT = 5
+_CANONICAL_EVIDENCE_REFS = {
+    "project_plan_ref": "program/project_plan.json",
+    "progress_ref": "program/progress.json",
+    "work_batch_ref": "program/work_batch.json",
+    "discovery_ref": "program/discovery.json",
+    "verification_bundle_ref": "program/verification_bundle.json",
+    "production_pipeline_plan_artifact_ref": "program/production_pipeline_plan_artifact.json",
+}
 
 
 def _validate_checks(checks: Any) -> tuple[list[str], bool | None]:
@@ -41,6 +50,32 @@ def _validate_metrics_step_count(metrics: Any) -> tuple[list[str], int | None]:
     if step_count_value < 0:
         return (["production_pipeline_plan_artifact_step_count_range"], None)
     return ([], step_count_value)
+
+
+def _validate_metrics_checked_artifacts(metrics: Any) -> list[str]:
+    if not isinstance(metrics, dict):
+        return []
+    checked_value = metrics.get("checked_program_artifacts")
+    if isinstance(checked_value, bool) or not isinstance(checked_value, int):
+        return ["production_pipeline_plan_artifact_checked_program_artifacts_type"]
+    if checked_value != _REQUIRED_CHECK_COUNT:
+        return ["production_pipeline_plan_artifact_checked_program_artifacts_mismatch"]
+    return []
+
+
+def _validate_evidence(evidence: Any) -> list[str]:
+    if not isinstance(evidence, dict):
+        return ["production_pipeline_plan_artifact_evidence"]
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"production_pipeline_plan_artifact_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"production_pipeline_plan_artifact_evidence_ref:{key}")
+    return errs
 
 
 def _validate_status_consistency(
@@ -78,7 +113,9 @@ def validate_production_pipeline_plan_artifact_dict(body: Any) -> list[str]:
     errs.extend(check_errs)
     metric_errs, step_count = _validate_metrics_step_count(body.get("metrics"))
     errs.extend(metric_errs)
+    errs.extend(_validate_metrics_checked_artifacts(body.get("metrics")))
     errs.extend(_validate_status_consistency(status=status, checks_all_true=checks_all_true, step_count=step_count))
+    errs.extend(_validate_evidence(body.get("evidence")))
     return errs
 
 

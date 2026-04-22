@@ -57,3 +57,16 @@ def test_failure_path_artifacts_fails_closed_when_replay_manifest_missing(tmp_pa
     payload = write_failure_path_artifacts(output_dir=run_dir, run_id=run_id)
     assert payload["status"] == "failed"
     assert payload["checks"]["replay_manifest_contract_valid"] is False
+
+
+def test_failure_path_artifacts_handles_malformed_summary_as_failed(tmp_path: Path) -> None:
+    run_id = "run-failure-path-malformed-summary"
+    run_dir = tmp_path / "runs" / run_id
+    traces = run_dir / "traces.jsonl"
+    traces.parent.mkdir(parents=True, exist_ok=True)
+    traces.write_text('{"type":"run_start"}\n', encoding="utf-8")
+    (run_dir / "summary.json").write_text('{"runId":"oops"', encoding="utf-8")
+    write_event_lineage_artifacts(output_dir=run_dir, run_id=run_id)
+    payload = write_failure_path_artifacts(output_dir=run_dir, run_id=run_id)
+    assert payload["status"] == "failed"
+    assert payload["checks"]["summary_contract_valid"] is False

@@ -8,6 +8,10 @@ from typing import Any
 
 BENCHMARK_CHECKPOINT_RUNTIME_CONTRACT = "sde.benchmark_checkpoint_runtime.v1"
 BENCHMARK_CHECKPOINT_RUNTIME_SCHEMA_VERSION = "1.0"
+_CANONICAL_EVIDENCE_REFS = {
+    "benchmark_checkpoint_ref": "benchmark-checkpoint.json",
+    "benchmark_checkpoint_runtime_ref": "benchmark-checkpoint-runtime.json",
+}
 
 
 def _validate_core_fields(body: dict[str, Any]) -> tuple[list[str], Any]:
@@ -48,6 +52,27 @@ def _validate_status_checks_coherence(checks: dict[str, Any], status: Any) -> li
     return errs
 
 
+def _validate_evidence(evidence: Any) -> list[str]:
+    if evidence is None:
+        return []
+    if not isinstance(evidence, dict):
+        return ["benchmark_checkpoint_runtime_evidence"]
+    if not evidence:
+        return []
+    errs: list[str] = []
+    for key, expected in _CANONICAL_EVIDENCE_REFS.items():
+        if key not in evidence:
+            continue
+        value = evidence.get(key)
+        if not isinstance(value, str) or not value.strip():
+            errs.append(f"benchmark_checkpoint_runtime_evidence_ref:{key}")
+            continue
+        normalized = value.strip()
+        if normalized.startswith("/") or ".." in normalized.split("/") or normalized != expected:
+            errs.append(f"benchmark_checkpoint_runtime_evidence_ref:{key}")
+    return errs
+
+
 def validate_benchmark_checkpoint_runtime_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["benchmark_checkpoint_runtime_not_object"]
@@ -55,6 +80,7 @@ def validate_benchmark_checkpoint_runtime_dict(body: Any) -> list[str]:
     checks = body.get("checks")
     check_errs = _validate_checks_fields(checks)
     errs.extend(check_errs)
+    errs.extend(_validate_evidence(body.get("evidence")))
     if not errs and isinstance(checks, dict):
         errs.extend(_validate_status_checks_coherence(checks, status))
     return errs
@@ -65,6 +91,8 @@ def validate_benchmark_checkpoint_runtime_path(path: Path) -> list[str]:
         return ["benchmark_checkpoint_runtime_file_missing"]
     try:
         body = json.loads(path.read_text(encoding="utf-8"))
+    except OSError:
+        return ["benchmark_checkpoint_runtime_unreadable"]
     except json.JSONDecodeError:
         return ["benchmark_checkpoint_runtime_json"]
     return validate_benchmark_checkpoint_runtime_dict(body)

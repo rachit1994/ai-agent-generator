@@ -163,3 +163,60 @@ def test_run_directory_flags_review_pass_with_blocker_finding(tmp_path: Path) ->
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "review_pass_not_evaluator_eligible" in result["errors"]
+
+
+def test_run_directory_flags_review_pass_with_malformed_finding_evidence_ref(tmp_path: Path) -> None:
+    out = tmp_path / "run-malformed-review-finding"
+    (out / "outputs").mkdir(parents=True)
+    (out / "outputs" / "a.txt").write_text("a", encoding="utf-8")
+    (out / "outputs" / "b.txt").write_text("b", encoding="utf-8")
+    (out / "summary.json").write_text(json.dumps({"runStatus": "ok", "balanced_gates": {}}), encoding="utf-8")
+    (out / "token_context.json").write_text(json.dumps({"schema_version": "1.0"}), encoding="utf-8")
+    (out / "traces.jsonl").write_text("", encoding="utf-8")
+    (out / "review.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.1",
+                "run_id": "rid",
+                "status": "completed_review_pass",
+                "reasons": [],
+                "required_fixes": [],
+                "gate_snapshot": {},
+                "artifact_manifest": [],
+                "review_findings": [
+                    {"severity": "warn", "code": "x", "message": "m", "evidence_ref": 1},
+                ],
+                "completed_at": "2026-01-01T00:00:00Z",
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "review_finding_invalid_field:0:evidence_ref" in result["errors"]
+    assert "review_pass_not_evaluator_eligible" in result["errors"]
+
+
+def test_run_directory_surfaces_unreadable_review_json(tmp_path: Path, monkeypatch) -> None:
+    out = tmp_path / "run-unreadable-review"
+    (out / "outputs").mkdir(parents=True)
+    (out / "outputs" / "a.txt").write_text("a", encoding="utf-8")
+    (out / "outputs" / "b.txt").write_text("b", encoding="utf-8")
+    (out / "summary.json").write_text(json.dumps({"runStatus": "ok", "balanced_gates": {}}), encoding="utf-8")
+    (out / "token_context.json").write_text(json.dumps({"schema_version": "1.0"}), encoding="utf-8")
+    (out / "traces.jsonl").write_text("", encoding="utf-8")
+    review_path = out / "review.json"
+    review_path.write_text("{}", encoding="utf-8")
+    original_read_text = Path.read_text
+
+    def _raise_for_review(self: Path, encoding: str = "utf-8") -> str:
+        if self == review_path:
+            raise OSError("permission denied")
+        return original_read_text(self, encoding=encoding)
+
+    monkeypatch.setattr(
+        "guardrails_and_safety.review_gating_evaluator_authority.review_gating.run_directory.evaluate_hard_stops",
+        lambda output_dir, events, token_ctx, run_status, mode: [],
+    )
+    monkeypatch.setattr(Path, "read_text", _raise_for_review)
+    result = validate_execution_run_directory(out, mode="baseline")
+    assert "unreadable:review.json" in result["errors"]

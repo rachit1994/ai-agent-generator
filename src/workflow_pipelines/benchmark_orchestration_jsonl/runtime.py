@@ -32,10 +32,19 @@ def build_benchmark_orchestration_jsonl_runtime(
 ) -> dict[str, Any]:
     resume_rows = [r for r in orchestration_rows if r.get("type") == "benchmark_resume"]
     error_rows = [r for r in orchestration_rows if r.get("type") == "benchmark_error"]
+    unknown_rows = [
+        r
+        for r in orchestration_rows
+        if r.get("type") not in ("benchmark_resume", "benchmark_error")
+    ]
     orchestration_present = len(orchestration_rows) > 0
     resume_lines_valid = _validate_rows(resume_rows, line_type="benchmark_resume")
     error_lines_valid = _validate_rows(error_rows, line_type="benchmark_error")
-    status = "clean" if resume_lines_valid and error_lines_valid else "has_error"
+    status = (
+        "clean"
+        if resume_lines_valid and error_lines_valid and len(unknown_rows) == 0
+        else "has_error"
+    )
     return {
         "schema": BENCHMARK_ORCHESTRATION_JSONL_RUNTIME_CONTRACT,
         "schema_version": BENCHMARK_ORCHESTRATION_JSONL_RUNTIME_SCHEMA_VERSION,

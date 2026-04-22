@@ -46,3 +46,16 @@ def test_validate_production_orchestration_rejects_status_metrics_mismatch() -> 
     payload["status"] = "missing"
     errs = validate_production_orchestration_dict(payload)
     assert "production_orchestration_status_metrics_mismatch" in errs
+
+
+def test_validate_production_orchestration_rejects_invalid_evidence_refs() -> None:
+    payload = build_production_orchestration(
+        run_id="rid-orchestration",
+        lease_table={"leases": [{"lease_id": "l1", "active": True}]},
+        shard_map={"shards": [{"id": "s1"}]},
+    )
+    payload["evidence"]["lease_table_ref"] = "../coordination/lease_table.json"
+    payload["evidence"]["shard_map_ref"] = "orchestration/other.json"
+    errs = validate_production_orchestration_dict(payload)
+    assert "production_orchestration_evidence_ref:lease_table_ref" in errs
+    assert "production_orchestration_evidence_ref:shard_map_ref" in errs

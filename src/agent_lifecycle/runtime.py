@@ -86,19 +86,34 @@ def _prev_stage(current_stage: str) -> str:
 
 
 def build_lifecycle_decision(
-    *, run_id: str, parsed: dict[str, Any], events: list[dict[str, Any]], skill_nodes: dict[str, Any] | None
+    *,
+    run_id: str,
+    parsed: dict[str, Any],
+    events: list[dict[str, Any]],
+    skill_nodes: dict[str, Any] | None,
+    prior_stage: str | None = None,
 ) -> dict[str, Any]:
     _ = parsed
     score = _extract_score(skill_nodes)
-    current_stage = _stage_for_score(score)
+    parsed_prior = parsed.get("current_stage") if isinstance(parsed, dict) else None
+    candidate_prior = prior_stage if isinstance(prior_stage, str) else parsed_prior
+    has_valid_prior_stage = isinstance(candidate_prior, str) and candidate_prior in LIFECYCLE_STAGES
+    current_stage = candidate_prior if has_valid_prior_stage else _stage_for_score(score)
     proposed_stage = current_stage
     reasons: list[str] = []
-    if score >= PROMOTION_THRESHOLDS.get(current_stage, 1.0):
-        proposed_stage = _next_stage(current_stage)
-        reasons.append("promotion_threshold_met")
-    if score < DEMOTION_FLOORS.get(current_stage, 0.0):
-        proposed_stage = _prev_stage(current_stage)
-        reasons.append("demotion_floor_breach")
+    if not has_valid_prior_stage:
+        reasons.append("missing_or_invalid_prior_stage")
+    else:
+        if score >= PROMOTION_THRESHOLDS.get(current_stage, 1.0):
+            next_stage = _next_stage(current_stage)
+            if next_stage != current_stage:
+                proposed_stage = next_stage
+                reasons.append("promotion_threshold_met")
+        if score < DEMOTION_FLOORS.get(current_stage, 0.0):
+            prev_stage = _prev_stage(current_stage)
+            if prev_stage != current_stage:
+                proposed_stage = prev_stage
+                reasons.append("demotion_floor_breach")
     if _stagnation(score, events):
         reasons.append("stagnation_detected")
     if not reasons:

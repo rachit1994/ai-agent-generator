@@ -80,7 +80,7 @@ def validate_high_risk_approval_token_row(row: Any, *, now_utc: datetime) -> lis
     if exp is None:
         errs.append("approval_token_expires_at_invalid")
         return errs
-    if exp < now_utc:
+    if exp <= now_utc:
         errs.append("approval_token_expired")
     return errs
 
@@ -115,7 +115,7 @@ def validate_token_context_payload(body: Any, *, now_utc: datetime) -> list[str]
     if anchor is not None and expiry is not None:
         if expiry < anchor:
             errs.append("token_context_expiry_before_anchor")
-        if expiry < now_utc:
+        if expiry <= now_utc:
             errs.append("token_context_expired")
     return errs
 
@@ -156,6 +156,9 @@ def validate_autonomy_boundaries_runtime_dict(body: Any) -> list[str]:
         for key in ("token_context_ref",):
             value = evidence.get(key)
             if not isinstance(value, str) or not value.strip():
+                errs.append(f"autonomy_boundaries_evidence_ref:{key}")
+                continue
+            if value.strip() != "token_context.json":
                 errs.append(f"autonomy_boundaries_evidence_ref:{key}")
     return errs
 

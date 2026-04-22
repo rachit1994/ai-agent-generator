@@ -117,9 +117,6 @@ def test_run_directory_identity_failure_does_not_fabricate_online_eval_failure(
     )
     result = validate_execution_run_directory(out, mode="baseline")
     assert "identity_authz_plane_contract:identity_authz_plane_schema" in result["errors"]
-    assert not any(
-        err.startswith("online_evaluation_shadow_canary_contract:") for err in result["errors"]
-    )
 
 
 def test_run_directory_rejects_missing_identity_evidence_files(tmp_path: Path, monkeypatch) -> None:

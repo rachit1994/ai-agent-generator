@@ -7,17 +7,27 @@ import math
 from pathlib import Path
 from typing import Any
 
-from .policy_defaults import MANDATORY_GATE_IDS
+from .policy_defaults import (
+    GATE_ID_ERROR_RATE_DELTA,
+    GATE_ID_LATENCY_P95_DELTA_MS,
+    GATE_ID_MIN_SAMPLE,
+    GATE_ID_QUALITY_DELTA,
+    MANDATORY_GATE_IDS,
+    MAX_ERROR_RATE_DELTA,
+    MAX_LATENCY_P95_DELTA_MS,
+    MIN_QUALITY_DELTA,
+    MIN_SAMPLE_SIZE,
+)
 
 ONLINE_EVALUATION_SHADOW_CANARY_CONTRACT = "sde.online_evaluation_shadow_canary.v1"
 ONLINE_EVALUATION_SHADOW_CANARY_SCHEMA_VERSION = "1.0"
 ONLINE_EVALUATION_SHADOW_CANARY_BOUNDARY_ID = "online_evaluation_shadow_canary"
 ONLINE_EVALUATION_SHADOW_CANARY_ERROR_PREFIX = "online_evaluation_shadow_canary_contract:"
 _CANONICAL_GATE_REASONS = {
-    "gate_min_sample": "gate_min_sample_unmet",
-    "gate_error_rate_delta": "gate_error_rate_delta_exceeded",
-    "gate_latency_p95_delta_ms": "gate_latency_p95_delta_exceeded",
-    "gate_quality_delta": "gate_quality_delta_below_threshold",
+    "min_sample": "gate_min_sample_unmet",
+    "error_rate_delta": "gate_error_rate_delta_exceeded",
+    "latency_p95_delta_ms": "gate_latency_p95_delta_exceeded",
+    "quality_delta": "gate_quality_delta_below_threshold",
 }
 _FLOAT_ZERO_TOLERANCE = 1e-9
 
@@ -138,6 +148,49 @@ def _validate_decision_semantics(
     return errs
 
 
+def _derive_failed_gates_from_metrics(metrics: dict[str, Any]) -> tuple[list[str], bool] | None:
+    sample_size = metrics.get("sample_size")
+    error_rate_delta = metrics.get("error_rate_delta")
+    latency_p95_delta_ms = metrics.get("latency_p95_delta_ms")
+    quality_delta = metrics.get("quality_delta")
+    values = (sample_size, error_rate_delta, latency_p95_delta_ms, quality_delta)
+    if any(isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)) for value in values):
+        return None
+    failed_gates: list[str] = []
+    min_sample_met = float(sample_size) >= float(MIN_SAMPLE_SIZE)
+    if not min_sample_met:
+        failed_gates.append(GATE_ID_MIN_SAMPLE)
+    if float(error_rate_delta) > float(MAX_ERROR_RATE_DELTA):
+        failed_gates.append(GATE_ID_ERROR_RATE_DELTA)
+    if float(latency_p95_delta_ms) > float(MAX_LATENCY_P95_DELTA_MS):
+        failed_gates.append(GATE_ID_LATENCY_P95_DELTA_MS)
+    if float(quality_delta) < float(MIN_QUALITY_DELTA):
+        failed_gates.append(GATE_ID_QUALITY_DELTA)
+    failed_gates = sorted(failed_gates, key=lambda gate_id: MANDATORY_GATE_IDS.index(gate_id))
+    return failed_gates, min_sample_met
+
+
+def _validate_metrics_decision_coherence(*, metrics: Any, decision_values: dict[str, Any]) -> list[str]:
+    if not isinstance(metrics, dict):
+        return []
+    derived = _derive_failed_gates_from_metrics(metrics)
+    if derived is None:
+        return []
+    expected_failed_gates, expected_min_sample_met = derived
+    actual_failed_gates = decision_values.get("failed_gates")
+    actual_decision = decision_values.get("decision_value")
+    actual_min_sample_met = decision_values.get("min_sample_met")
+    errs: list[str] = []
+    if isinstance(actual_failed_gates, list) and actual_failed_gates != expected_failed_gates:
+        errs.append("online_evaluation_shadow_canary_failed_gates_metrics_mismatch")
+    if isinstance(actual_min_sample_met, bool) and actual_min_sample_met != expected_min_sample_met:
+        errs.append("online_evaluation_shadow_canary_min_sample_metrics_mismatch")
+    expected_decision = "promote" if not expected_failed_gates else "hold"
+    if actual_decision in ("promote", "hold") and actual_decision != expected_decision:
+        errs.append("online_evaluation_shadow_canary_decision_metrics_mismatch")
+    return errs
+
+
 def validate_online_evaluation_shadow_canary_dict(body: Any) -> list[str]:
     if not isinstance(body, dict):
         return ["online_evaluation_shadow_canary_not_object"]
@@ -160,6 +213,12 @@ def validate_online_evaluation_shadow_canary_dict(body: Any) -> list[str]:
             failed_gates=decision_values.get("failed_gates"),
             decision_reasons=decision_values.get("decision_reasons"),
             min_sample_met=decision_values.get("min_sample_met"),
+        )
+    )
+    errs.extend(
+        _validate_metrics_decision_coherence(
+            metrics=body.get("metrics"),
+            decision_values=decision_values,
         )
     )
     return errs

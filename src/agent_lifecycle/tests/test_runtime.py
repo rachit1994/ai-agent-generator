@@ -12,8 +12,12 @@ def test_build_lifecycle_decision_is_deterministic() -> None:
     parsed = {"checks": [{"name": "a", "passed": True}]}
     events = [{"stage": "finalize", "score": {"passed": True}} for _ in range(3)]
     skill_nodes = {"schema_version": "1.0", "nodes": [{"skill_id": "x", "score": 0.72}]}
-    one = build_lifecycle_decision(run_id="rid", parsed=parsed, events=events, skill_nodes=skill_nodes)
-    two = build_lifecycle_decision(run_id="rid", parsed=parsed, events=events, skill_nodes=skill_nodes)
+    one = build_lifecycle_decision(
+        run_id="rid", parsed=parsed, events=events, skill_nodes=skill_nodes, prior_stage="senior"
+    )
+    two = build_lifecycle_decision(
+        run_id="rid", parsed=parsed, events=events, skill_nodes=skill_nodes, prior_stage="senior"
+    )
     assert one == two
     assert one["current_stage"] == "senior"
     assert one["proposed_stage"] == "senior"
@@ -23,7 +27,9 @@ def test_build_lifecycle_decision_detects_stagnation() -> None:
     parsed = {"checks": [{"name": "a", "passed": True}]}
     events = [{"stage": "finalize", "score": {"passed": False}} for _ in range(4)]
     skill_nodes = {"schema_version": "1.0", "nodes": [{"skill_id": "x", "score": 0.6}]}
-    out = build_lifecycle_decision(run_id="rid2", parsed=parsed, events=events, skill_nodes=skill_nodes)
+    out = build_lifecycle_decision(
+        run_id="rid2", parsed=parsed, events=events, skill_nodes=skill_nodes, prior_stage="mid"
+    )
     assert "stagnation_detected" in out["reasons"]
     eval_result = build_practice_evaluation_result(out)
     assert eval_result["passed"] is False
@@ -33,7 +39,9 @@ def test_build_lifecycle_decision_treats_truthy_non_boolean_passed_as_false() ->
     parsed = {"checks": [{"name": "a", "passed": True}]}
     events = [{"stage": "finalize", "score": {"passed": "true"}} for _ in range(4)]
     skill_nodes = {"schema_version": "1.0", "nodes": [{"skill_id": "x", "score": 0.6}]}
-    out = build_lifecycle_decision(run_id="rid3", parsed=parsed, events=events, skill_nodes=skill_nodes)
+    out = build_lifecycle_decision(
+        run_id="rid3", parsed=parsed, events=events, skill_nodes=skill_nodes, prior_stage="mid"
+    )
     assert "stagnation_detected" in out["reasons"]
 
 
@@ -66,3 +74,40 @@ def test_build_promotion_package_fails_closed_for_non_numeric_score() -> None:
     }
     promotion = build_promotion_package(run_id="r", decision=decision)
     assert promotion["independent_evaluator_signal_ids"] == ["lifecycle-score:0.000"]
+
+
+def test_build_lifecycle_decision_promotes_against_prior_stage() -> None:
+    out = build_lifecycle_decision(
+        run_id="rid-promote",
+        parsed={},
+        events=[],
+        skill_nodes={"nodes": [{"score": 0.95}]},
+        prior_stage="senior",
+    )
+    assert out["current_stage"] == "senior"
+    assert out["proposed_stage"] == "architect"
+    assert "promotion_threshold_met" in out["reasons"]
+
+
+def test_build_lifecycle_decision_demotes_against_prior_stage() -> None:
+    out = build_lifecycle_decision(
+        run_id="rid-demote",
+        parsed={},
+        events=[],
+        skill_nodes={"nodes": [{"score": 0.4}]},
+        prior_stage="senior",
+    )
+    assert out["current_stage"] == "senior"
+    assert out["proposed_stage"] == "mid"
+    assert "demotion_floor_breach" in out["reasons"]
+
+
+def test_build_lifecycle_decision_fail_closed_without_prior_stage() -> None:
+    out = build_lifecycle_decision(
+        run_id="rid-no-prior",
+        parsed={},
+        events=[],
+        skill_nodes={"nodes": [{"score": 1.0}]},
+    )
+    assert "missing_or_invalid_prior_stage" in out["reasons"]
+    assert "promotion_threshold_met" not in out["reasons"]

@@ -20,6 +20,8 @@ def build_autonomy_boundaries_runtime_payload(
 ) -> dict[str, Any]:
     if not isinstance(run_id, str) or not run_id.strip():
         raise ValueError("autonomy_boundaries_run_id")
+    if not isinstance(token_context, dict):
+        raise ValueError("token_context_not_object")
     normalized_run_id = run_id.strip()
     token_context_run_id = token_context.get("run_id")
     if not isinstance(token_context_run_id, str) or token_context_run_id.strip() != normalized_run_id:

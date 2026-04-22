@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from .contracts import DUAL_CONTROL_CONTRACT, DUAL_CONTROL_SCHEMA_VERSION
@@ -32,12 +33,17 @@ def _ack_valid(ack: dict[str, Any]) -> tuple[bool, bool]:
     b = actor_b.strip()
     distinct_actors = bool(a and b and a != b)
     acked_at = ack.get("acknowledged_at")
-    acked_at_ok = (
-        isinstance(acked_at, str)
-        and bool(acked_at.strip())
-        and "T" in acked_at
-        and acked_at.endswith("Z")
-    )
+    acked_at_ok = False
+    if isinstance(acked_at, str) and acked_at.strip():
+        normalized = acked_at.strip()
+        if normalized.endswith("Z"):
+            normalized = f"{normalized[:-1]}+00:00"
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            acked_at_ok = False
+        else:
+            acked_at_ok = parsed.utcoffset() is not None and parsed.utcoffset().total_seconds() == 0
     return distinct_actors and acked_at_ok, distinct_actors
 
 

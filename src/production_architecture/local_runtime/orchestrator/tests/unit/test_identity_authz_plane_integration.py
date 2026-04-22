@@ -88,3 +88,21 @@ def test_identity_authz_writer_fails_closed_for_non_object_lease_table(tmp_path:
         match="^identity_authz_plane_contract:json_not_object:coordination/lease_table.json$",
     ):
         write_identity_authz_plane_artifact(output_dir=run_dir, run_id=run_id)
+
+
+def test_identity_authz_writer_missing_action_audit_file_degrades_status(tmp_path: Path) -> None:
+    run_id = "run-identity-authz-missing-action-audit"
+    run_dir = tmp_path / "runs" / run_id
+    (run_dir / "iam").mkdir(parents=True)
+    (run_dir / "coordination").mkdir(parents=True)
+    (run_dir / "iam" / "permission_matrix.json").write_text(
+        json.dumps({"roles": [{"name": "r"}]}),
+        encoding="utf-8",
+    )
+    (run_dir / "coordination" / "lease_table.json").write_text(
+        json.dumps({"leases": [{"lease_id": "l1", "active": True}]}),
+        encoding="utf-8",
+    )
+    payload = write_identity_authz_plane_artifact(output_dir=run_dir, run_id=run_id)
+    assert payload["status"] == "missing"
+    assert payload["controls"]["high_risk_tokens_valid"] is False

@@ -80,3 +80,16 @@ def test_validate_risk_budgets_permission_matrix_rejects_count_check_mismatch() 
     payload["checks"]["hard_stops_all_pass"] = True
     errs = validate_risk_budgets_permission_matrix_dict(payload)
     assert "risk_budgets_permission_matrix_counts_checks_mismatch" in errs
+
+
+def test_build_risk_budgets_permission_matrix_fail_closed_for_non_dict_hard_stop_rows() -> None:
+    payload = build_risk_budgets_permission_matrix(
+        run_id="rid-risk-malformed-hard-stops",
+        cto={
+            "validation_ready": True,
+            "balanced_gates": {"all_ok": True},
+            "hard_stops": [True],
+        },
+    )
+    assert payload["status"] == "degraded"
+    assert payload["checks"]["hard_stops_all_pass"] is False
